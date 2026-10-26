@@ -89,6 +89,8 @@ class Core:
         self.stations: Dict[str, Dict[str, Any]] = {}
         self.media: List[Dict[str, str]] = []
         self._tasks: List[asyncio.Task] = []
+        # asyncio haelt Aufgaben nur schwach - ohne Referenz raeumt der Garbage Collector sie mittendrin weg
+        self._bg: Set[asyncio.Task] = set()
         self._push_pending = False
         self._takeover_lock = asyncio.Lock()
         self._last_mpd: "tuple[Dict[str, str], Dict[str, str]]" = ({}, {})
@@ -140,7 +142,9 @@ class Core:
         return {"KS_HOOK_URL": f"http://127.0.0.1:{PORT}/api/internal/hook", "KS_HOOK_TOKEN": self.hook_token}
 
     def _spawn(self, coro) -> None:
-        asyncio.get_running_loop().create_task(coro)
+        task = asyncio.get_running_loop().create_task(coro)
+        self._bg.add(task)
+        task.add_done_callback(self._bg.discard)
 
     async def apply_audio(self, which=("mpd", "airplay", "spotify", "upnp", "bluetooth", "cec")) -> None:
         s = self.settings
@@ -315,7 +319,7 @@ class Core:
             finally:
                 await asyncio.sleep(2)  # nicht in eine Schleife geraten, falls das Geraet belegt bleibt
                 self._claiming.discard(source)
-        asyncio.get_running_loop().create_task(run())
+        self._spawn(run())
 
     async def _upnp_loop(self) -> None:
         """gmediarender hat keine Hooks: Zustand jede Sekunde per SOAP abfragen."""
@@ -415,7 +419,7 @@ class Core:
             await asyncio.sleep(0.1)
             self._push_pending = False
             self.broadcast({"type": "state", "data": await self.state()})
-        asyncio.get_running_loop().create_task(later())
+        self._spawn(later())
 
     async def _on_mpd_change(self, changed: List[str]) -> None:
         if "reconnect" in changed and self.settings.get("shares"):
@@ -790,7 +794,13 @@ class Core:
         for _ in range(15):
             await asyncio.sleep(1)
             try:
-                await self.mpd.run("play")
+                status = await self.mpd.dict("status")
+                song = await self.mpd.dict("currentsong")
+                if _media_kind(song.get("file", "")) == "radio":
+                    # Pausiert wiederhergestellter Stream laeuft nach "play" oft nicht weiter -> frisch verbinden
+                    await self.mpd.run("play", status.get("song", "0"))
+                else:
+                    await self.mpd.run("play")
                 return
             except (ConnectionError, MPDError):
                 continue
@@ -1038,7 +1048,7 @@ class Core:
             raise ValueError("Ungueltige Stream-URL")
         self.remember_station(st)
         await self.queue_add([url], "play")
-        asyncio.get_running_loop().create_task(self.radio.click(st.get("uuid", "")))
+        self._spawn(self.radio.click(st.get("uuid", "")))
 
     # ------------------------------------------------------------ Bibliothek
     async def browse(self, path: str) -> List[Dict[str, Any]]:
@@ -1197,7 +1207,7 @@ class Core:
                            "disc_id": toc["disc_id"], "toc": toc["toc"], "tracks": toc["tracks"],
                            "album": "Audio-CD", "artist": "", "art": None, "lookup": "pending"}
                 self.push()
-                asyncio.get_running_loop().create_task(self._cd_lookup(toc["disc_id"]))
+                self._spawn(self._cd_lookup(toc["disc_id"]))
                 if inserted and self.settings.get("cd_autoplay"):
                     await self.cd_play(1)
             else:
@@ -1209,7 +1219,7 @@ class Core:
             self.cd = {"available": status is not None, "status": cdrom.STATUS_NAMES.get(status, "none"),
                        "present": False}
             if had_disc:
-                asyncio.get_running_loop().create_task(self._remove_cd_from_queue())
+                self._spawn(self._remove_cd_from_queue())
         self.push()
 
     async def _remove_cd_from_queue(self) -> None:
@@ -1369,6 +1379,13 @@ class Core:
         if changed & {"output", "bitperfect"}:
             # MPD startet fuer das neue Geraet neu und stellt sich dann pausiert wieder her
             resume = self.source in ("mpd", "idle") and await self._is_playing()
+            try:
+                # Einen gemerkten Sender stellt MPD beim Start pausiert wieder her und versucht, darin zu
+                # springen - so lange nimmt er keine Verbindung an (am Pi bis ueber 25 s)
+                if _media_kind((await self.mpd.dict("currentsong")).get("file", "")) == "radio":
+                    await self.mpd.run("stop")
+            except (ConnectionError, MPDError):
+                pass
             await self.apply_audio()
             if resume:
                 self._spawn(self._resume_mpd())

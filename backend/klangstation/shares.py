@@ -158,6 +158,7 @@ class Shares:
         self._lock = asyncio.Lock()
         self._legacy_done = False
         self._watch: Optional[asyncio.Task] = None
+        self._bg: Set[asyncio.Task] = set()  # Referenz halten, sonst raeumt der GC die Aufgabe weg
         self._mounted_names: Set[str] = set()
 
     # ------------------------------------------------------------ Einlesen (Scan)
@@ -175,7 +176,9 @@ class Shares:
                 if name in self.scanning:
                     self.scanning[name]["total"] = n
                     self._notify()
-            loop.create_task(total())
+            task = loop.create_task(total())
+            self._bg.add(task)
+            task.add_done_callback(self._bg.discard)
         if not self._watch or self._watch.done():
             self._watch = loop.create_task(self._watch_scan())
         self._notify()

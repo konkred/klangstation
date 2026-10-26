@@ -88,6 +88,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   bleibt belegt → udev-`remove`-Regel hängt lazy aus und entfernt den Ordner.
 * **WebSocket-Ablehnung** erst nach `websocket.accept` schließen, sonst sieht der Browser 1006 statt 4401.
 * **MPD/curl** verbindet bei stillem Netzausfall nie neu (bleibt auf „play“) → Webradio-Wächter in `core`.
+* **asyncio hält Aufgaben nur schwach** → ohne Referenz räumt der Garbage Collector sie mitten im Lauf weg
+  („Task was destroyed but it is pending“). Hintergrundaufgaben immer über `Core._spawn` starten.
+* **MPD stellt einen gemerkten Sender pausiert wieder her** und versucht beim Start, darin zu springen – so lange
+  nimmt er keine Verbindung an (am Pi bis über 25 s) → vor dem MPD-Neustart Radio stoppen, danach `play <Nr>`.
 
 ## Stand und offene Punkte
 
@@ -105,19 +109,22 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
   Bluetooth-Übernahme mit iPhone (Ausgang HDMI ↔ Klinke bei pausiertem iPhone: keine Übernahme; die PCM meldete
   dabei wie früher kurz `Running` bei AVRCP „paused“ – jetzt abgefangen), Synology-Scan über WLAN
   (`Netz-Synology-Test2`, 928 Titel in 2 min 10 s ≈ 7 Titel/s, Last bis 3,5, 49 °C, nicht gedrosselt,
-  Speicher stabil, `/api/state` meist 0,01 s, einmal 3,5 s).
+  Speicher stabil, `/api/state` meist 0,01 s, einmal 3,5 s), Ausgabewechsel mit Radio (8 Wechsel Klinke ↔ HDMI,
+  spielt jeweils nach 6–7 s weiter), Webradio-Netzausfall (60 s gesperrt, spielt 8 s nach Rückkehr wieder),
+  Synology-Ausfall (90 s gesperrt, nach 15 s pausiert mit Hinweis, danach selber Titel an derselben Stelle; bis
+  wieder Ton kommt ~22 s, davon ~15 s CIFS-Wiederverbindung über WLAN). Alle Störfälle stumm (MPD-Lautstärke 0).
 * **Alma bestanden:** Rippen in den internen Speicher (3 min 15 s), Auswerfen per Taste während des Rippens,
   FAT32-Umlaute, Bluetooth übersteht Neustart, Bluetooth-Stick wird im laufenden Betrieb erkannt,
   Update per `install.sh --tv-headless` (1 min 47 s; Einstellungen, Geheimnis, Spotify-Anmeldung, Freigabe mit
   Passwort unverändert, keine Paketänderung), Neustart während Radio (Web nach 65 s, davon 39 s Firmware; alle
   Dienste, Freigabe, Stick, Bluetooth, SELinux-Modul da, kein ungefragtes Weiterspielen).
 * **Dauerlauf am Pi** am 26.10.2026 nach 35 min abgebrochen (unauffällig), um erst alle Fehler zu beheben –
-  danach neu starten. `ks-dauerlauf.sh` (als transienter Dienst per `systemd-run`) schreibt 24 h lang alle 5 min
-  nach `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand,
-  Temperatur, `vcgencmd get_throttled`). Danach: Testplaylist „Test Update“ und Radio-Favorit „Deutschlandfunk“
-  am Pi entfernen.
+  kommt als allerletzter Test. `ks-dauerlauf.sh` (als transienter Dienst per `systemd-run`) schreibt 24 h lang
+  alle 5 min nach `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen,
+  Zustand, Temperatur, `vcgencmd get_throttled`). Testdateien, Testplaylist „Test Update“ und Radio-Favorit sind
+  am Pi entfernt; die Wiedergabeliste „SynoTest“ ist geblieben.
 
-### Behoben (im Repo, am Alma eingespielt und geprüft; Pi folgt)
+### Behoben (im Repo, am Alma und am Pi eingespielt)
 
 * **NTFS-Sticks:** Installer zieht `ntfs-3g` (RHEL aus EPEL); `ks-netmount` schreibt auch auf `fuseblk`;
   Rip-Ziele nur mit beschreibbarem Dateisystem; scheitert das Speichern auf USB, landet das Album im internen
@@ -156,13 +163,13 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
 * **Freigabe eintragen (behoben 26.10.2026):** Pfad mit Backslashes (`\Ordner\Unterordner`) ergab
   „mount error(22)“ ohne Erklärung → `\` wird zu `/`, Fehler 22 bekommt eine Meldung; „Neu einlesen“ bei nicht
   eingebundener Freigabe zeigte fälschlich „wird eingelesen“ → versucht jetzt neu einzubinden.
-* **Radio hängt nach Ausgabewechsel am Pi:** Nach dem Wechsel Klinke → HDMI 0 (MPD-Neustart, Wiederaufnahme per
-  `_resume_mpd`) stand `elapsed` still bei „play“, der Nutzer hörte Stille. Der Webradio-Wächter verbindet nach
-  20 s neu (19:47:10 → läuft 19:47:15) – Ursache offen (MPD/vc4hdmi nach Neustart?). Trat schon beim ersten
-  Quellenwechsel-Test auf („seit Ausgangswechsel stumm“).
+* **Radio nach Ausgabewechsel (behoben 26.10.2026):** Die Wiederaufnahme lief ohne Referenz und wurde vom
+  Garbage Collector abgebrochen (Radio blieb pausiert); MPD hing beim Start am wiederhergestellten Sender (Stille,
+  bis der Webradio-Wächter neu verband) → `_spawn` hält Referenzen, Radio wird vor dem Neustart gestoppt und
+  danach frisch verbunden.
 * Pi-Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Alma.
-* Tests Pi: Störfälle mit neuem Stand nachtesten, Dauerlauf neu (erst wenn der Nutzer will), Scan einer
-  noch größeren Bibliothek (falls vorhanden), `--tv-headless` auf Pi OS Lite, NFS.
+* Tests Pi: `--tv-headless` auf Pi OS Lite, NFS; ganz zum Schluss der Dauerlauf. (Größere Bibliothek scannen
+  entfällt.)
 * Tests Alma: UPnP mit echter App, Neuinstallation von null, NFS, CEC (braucht Fernseher); mit Audio-CD:
   Rückfall beim Rippen auf USB, MusicBrainz-Neuversuch über 16 Versuche, echtes Rippen auf einen Stick.

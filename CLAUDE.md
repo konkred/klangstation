@@ -28,34 +28,29 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 
 | Gerät | Zugang | Hinweise |
 |---|---|---|
-| Raspberry Pi, Raspberry Pi OS (Debian 13 trixie), aarch64, mit Desktop | `ssh pi@raspberrypi.local` | sudo verlangt ein Passwort – Claude hat dort **kein** root |
-| PC, AlmaLinux 10.2, x86_64, ohne Desktop, SELinux enforcing | `ssh root@10.0.0.162` (SSH-Key) | Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
+| Raspberry Pi (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie), aarch64, mit Desktop | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort |
+| PC (Hostname `KlangStationAlma`), AlmaLinux 10.2, x86_64, ohne Desktop, SELinux enforcing | `ssh root@10.0.0.162` (SSH-Key) | Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
 | Synology | `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
 
-Die SSH-Keys liegen auf dem Windows-PC, auf dem bisher gearbeitet wurde. Auf einem anderen Rechner müssen
-die Keys erst eingerichtet werden (oder der Nutzer kopiert sie).
+Gearbeitet wird auf einem Laptop mit AlmaLinux 10.2 (`konnis-Latitude`, Bash). Dessen SSH-Key ist auf beiden
+Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdns) – den Pi darum über
+`raspberrypi` ansprechen (Router-DNS, nur IPv6-Adressen).
 
 ## Einspielen
 
-* **Pi (kein root):** Dateien per scp nach `/tmp/ks-fixN/` bzw. den ganzen Stand nach `~/klangstation`
-  kopieren; der Nutzer führt aus: `ssh -t pi@raspberrypi.local "cd ~/klangstation && sudo ./install.sh"`
-  (oder ein vorbereitetes `sudo bash /tmp/ks-fixN/deploy.sh`). Danach prüfen.
+* **Pi (sudo):** scp nach `~/klangstation`, dann `ssh pi@raspberrypi "cd ~/klangstation && sudo ./install.sh"`
+  oder einzelne Dateien mit `sudo install -m 0644` nach `/opt/klangstation/...` und
+  `sudo systemctl restart klangstation`. Danach prüfen.
 * **Alma (root):** scp nach `/root/klangstation`, dann `bash install.sh --tv-headless` oder einzelne Dateien
   mit `install -m 0644` nach `/opt/klangstation/...` und `systemctl restart klangstation`.
-* Längere Remote-Skripte aus PowerShell als base64 übergeben: `ssh host "echo <b64> | base64 -d | bash"`
-  (verschachtelte Anführungszeichen brechen sonst). In PowerShell ist `$args` reserviert.
 * Lange Tests (Rippen, Scans, Kopplung) als Hintergrund-Beobachtung starten, die auf das Ereignis wartet;
   der Nutzer bedient dabei Oberfläche bzw. iPhone und meldet, was er hört.
 
 ## Git und GitHub
 
 * Repo: `konkred/klangstation` (privat), Branch `main`. Commits mit der noreply-Adresse von GitHub, nicht
-  mit der privaten E-Mail.
-* Auf dem bisherigen Windows-PC (Windows IoT LTSC, kein winget) liegen MinGit und gh portabel im
-  Paketbereich der Claude-App (`%LOCALAPPDATA%\Programs\…` aus Sicht von Claude, real unter
-  `…\AppData\Local\Packages\Claude_…\LocalCache\Local\Programs`). gh braucht dort
-  `GH_CONFIG_DIR=%USERPROFILE%\.config\gh`, damit Claude und der Nutzer dieselbe Anmeldung sehen.
-* PowerShell 5.1 zerlegt Commit-Nachrichten mit Anführungszeichen – Nachricht per Datei (`git commit -F`).
+  mit der privaten E-Mail (auf dem Laptop in der Repo-Konfiguration gesetzt).
+* Zugriff auf GitHub per SSH (`ssh.github.com:443`). gh ist auf dem Laptop nicht installiert.
 
 ## Absprachen mit dem Nutzer
 

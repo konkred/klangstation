@@ -30,7 +30,7 @@ jeweils auf x86_64, aarch64 und armv7.
 | System | Ergebnis |
 |---|---|
 | Raspberry Pi, Raspberry Pi OS (Debian 13 „trixie“), aarch64, mit Desktop | alle Quellen, CD-Wiedergabe und Rippen (USB-Laufwerk), Synology per SMB, CEC, HDMI-Ton |
-| PC, AlmaLinux 10.2, x86_64, ohne Desktop (SELinux aktiv) | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio, AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (USB-Stick RTL8761BU, iPhone, Ein-/Ausstecken im Betrieb), USB-Stick, Synology per SMB, CD-Wiedergabe (internes SATA-Laufwerk) und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless` inkl. Neustart |
+| PC, AlmaLinux 10.2, x86_64, ohne Desktop (SELinux aktiv) | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio, AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (USB-Stick RTL8761BU, iPhone, Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Stick, Synology per SMB, CD-Wiedergabe (internes SATA-Laufwerk) und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless` inkl. Neustart |
 
 Noch nicht geprüft: CEC unter RHEL-Systemen, NFS-Freigaben, UPnP mit einer echten App unter RHEL,
 `--tv-headless` auf Raspberry Pi OS Lite, eine Installation auf einem frischen RHEL-System von null.

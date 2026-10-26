@@ -44,6 +44,18 @@ die Keys erst eingerichtet werden (oder der Nutzer kopiert sie).
   mit `install -m 0644` nach `/opt/klangstation/...` und `systemctl restart klangstation`.
 * Längere Remote-Skripte aus PowerShell als base64 übergeben: `ssh host "echo <b64> | base64 -d | bash"`
   (verschachtelte Anführungszeichen brechen sonst). In PowerShell ist `$args` reserviert.
+* Lange Tests (Rippen, Scans, Kopplung) als Hintergrund-Beobachtung starten, die auf das Ereignis wartet;
+  der Nutzer bedient dabei Oberfläche bzw. iPhone und meldet, was er hört.
+
+## Git und GitHub
+
+* Repo: `konkred/klangstation` (privat), Branch `main`. Commits mit der noreply-Adresse von GitHub, nicht
+  mit der privaten E-Mail.
+* Auf dem bisherigen Windows-PC (Windows IoT LTSC, kein winget) liegen MinGit und gh portabel im
+  Paketbereich der Claude-App (`%LOCALAPPDATA%\Programs\…` aus Sicht von Claude, real unter
+  `…\AppData\Local\Packages\Claude_…\LocalCache\Local\Programs`). gh braucht dort
+  `GH_CONFIG_DIR=%USERPROFILE%\.config\gh`, damit Claude und der Nutzer dieselbe Anmeldung sehen.
+* PowerShell 5.1 zerlegt Commit-Nachrichten mit Anführungszeichen – Nachricht per Datei (`git commit -F`).
 
 ## Absprachen mit dem Nutzer
 
@@ -79,6 +91,8 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
 
 * **Pi ist nicht auf dem neuesten Stand:** Es fehlen die Korrekturen zu MusicBrainz-Neuversuch und MPD-Update
   nach dem Rippen (`core.py`, `web/js/app.js`). Einspielen über `~/klangstation` + `sudo ./install.sh`.
-* Auf AlmaLinux noch offen: Bluetooth nach Neustart, UPnP mit echter App, Rippen in den internen Speicher,
-  Neuinstallation von null, NFS, CEC (braucht Fernseher).
+* Auf AlmaLinux geprüft (26.10.2026): Bluetooth übersteht einen Neustart – SELinux-Modul bleibt geladen,
+  Klangstation findet den Adapter beim Start, das iPhone verbindet sich selbst neu und spielt nach ~20 s weiter.
+* Auf AlmaLinux noch offen: UPnP mit echter App, Rippen in den internen Speicher, Neuinstallation von null,
+  NFS, CEC (braucht Fernseher).
 * Pi: `--tv-headless` auf Pi OS Lite ungetestet, CEC-Standby, großer Synology-Scan.

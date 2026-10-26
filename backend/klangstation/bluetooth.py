@@ -283,6 +283,7 @@ class Bluetooth:
                 if duration >= 0xFFFFFFFF or duration > 24 * 3600 * 1000:
                     duration = 0  # AVRCP: 0xFFFFFFFF = Laenge unbekannt
                 info = {"player": player_path, "state": _STATUS.get(_v(pl, "Status", ""), "stop"),
+                        "avrcp": _v(pl, "Status", ""),
                         # Apple Music haengt wie bei AirPlay z. B. " • Video verfügbar" an den Interpreten
                         "title": _v(track, "Title", ""), "artist": _SUFFIX.sub("", _v(track, "Artist", "")),
                         "album": _v(track, "Album", ""), "duration": duration / 1000.0,

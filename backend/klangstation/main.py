@@ -364,7 +364,11 @@ class AuthMiddleware:
         client = (scope.get("client") or ("", 0))[0]
         if core.auth.needs_login(scope["path"], scope.get("method", "GET"), client, cookie):
             if scope["type"] == "websocket":
-                await send({"type": "websocket.close", "code": 4401})
+                # Erst annehmen, dann schliessen: vor dem Accept wird daraus ein HTTP 403 und der Browser
+                # sieht nur 1006 statt 4401 - die Seite wuesste dann nicht, dass sie sich anmelden muss
+                if (await receive())["type"] == "websocket.connect":
+                    await send({"type": "websocket.accept"})
+                    await send({"type": "websocket.close", "code": 4401})
                 return
             response = JSONResponse({"ok": False, "error": "Anmeldung erforderlich", "auth": True}, status_code=401)
             return await response(scope, receive, send)

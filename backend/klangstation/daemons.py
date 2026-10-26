@@ -10,6 +10,7 @@ import collections
 import logging
 import os
 import shutil
+import time
 from typing import Callable, Dict, List, Optional
 
 log = logging.getLogger("klangstation.daemons")
@@ -70,6 +71,7 @@ class Daemon:
                 self.tail.append(f"Start fehlgeschlagen: {exc}")
                 return
             log.info("%s gestartet (pid %s)", self.name, self.proc.pid)
+            started = time.monotonic()
             assert self.proc.stdout
             async for raw in self.proc.stdout:
                 line = raw.decode("utf-8", "replace").rstrip()
@@ -81,6 +83,8 @@ class Daemon:
             rc = await self.proc.wait()
             if self._stopping:
                 break
+            if time.monotonic() - started > 60:
+                backoff = 1.0  # lief lange: frischer Fehler, kein Dauerabsturz
             log.warning("%s beendet (Code %s), Neustart in %.0fs", self.name, rc, backoff)
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, 30)

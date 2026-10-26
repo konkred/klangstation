@@ -728,7 +728,7 @@ function renderCD() {
     const total = (cd.tracks || []).reduce((a, t) => a + t.duration, 0);
     status = `${cd.tracks.length} Titel · ${fmt(total)}` +
       (cd.lookup === "pending" ? " · Titel werden bei MusicBrainz gesucht…" : cd.lookup === "unknown" ? " · CD ist bei MusicBrainz nicht bekannt" :
-        cd.lookup === "offline" ? " · MusicBrainz gerade nicht erreichbar, wird jede Minute erneut versucht" : "") +
+        cd.lookup === "offline" ? " · MusicBrainz gerade nicht erreichbar, wird regelmäßig erneut versucht" : "") +
       (cd.date ? " · " + cd.date : "");
   }
   $("#cd-status").textContent = status;
@@ -796,8 +796,9 @@ function renderRip() {
     $("#rip-bar").style.width = pct + "%";
     note.textContent = job.track ? `Titel ${job.track} von ${job.tracks}: ${job.title} · ${pct} %${fmtEta(job.eta)}` : "Wird vorbereitet …";
   } else if (job && job.state === "done") {
-    note.classList.add("ok");
-    note.textContent = `Fertig: „${job.album}“ liegt auf „${job.target}“ unter ${job.folder}.`;
+    note.classList.add(job.warning ? "err" : "ok");
+    note.textContent = (job.warning ? job.warning + " " : "") +
+      `Fertig: „${job.album}“ liegt auf „${job.target}“ unter ${job.folder}.`;
   } else if (job && job.state === "error") {
     note.classList.add("err");
     note.textContent = "Rippen fehlgeschlagen: " + job.error;

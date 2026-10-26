@@ -79,76 +79,67 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **BlueZ hostname-Plugin** macht aus dem Gehäusetyp „Desktop-Computer“ → `bluetoothd -P hostname`.
 * **MusicBrainz** drosselt (503), Pi und PC teilen eine IP → CD-Abfrage wird bei „offline“ jede Minute wiederholt.
 * **shairport-sync 5.6** verlangt `session_timeout` ≥ 60; schickt `prgr` (Position) normal.
+* **libcdio (MPD-Archiv-Plugin „iso“)** beendet bei einem Lesefehler den ganzen MPD-Prozess per `exit()` →
+  ISO-Abbilder auf Sticks werden nicht als Archiv eingelesen (`archive_plugin iso` aus).
+* **ntfs-3g** kann kein `remount` → zum Schreiben aus- und `rw` neu einhängen, danach wieder über
+  `ks-automount` (systemd-mount, ans Gerät gebunden). Nach `umount` hält ntfs-3g das Gerät noch kurz exklusiv.
+* **udev hat einen eigenen Mount-Namensraum** → Aus-/Einhängen aus udev-Regeln nur über `systemd-run`/`systemd-mount`.
+* **USB-Stick abgezogen, Datei noch offen** → systemd kann nicht aushängen, versucht es nicht wieder, der Ordner
+  bleibt belegt → udev-`remove`-Regel hängt lazy aus und entfernt den Ordner.
+* **WebSocket-Ablehnung** erst nach `websocket.accept` schließen, sonst sieht der Browser 1006 statt 4401.
+* **MPD/curl** verbindet bei stillem Netzausfall nie neu (bleibt auf „play“) → Webradio-Wächter in `core`.
 
 ## Stand und offene Punkte
 
 Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
 
-* Pi auf dem neuesten Stand (26.10.2026). Dort geprüft: MusicBrainz-Neuversuch (Sperre per `/etc/hosts`,
-  Titel kommen nach Aufheben von selbst), Rippen in den internen Speicher mit neuem Interpreten-Ordner →
-  sofort in der Bibliothek.
-* **Offener Fehler:** `Core._cd_lookup` gibt nach 16 Neuversuchen (~16 min) auf, `lookup` bleibt „offline“ und die
-  Oberfläche zeigt weiter „wird jede Minute erneut versucht“. Neuversuch sollte laufen, solange die CD drin ist.
-* Zugangsschutz am Pi geprüft (beide Stufen, Sperre, lokale Zugriffe, Kiosk, `ks-reset-password`). **Offene
-  Fehler:** `AuthMiddleware` lehnt den WebSocket vor dem Accept ab → Browser sieht 1006 statt 4401; offene Seiten
-  zeigen dann nur „Verbindung getrennt…“ statt Anmeldefenster, `/tv` auf fremden Geräten nie „Anmeldung nötig“.
-  Kleinigkeiten: `--reset-password` lässt `auth_scope` stehen (Entfernen über die Oberfläche setzt „settings“);
-  `GET /api/bluetooth` (Geräteliste) ist bei Stufe „settings“ ohne Anmeldung lesbar.
-* Update per `install.sh` am Pi geprüft: Einstellungen, Freigabe mit Passwort, Favoriten, Wiedergabelisten,
-  Musik, Sitzungsgeheimnis und Spotify-Anmeldung bleiben erhalten. Vorher fehlte im Repo das Ausführungsrecht
-  aller Skripte (Windows) → `sudo ./install.sh` brach mit „Befehl nicht gefunden“ ab; behoben.
-* Quellenwechsel am Pi geprüft (Bibliothek → AirPlay → Spotify → Bluetooth → Radio). **Offene Fehler:**
-  * Bluetooth reißt die Quelle an sich: Nach jedem `apply_audio` (Ausgabe-/Bit-perfekt-Wechsel) startet
-    bluealsa-aplay neu, die PCM des verbundenen, aber pausierten iPhones meldet kurz `Running` → `_bt_loop` ruft
-    `take_over("bluetooth")` und stoppt das laufende Radio (10–20 s nach dem Wechsel, reproduzierbar).
-    Idee: nur übernehmen, wenn AVRCP „play“ meldet oder kein AVRCP-Status da ist.
-  * Spotify bei laufendem AirPlay: librespot stirbt beim Übernehmen mit Code 1 (Gerät belegt), erst der Neustart
-    klappt – Übernahme dauert spürbar. Für Spotify fehlt ein Freigeben vor dem Öffnen wie bei AirPlay.
-* Ausgabewechsel am Pi (ohne verbundenes Bluetooth) geprüft: HDMI 0 ↔ Klinke, Bit-perfekt an/aus – Radio spielt
-  jeweils nach wenigen Sekunden weiter. Bei `vc4hdmi` greift Bit-perfekt bewusst nicht (immer `default:CARD=`),
-  die Oberfläche sagt das aber nicht.
-* **Offener Fehler – Radio hängt nach Netzausfall:** Internet am Pi per Blackhole-Route gesperrt → MPD bleibt
-  auf „play“, `elapsed` steht still, kein Fehler, kein Neuversuch; auch nach Rückkehr des Netzes (> 2 min) nicht.
-  Die Oberfläche zeigt „spielt“, es ist stumm. Braucht einen Wächter (Stream, „play“, `elapsed` steht → neu
-  verbinden bzw. Meldung). „Stop“ funktioniert.
-* **Synology-Ausfall** (Blackhole auf 10.0.0.10, Titel von der Freigabe läuft): erst ~3 min stumm bei „play“
-  (`elapsed` steht, bis CIFS nach 180 s aufgibt), dann überspringt MPD die ganze Warteschlange mit „Host is down“,
-  die Oberfläche zeigt wechselnde Titel bei 0:00, die Freigabe gilt weiter als eingehängt ohne Fehler. API bleibt
-  bedienbar (`state` ≤ 2 s dank Timeout, `queue` bis 6 s). Nach Freigabe: Einhängung und Wiedergabe kommen sofort
-  von selbst zurück, aber mitten in der übersprungenen Warteschlange. Wünschenswert: Freigabe als „nicht
-  erreichbar“ melden und anhalten statt durchzuspringen.
-* Rippen abbrechen am Pi geprüft: Zwischenspeicher leer, kein „(2)“-Ordner, keine Prozesse übrig.
-* **Offener Fehler – USB-Stick weg während MPD ihn einliest:** MPD (`auto_update`) hält Dateien auf dem Stick
-  offen → systemd kann den Mount nach dem Abziehen nicht lösen (Status 32, „busy“), der Einhängeordner bleibt
-  stehen und der wieder eingesteckte Stick (neuer Gerätename) wird nicht eingehängt – bis MPD neu startet bzw.
-  zum Neustart. Gesehen am Pi, als der Stick durch Überstrom getrennt wurde (NTFS, Easy2Boot-Stick).
-  Am Alma nachgestellt (`rescan` + `/sys/block/sdb/device/delete`): Mount hängt ~10 s, dann gibt MPD auf und
-  systemd hängt beim Neuversuch aus. Kommt der Stick in diesem Fenster wieder (Pi: Wackler), scheitert sein
-  Einhängen endgültig. Außerdem bleibt nach jedem Abziehen der leere Einhängeordner stehen (so entstand
-  `5C63-D696`), und MPD liest ISO-Abbilder auf Sticks als Archiv ein (`DPMS.ISO`).
-  Idee: bei `remove` lazy aushängen (`umount -l`) und Ordner entfernen; `ks-automount` bei belegtem Ziel warten.
-  **Mit echtem Musik-Stick (FAT32) am Alma bestätigt:** Titel vom Stick läuft, Stick ab- und gleich wieder
-  angesteckt → Klangstation stoppt die Wiedergabe und leert die Warteschlange korrekt, aber der alte Mount
-  (`sdb1`) hängt („busy“ beim Abziehen, systemd versucht es danach wegen Ratenbegrenzung nicht mehr), und der
-  Stick als `sdc1` wird nicht eingehängt (`ks-automount` Exit 1). Erst `systemctl stop <mount>` + `udevadm
-  trigger` half. Normale Bedienung reicht also, um den Stick bis zum Neustart unbrauchbar zu machen.
-  Umlaute auf FAT32 ok (`utf8` greift).
-* Alma: Auswerfen per Taste während des Rippens geprüft – Laufwerk wirft aus, Job endet mit „Die CD ließ sich
-  nicht mehr lesen (ausgeworfen?)“, kein halber Ordner, Zwischenspeicher leer.
-* Am Pi weitere CD-/USB-Tests wegen Überstrom des Laufwerks nicht sinnvoll → am Alma-PC (SATA-Laufwerk).
-* Alma: Rippen in den internen Speicher geprüft (3 min 15 s, Tags/Cover ok, sofort in der Bibliothek).
-* **Offene Fehler – NTFS-USB-Medien:**
-  * Installer installiert unter RHEL kein `ntfs-3g` (EPEL) → NTFS-Sticks werden gar nicht eingehängt
-    („unknown filesystem type 'ntfs'“). Auf Alma von Hand nachinstalliert. Weder Pi- noch Alma-Kernel haben `ntfs3`.
-  * `ks-netmount` kennt nur `ntfs3`, nicht `fuseblk` (ntfs-3g) → Rippen auf NTFS-Stick läuft 3 min durch und
-    scheitert dann mit irreführendem „Ziel-Datentraeger ist nicht eingehaengt“; die gerippten Dateien werden
-    verworfen. `remount,rw` geht bei ntfs-3g ohnehin nicht (aushängen + `ntfs-3g` rw einhängen). Ziel sollte
-    vorher geprüft bzw. gar nicht erst angeboten werden.
-* Pi-Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst am Pi „over-current“ aus und trennt sich beim
-  Anlaufen kurz – Y-Kabel oder aktiver Hub. Leerer Einhängeordner `/media/klangstation/5C63-D696` von einem
-  früheren USB-Stick wurde nicht aufgeräumt (beim USB-Test prüfen).
-* Auf AlmaLinux geprüft (26.10.2026): Bluetooth übersteht einen Neustart – SELinux-Modul bleibt geladen,
-  Klangstation findet den Adapter beim Start, das iPhone verbindet sich selbst neu und spielt nach ~20 s weiter.
-* Auf AlmaLinux noch offen: UPnP mit echter App, Rippen in den internen Speicher, Neuinstallation von null,
-  NFS, CEC (braucht Fernseher).
-* Pi: `--tv-headless` auf Pi OS Lite ungetestet, CEC-Standby, großer Synology-Scan.
+### Testergebnisse (26.10.2026)
+
+* **Pi bestanden:** MusicBrainz-Neuversuch (Sperre per `/etc/hosts`), Rippen in den internen Speicher (sofort in
+  der Bibliothek), Rippen abbrechen, Zugangsschutz (beide Stufen, Sperre, lokale Zugriffe, Kiosk,
+  `ks-reset-password`), Update per `install.sh` (alles bleibt erhalten), Quellenwechsel, Ausgabewechsel ohne
+  Bluetooth, Neustart während Spotify (Web nach 32 s, alles wieder da, kein ungefragtes Weiterspielen).
+* **Alma bestanden:** Rippen in den internen Speicher (3 min 15 s), Auswerfen per Taste während des Rippens,
+  FAT32-Umlaute, Bluetooth übersteht Neustart, Bluetooth-Stick wird im laufenden Betrieb erkannt.
+* **Dauerlauf am Pi** seit 26.10.2026 18:32: `ks-dauerlauf.service` (transient, root) schreibt 24 h lang alle
+  5 min nach `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand,
+  Temperatur, `vcgencmd get_throttled`). Skript `/home/pi/ks-dauerlauf.sh`. Bis zur Auswertung am Pi nichts ändern.
+  Danach: Testplaylist „Test Update“ und Radio-Favorit „Deutschlandfunk“ am Pi entfernen.
+
+### Behoben (im Repo, am Alma eingespielt und geprüft; Pi folgt nach dem Dauerlauf)
+
+* **NTFS-Sticks:** Installer zieht `ntfs-3g` (RHEL aus EPEL); `ks-netmount` schreibt auch auf `fuseblk`;
+  Rip-Ziele nur mit beschreibbarem Dateisystem; scheitert das Speichern auf USB, landet das Album im internen
+  Speicher (Hinweis in der Oberfläche) statt verworfen zu werden. Geprüft: Speichern auf NTFS und FAT32.
+  Ungetestet: der Rückfallweg mit echter CD.
+* **USB abziehen/wieder anstecken:** udev-`remove` → lazy aushängen + Ordner entfernen; `ks-automount` räumt einen
+  hängenden alten Mount weg. Geprüft per USB-`authorized` mit offener Datei, mit schnellem Wiederanstecken
+  (neuer Gerätename), mit ausgeschalteter remove-Regel (Rückfallweg) und echtem Abziehen.
+* **MPD-Absturz** beim Aushängen eines Sticks mit ISO-Abbild (libcdio) → Archiv-Plugin aus.
+* **Webradio nach Netzausfall:** Wächter erkennt Stillstand nach 20 s, zeigt „Verbindung unterbrochen – neuer
+  Versuch …“, verbindet neu (bis 30 min). Geprüft am Alma: spielt 7 s nach Netzrückkehr wieder.
+* **MusicBrainz-Neuversuch** läuft, solange die CD drin ist (erst jede Minute, nach 16 Versuchen alle 5 min).
+* **WebSocket 4401** statt 1006 (geprüft per TestClient); `--reset-password` setzt auch `auth_scope` zurück.
+* Bei `vc4hdmi` steht „Bit-perfekt hier nicht möglich“ am Ausgang. Dienst-Neustart-Wartezeit wird nach
+  längerem Lauf zurückgesetzt.
+* `GET /api/bluetooth` bleibt bei Stufe „settings“ offen – die Geräteliste steckt ohnehin im Zustand.
+
+### Gebaut, Test mit Nutzer offen
+
+* **Bluetooth reißt die Quelle an sich** (pausiertes iPhone, PCM nach Ausgabewechsel kurz `Running`): Übernahme
+  jetzt nie bei AVRCP „paused“, sofort bei „playing“, sonst erst nach 3 s laufender PCM. iPhone meldet nach
+  frischem Verbinden „stopped“, nicht „paused“ – darum die 3 s. Test: Radio läuft, iPhone verbunden und
+  pausiert, Ausgabe/Bit-perfekt wechseln → Radio muss weiterlaufen; danach am iPhone Play → Übernahme.
+* **Spotify bei laufendem AirPlay:** meldet librespot „Busy“ beim Öffnen der Sink, gibt Klangstation das Gerät
+  frei (wie Bluetooth/UPnP). Test: AirPlay läuft, in Spotify Klangstation wählen.
+
+### Noch offen
+
+* **Synology-Ausfall:** ~3 min stumm bei „play“ (bis CIFS nach 180 s aufgibt), dann überspringt MPD die ganze
+  Warteschlange mit „Host is down“, die Freigabe gilt weiter als eingehängt. Wünschenswert: Stillstand bei
+  Titeln von `Netz-*` erkennen, anhalten und Freigabe als „nicht erreichbar“ melden. Vorsicht: `stop` blockiert
+  in MPD, solange der Decoder im CIFS-Lesen hängt.
+* Pi-Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst „over-current“ aus → Y-Kabel oder aktiver Hub.
+  CD-/USB-Tests darum am Alma.
+* Tests Pi: CEC-Standby, großer Synology-Scan (beide nach dem Dauerlauf), `--tv-headless` auf Pi OS Lite, NFS.
+* Tests Alma: UPnP mit echter App, Neuinstallation von null, NFS, CEC (braucht Fernseher).

@@ -17,13 +17,16 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 
 ROOT = "/media/klangstation"
 RIP_ROOT = "/var/lib/klangstation/rip"
 SVC_USER = "klangstation"
 CRED_DIR = "/run/ks-netmount"
 NET_TYPES = ("cifs", "smb3", "nfs", "nfs4")
-DISK_TYPES = ("vfat", "exfat", "ext2", "ext3", "ext4", "ntfs3", "btrfs", "xfs", "f2fs")
+# fuseblk = NTFS ueber ntfs-3g (die Kernel von Pi OS und EL haben kein ntfs3)
+DISK_TYPES = ("vfat", "exfat", "ext2", "ext3", "ext4", "ntfs3", "fuseblk", "btrfs", "xfs", "f2fs")
+AUTOMOUNT = "/opt/klangstation/system/ks-automount"
 DISK_DIR = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 RIP_DIR_NAME = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}$")   # MusicBrainz-Disc-ID
 RIP_FILE = re.compile(r"^[^/\x00-\x1f]{1,200}\.(flac|jpg)$")
@@ -155,7 +158,7 @@ def do_umount(req):
 
 
 def disk_mount(name):
-    """Dateisystemtyp, falls ROOT/name ein eingehaengter USB-/SD-Datentraeger ist, sonst None."""
+    """(Dateisystemtyp, Geraet), falls ROOT/name ein eingehaengter USB-/SD-Datentraeger ist, sonst None."""
     with open("/proc/self/mountinfo", encoding="utf-8", errors="replace") as fh:
         for line in fh:
             left, _, right = line.partition(" - ")
@@ -163,8 +166,51 @@ def disk_mount(name):
             if mnt == os.path.join(ROOT, name) and right:
                 fstype, source = right.split()[:2]
                 if fstype in DISK_TYPES and source.startswith("/dev/"):
-                    return fstype
+                    return fstype, source
     return None
+
+
+def wait_released(dev, seconds=15):
+    """Nach dem Aushaengen laeuft ntfs-3g noch kurz weiter und haelt das Geraet exklusiv offen."""
+    for _ in range(seconds * 4):
+        try:
+            os.close(os.open(dev, os.O_RDONLY | os.O_EXCL))
+            return
+        except OSError:
+            time.sleep(0.25)
+
+
+def make_writable(target, fstype, dev):
+    """Datentraeger beschreibbar machen; liefert Fehlertext oder "".
+
+    ntfs-3g kann kein remount: aushaengen und beschreibbar neu einhaengen.
+    """
+    if fstype != "fuseblk":
+        return run(["mount", "-o", "remount,rw", target], 30)
+    if run(["umount", target], 30):
+        return "Datentraeger wird gerade benutzt"
+    wait_released(dev)
+    error = run(["mount", "-t", "ntfs-3g", "-o", "rw,noatime,nosuid,nodev,noexec", dev, target], 60)
+    if error:
+        make_readonly(target, fstype, dev)
+    return error
+
+
+def make_readonly(target, fstype, dev):
+    if fstype != "fuseblk":
+        run(["mount", "-o", "remount,ro", target], 60)
+        return
+    if os.path.ismount(target):
+        run(["umount", target], 60)
+    # wieder wie beim Einstecken (systemd-mount, ans Geraet gebunden), damit Abziehen sauber aushaengt.
+    # systemd-mount --no-block meldet Fehler nicht zurueck: auf den Mount warten, notfalls nochmal.
+    for _ in range(3):
+        wait_released(dev)
+        run([AUTOMOUNT, dev, os.path.basename(target), "ntfs"], 30)
+        for _ in range(20):
+            if os.path.ismount(target):
+                return
+            time.sleep(0.25)
 
 
 def do_store(req):
@@ -190,11 +236,13 @@ def do_store(req):
             files.append(name)
     if not any(f.endswith(".flac") for f in files):
         answer(False, "Keine FLAC-Dateien gefunden")
-    if not disk_mount(dest):
-        answer(False, "Ziel-Datentraeger ist nicht eingehaengt")
+    mounted = disk_mount(dest)
+    if not mounted:
+        answer(False, "Dateisystem des Ziel-Datentraegers wird nicht unterstuetzt")
+    fstype, dev = mounted
 
     target = os.path.join(ROOT, dest)
-    error = run(["mount", "-o", "remount,rw", target], 30)
+    error = make_writable(target, fstype, dev)
     if error:
         answer(False, f"Datentraeger laesst sich nicht beschreibbar machen: {error}")
     result = ""
@@ -213,7 +261,7 @@ def do_store(req):
     except OSError as exc:
         error = f"Kopieren fehlgeschlagen: {exc.strerror or exc}"
     finally:
-        run(["mount", "-o", "remount,ro", target], 60)
+        make_readonly(target, fstype, dev)
     if error:
         answer(False, error)
     answer(True, folder=result)

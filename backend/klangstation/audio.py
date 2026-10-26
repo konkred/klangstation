@@ -132,7 +132,8 @@ def list_outputs() -> List[Dict[str, Any]]:
                 outputs.append({
                     "id": f"hw:CARD={card_id},DEV={dev}",
                     "label": label,
-                    "detail": long_name,
+                    # siehe alsa_device(): hier laeuft immer die Umrechnung der Karte
+                    "detail": long_name + (" · Bit-perfekt hier nicht möglich" if card_id.startswith("vc4hdmi") else ""),
                     "kind": kind,
                     "connected": connected,
                 })
@@ -205,6 +206,13 @@ decoder {{
 }}
 decoder {{
     plugin  "mad"
+    enabled "no"
+}}
+
+# ISO-Abbilder auf Sticks nicht als Archiv durchsuchen: libcdio beendet bei einem Lesefehler (Stick
+# abgezogen oder ausgehaengt) den ganzen MPD-Prozess per exit().
+archive_plugin {{
+    name    "iso"
     enabled "no"
 }}
 

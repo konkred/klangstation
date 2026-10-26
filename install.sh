@@ -195,7 +195,7 @@ install_debian() {
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
     apt-get install -y --no-install-recommends python3 python3-venv mpd avahi-daemon ca-certificates curl util-linux \
-        v4l-utils cifs-utils nfs-common cdparanoia flac alsa-utils
+        v4l-utils cifs-utils nfs-common cdparanoia flac alsa-utils ntfs-3g
     if [ "$TV_HEADLESS" = 1 ]; then
         apt-get install -y --no-install-recommends cage chromium fonts-dejavu-core
     fi
@@ -245,6 +245,8 @@ install_rhel() {
         if dnf install -y python3.11 >/dev/null 2>&1; then PY=python3.11; fi
     fi
     dnf install -y python3 avahi ca-certificates curl util-linux v4l-utils cifs-utils nfs-utils cdparanoia flac alsa-utils
+    # NTFS-Sticks: die EL-Kernel haben kein ntfs3, ntfs-3g kommt aus EPEL
+    dnf install -y ntfs-3g || warn "ntfs-3g nicht verfuegbar - NTFS-Datentraeger werden nicht eingehaengt"
     if [ "$TV_HEADLESS" = 1 ]; then
         dnf install -y cage chromium || warn "cage/chromium nicht verfuegbar - Bildschirm ohne Desktop nicht moeglich"
     fi

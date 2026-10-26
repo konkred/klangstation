@@ -31,6 +31,8 @@ from .upnp import UpnpRenderer
 log = logging.getLogger("klangstation.core")
 
 SPOTIFY_EVENTS_START = {"loading", "playing"}
+# Dateisysteme, auf die ks-netmount gerippte CDs schreiben kann (fuseblk = NTFS ueber ntfs-3g)
+WRITABLE_FS = {"vfat", "exfat", "ext2", "ext3", "ext4", "ntfs3", "fuseblk", "btrfs", "xfs", "f2fs"}
 
 
 def _media_kind(uri: str) -> Optional[str]:
@@ -67,7 +69,7 @@ class Core:
         self.daemons = {
             "mpd": Daemon("mpd", BIN_MPD, on_line=self.shares.on_mpd_line),
             "airplay": Daemon("airplay", BIN_SHAIRPORT),
-            "spotify": Daemon("spotify", BIN_LIBRESPOT),
+            "spotify": Daemon("spotify", BIN_LIBRESPOT, on_line=self._spotify_line),
             "upnp": Daemon("upnp", BIN_GMEDIARENDER, on_line=self.upnp.on_line),
             "bluetooth": Daemon("bluetooth", BIN_BLUEALSA_APLAY, on_line=self._bt_line),
             "cec": Daemon("cec", "cec-ctl", on_line=self.cec.on_line),
@@ -90,6 +92,8 @@ class Core:
         self._push_pending = False
         self._takeover_lock = asyncio.Lock()
         self._last_mpd: "tuple[Dict[str, str], Dict[str, str]]" = ({}, {})
+        # Webradio nach Verbindungsabbruch: {"uri", "until", "next"} solange neu verbunden wird
+        self._stream_retry: Optional[Dict[str, Any]] = None
 
     # ------------------------------------------------------------ Lebenszyklus
     async def start(self) -> None:
@@ -101,6 +105,7 @@ class Core:
             asyncio.create_task(self._guarded("UPnP-Ueberwachung", self._upnp_loop)),
             asyncio.create_task(self._guarded("Bluetooth-Ueberwachung", self._bt_loop)),
             asyncio.create_task(self._guarded("CEC-Steuerung", self._cec_loop)),
+            asyncio.create_task(self._guarded("Webradio-Waechter", self._stream_loop)),
         ]
         if self.daemons["airplay"].available:
             self._tasks.append(asyncio.create_task(self._guarded("AirPlay-Metadaten", self.airplay.run)))
@@ -280,6 +285,13 @@ class Core:
         if "busy" in line.lower():
             self._claim("bluetooth")
 
+    def _spotify_line(self, line: str) -> None:
+        # librespot oeffnet das Geraet erst beim Abspielen; haelt es dann noch AirPlay o. a., meldet es
+        # "... May be Invalid, Busy, or Already in Use" und beendet sich - vorher freigeben, sonst klappt
+        # erst ein spaeterer Neustart und die Uebernahme dauert spuerbar
+        if "busy" in line.lower() and "sink" in line.lower():
+            self._claim("spotify")
+
     def _claim(self, source: str) -> None:
         """Eine Quelle wollte starten, das ALSA-Geraet war aber noch belegt: freigeben und erneut starten."""
         if source in self._claiming:
@@ -331,6 +343,7 @@ class Core:
     async def _bt_loop(self) -> None:
         last = None
         retry_at = 0.0
+        running_for = 0  # Sekunden, die eine Bluetooth-PCM ununterbrochen laeuft
         while True:
             await asyncio.sleep(1)
             if not self.settings.get("bluetooth_enabled"):
@@ -356,7 +369,14 @@ class Core:
                 log.debug("Bluetooth-Abfrage fehlgeschlagen: %s", exc)
                 continue
             p = self.bt.player
-            if self.bt.streaming and self.source != "bluetooth":
+            # Nach jedem Neustart von bluealsa-aplay (Ausgabewechsel) ist die PCM des verbundenen, aber
+            # pausierten iPhones kurz "Running" und wuerde sonst Radio & Co. stoppen. Darum: nie bei AVRCP
+            # "paused"; meldet das Handy "playing", sofort; ohne brauchbaren AVRCP-Status (Laptops, Browser
+            # melden "stopped") erst, wenn die PCM 3 s am Stueck laeuft.
+            running_for = running_for + 1 if self.bt.streaming else 0
+            avrcp = p.get("avrcp")
+            if self.source != "bluetooth" and avrcp != "paused" and \
+                    (running_for >= 3 or (running_for and avrcp == "playing")):
                 await self.take_over("bluetooth")
             elif self.source == "bluetooth" and not p.get("device"):
                 self.source = "idle"  # Handy hat die Verbindung getrennt
@@ -520,6 +540,8 @@ class Core:
         elif kind == "radio":
             st = self.station(uri)
             now["extra"] = st.get("name") or song.get("Name", "")
+            if self._stream_retry and self._stream_retry["uri"] == uri:
+                now["extra"] += " · Verbindung unterbrochen – neuer Versuch …"
             now["art"] = st.get("favicon") or None
             stream = song.get("Title", "")
             if " - " in stream:
@@ -617,6 +639,75 @@ class Core:
         except Exception as exc:  # noqa: BLE001
             raise ValueError(f"Bluetooth: {exc}")
         await self.bt.poll()
+        self.push()
+
+    # ------------------------------------------------------------ Webradio-Waechter
+    STREAM_STALL = 20        # s ohne Fortschritt bei "play" -> neu verbinden
+    STREAM_RETRY_EVERY = 15  # s zwischen zwei Versuchen, wenn MPD mit Fehler angehalten hat
+    STREAM_GIVE_UP = 1800    # s, danach bleibt der Sender aus
+
+    async def _stream_loop(self) -> None:
+        """Haelt Webradio nach einem Netzausfall am Laufen.
+
+        Bricht die Verbindung ohne Fehler ab (Router weg, WLAN weg), bleibt MPD auf "play" stehen und
+        verbindet nie neu - auch nicht, wenn das Netz zurueckkommt. Steht elapsed still, startet der
+        Waechter den Sender neu und wiederholt das, bis er wieder spielt oder der Nutzer etwas anderes macht.
+        """
+        last: "tuple[str, float]" = ("", -1.0)
+        still_since = 0.0
+        while True:
+            await asyncio.sleep(5)
+            now = time.monotonic()
+            retry = self._stream_retry
+            try:
+                status = await asyncio.wait_for(self.mpd.dict("status"), 3)
+                song = await asyncio.wait_for(self.mpd.dict("currentsong"), 3)
+            except (ConnectionError, MPDError, asyncio.TimeoutError):
+                continue
+            uri, state = song.get("file", ""), status.get("state")
+            elapsed = float(status.get("elapsed", 0) or 0)
+            playing_radio = self.source == "mpd" and state == "play" and _media_kind(uri) == "radio"
+            if not playing_radio and not retry:
+                last = ("", -1.0)  # nach Pause/Stopp neu anfangen zu zaehlen
+                continue
+            if playing_radio and (status.get("songid", ""), elapsed) != last:
+                last, still_since = (status.get("songid", ""), elapsed), now
+                if retry and retry["uri"] == uri and elapsed > 2:
+                    log.info("Webradio spielt wieder: %s", uri)
+                    self._stream_retry = None
+                    self.push()
+                continue
+
+            if retry:
+                # Nutzer hat gestoppt, pausiert, etwas anderes gewaehlt oder die Quelle gewechselt
+                stopped_by_error = state == "stop" and status.get("error")
+                if self.source != "mpd" or uri != retry["uri"] or not (playing_radio or stopped_by_error):
+                    self._stream_retry = None
+                    self.push()
+                    continue
+                if now > retry["until"]:
+                    log.warning("Webradio nach %d min nicht erreichbar, gebe auf: %s", self.STREAM_GIVE_UP // 60, uri)
+                    self._stream_retry = None
+                    await self.mpd.run("stop")
+                    self.push()
+                    continue
+
+            if playing_radio and now - still_since >= self.STREAM_STALL:
+                if not retry:
+                    log.warning("Webradio haengt seit %d s, verbinde neu: %s", self.STREAM_STALL, uri)
+                    self._stream_retry = retry = {"uri": uri, "until": now + self.STREAM_GIVE_UP}
+                await self._stream_restart(status)
+                still_since = now
+            elif retry and state == "stop" and now - still_since >= self.STREAM_RETRY_EVERY:
+                await self._stream_restart(status)
+                still_since = now
+
+    async def _stream_restart(self, status: Dict[str, str]) -> None:
+        try:
+            await self.mpd.run("stop")
+            await self.mpd.run("play", status.get("song", "0"))
+        except (ConnectionError, MPDError) as exc:
+            log.info("Neuverbindung fehlgeschlagen: %s", exc)
         self.push()
 
     # ------------------------------------------------------------ CEC
@@ -959,13 +1050,13 @@ class Core:
         try:
             with open("/proc/mounts", encoding="utf-8", errors="replace") as fh:
                 for line in fh:
-                    dev, mnt = line.split()[:2]
+                    dev, mnt, fstype = line.split()[:3]
                     mnt = mnt.replace("\\040", " ")
                     # Abgezogenes Geraet: Mount kann noch haengen, solange MPD die Datei offen hat
                     if mnt.startswith(prefix) and "/" not in mnt[len(prefix):] and os.path.exists(dev):
                         d = mnt[len(prefix):]
                         kind = "sd" if "mmcblk" in dev else "usb"
-                        mounts.append({"dir": d, "device": dev, "kind": kind,
+                        mounts.append({"dir": d, "device": dev, "kind": kind, "fstype": fstype,
                                        "label": labels.get(os.path.realpath(dev)) or
                                        ("SD-Karte" if kind == "sd" else "USB-Laufwerk") + f" ({d[:8]})"})
         except OSError:
@@ -1060,7 +1151,9 @@ class Core:
             self.push()
             return
         tracks = self.cd.get("tracks", [])
-        for attempt in range(16):
+        attempt = 0
+        while True:
+            attempt += 1
             try:
                 info = await self.mb.lookup_disc(disc_id, self.cd.get("toc", ""), [t["duration"] for t in tracks])
                 break
@@ -1072,11 +1165,10 @@ class Core:
                     self.cd["lookup"] = "offline"
                     self.push()
             # MusicBrainz pausiert nach Drosselung 5 Minuten: solange die CD drin ist, regelmaessig nachfragen
-            await asyncio.sleep(60)
+            # (die erste Viertelstunde jede Minute, danach alle 5 Minuten - z. B. bei laengerem Netzausfall)
+            await asyncio.sleep(60 if attempt < 16 else 300)
             if self.cd.get("disc_id") != disc_id:
                 return
-        else:
-            return
         if self.cd.get("disc_id") != disc_id:
             return
         if not info:
@@ -1124,7 +1216,7 @@ class Core:
         """Interner Speicher und eingesteckte USB-/SD-Datentraeger mit freiem Platz."""
         out = []
         for tid, label, path in [("local", "Interner Speicher", MEDIA_ROOT / ripper_mod.LOCAL_DIR)] + \
-                [(m["dir"], m["label"], MEDIA_ROOT / m["dir"]) for m in self.media]:
+                [(m["dir"], m["label"], MEDIA_ROOT / m["dir"]) for m in self.media if m["fstype"] in WRITABLE_FS]:
             try:
                 free = ripper_mod.free_bytes(path)
             except OSError:
@@ -1153,9 +1245,16 @@ class Core:
                 return await asyncio.to_thread(ripper_mod.store_local, work, folder)
             res = await shares_mod.helper({"action": "store", "src": work.name, "dest": dest, "folder": folder},
                                           timeout=1800)
-            if not res.get("ok"):
-                raise ripper_mod.RipError(f"Speichern auf „{target['label']}“ fehlgeschlagen: {res.get('error')}")
-            return f"{dest}/{res['folder']}"
+            if res.get("ok"):
+                return f"{dest}/{res['folder']}"
+            # Gerippte Dateien nicht verwerfen, sonst waeren bis zu 20 min Rippen umsonst gewesen
+            log.warning("Speichern auf %s fehlgeschlagen: %s - lege im internen Speicher ab", dest, res.get("error"))
+            path = await asyncio.to_thread(ripper_mod.store_local, work, folder)
+            if self.ripper.job:
+                self.ripper.job.update(target="Interner Speicher",
+                                       warning=f"Speichern auf „{target['label']}“ fehlgeschlagen ({res.get('error')}) "
+                                               "– das Album liegt stattdessen im internen Speicher.")
+            return path
 
         async def done(job: Dict[str, Any]) -> None:
             if job.get("state") != "done":

@@ -13,7 +13,8 @@ def main() -> None:
                         help="Zugangsschutz der Weboberflaeche entfernen (vergessenes Passwort)")
     args = parser.parse_args()
     if args.reset_password:
-        Settings(DATA_DIR / "settings.json").update({"auth_hash": ""})
+        # wie "Entfernen" in der Oberflaeche: auch den Schutzumfang auf die Voreinstellung zuruecksetzen
+        Settings(DATA_DIR / "settings.json").update({"auth_hash": "", "auth_scope": "settings"})
         print("Zugangsschutz entfernt.")
         return
 

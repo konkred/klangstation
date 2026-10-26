@@ -1,13 +1,43 @@
 #!/bin/sh
 # Von udev aufgerufen: haengt USB-/SD-Datentraeger nur lesend unter /media/klangstation/<UUID> ein.
 # Systemlaufwerke (z. B. Pi mit Root auf USB-SSD) und bereits eingehaengte Partitionen werden uebersprungen.
+#   ks-automount <Geraet> <UUID> <Dateisystem>   beim Einstecken
+#   ks-automount --remove <Geraet> <UUID>          beim Abziehen (ueber systemd-run, siehe udev-Regel)
+ROOT="/media/klangstation"
+
+# Lazy aushaengen und Ordner entfernen. Haelt MPD noch Dateien offen, scheitert das normale Aushaengen
+# ("busy"), systemd versucht es danach nicht mehr und der Ordner bleibt belegt - der wieder eingesteckte
+# Stick liesse sich dann nicht einhaengen.
+release() {
+    if mountpoint -q "$1"; then
+        umount -l "$1" || return 1
+    fi
+    rmdir "$1" 2>/dev/null
+    return 0
+}
+
+if [ "$1" = "--remove" ]; then
+    DEV="$2"
+    UUID="$3"
+    case "$UUID" in ""|*[!A-Za-z0-9_-]*) exit 0 ;; esac
+    TARGET="$ROOT/$UUID"
+    [ -d "$TARGET" ] || exit 0
+    SRC="$(findmnt -rno SOURCE -M "$TARGET" 2>/dev/null)"
+    # nur aufraeumen, was zu genau diesem Geraet gehoert (oder schon gar nicht mehr eingehaengt ist)
+    if [ -z "$SRC" ] || [ "$SRC" = "$DEV" ]; then
+        release "$TARGET"
+    fi
+    exit 0
+fi
+
 DEV="$1"
 UUID="$2"
 FSTYPE="$3"
-ROOT="/media/klangstation"
 
 [ -b "$DEV" ] || exit 0
-[ -n "$UUID" ] || exit 0
+# UUID wird Ordnername: nichts, was aus /media/klangstation herausfuehrt
+case "$UUID" in ""|*[!A-Za-z0-9_-]*) exit 0 ;; esac
+TARGET="$ROOT/$UUID"
 
 # schon eingehaengt?
 if findmnt -rn -S "$DEV" >/dev/null 2>&1; then
@@ -23,10 +53,18 @@ if [ -n "$ROOT_DISK" ] && [ "$ROOT_DISK" = "$DEV_DISK" ]; then
     exit 0
 fi
 
+# Ordner noch von einem abgezogenen Geraet belegt (Stick schnell wieder eingesteckt, neuer Geraetename)?
+OLD="$(findmnt -rno SOURCE -M "$TARGET" 2>/dev/null)"
+if [ -n "$OLD" ] && [ ! -b "$OLD" ]; then
+    # udev laeuft in einem eigenen Mount-Namensraum: aushaengen muss im Namensraum von systemd passieren
+    /usr/bin/systemd-run --quiet --wait --collect \
+        /opt/klangstation/system/ks-automount --remove "$OLD" "$UUID"
+fi
+
 OPTS="ro,noatime"
 case "$FSTYPE" in
     # Kernel-Standard ist oft iocharset=ascii -> Umlaute in Dateinamen waeren kaputt
     vfat) OPTS="$OPTS,utf8,shortname=mixed" ;;
 esac
 
-exec /usr/bin/systemd-mount --no-block --collect --options="$OPTS" "$DEV" "$ROOT/$UUID"
+exec /usr/bin/systemd-mount --no-block --collect --options="$OPTS" "$DEV" "$TARGET"

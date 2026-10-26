@@ -1,9 +1,15 @@
 # Klangstation: Musik-Datentraeger automatisch einhaengen (nur lesend).
-# Abgezogene Laufwerke haengt systemd selbst aus (systemd-mount bindet den Mount ans Geraet).
+# Abgezogene Laufwerke haengt systemd selbst aus (systemd-mount bindet den Mount ans Geraet), solange
+# niemand Dateien offen haelt - sonst raeumt die remove-Regel unten auf.
 
 # CD-/DVD-Laufwerke gehoeren Klangstation: der Desktop (gvfsd-cdda) wuerde Audio-CDs sonst selbst
 # oeffnen, das Laufwerk offen halten und damit Auswerfen, Abspielen und Rippen blockieren.
 SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"
+
+# Abgezogen: Mount lazy loesen und Ordner entfernen (siehe ks-automount). Muss ueber systemd-run laufen,
+# udev hat einen eigenen Mount-Namensraum.
+ACTION=="remove", SUBSYSTEM=="block", ENV{ID_FS_UUID}=="?*", TEST=="/media/klangstation/$env{ID_FS_UUID}", \
+    RUN+="/usr/bin/systemd-run --quiet --wait --collect /opt/klangstation/system/ks-automount --remove $devnode $env{ID_FS_UUID}"
 
 ACTION!="add", GOTO="klangstation_end"
 SUBSYSTEM!="block", GOTO="klangstation_end"

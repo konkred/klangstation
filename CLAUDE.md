@@ -100,13 +100,17 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
   `ks-reset-password`), Update per `install.sh` (alles bleibt erhalten), Quellenwechsel, Ausgabewechsel ohne
   Bluetooth, Neustart während Spotify (Web nach 32 s, alles wieder da, kein ungefragtes Weiterspielen).
 * **Alma bestanden:** Rippen in den internen Speicher (3 min 15 s), Auswerfen per Taste während des Rippens,
-  FAT32-Umlaute, Bluetooth übersteht Neustart, Bluetooth-Stick wird im laufenden Betrieb erkannt.
-* **Dauerlauf am Pi** seit 26.10.2026 18:32: `ks-dauerlauf.service` (transient, root) schreibt 24 h lang alle
-  5 min nach `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand,
-  Temperatur, `vcgencmd get_throttled`). Skript `/home/pi/ks-dauerlauf.sh`. Bis zur Auswertung am Pi nichts ändern.
-  Danach: Testplaylist „Test Update“ und Radio-Favorit „Deutschlandfunk“ am Pi entfernen.
+  FAT32-Umlaute, Bluetooth übersteht Neustart, Bluetooth-Stick wird im laufenden Betrieb erkannt,
+  Update per `install.sh --tv-headless` (1 min 47 s; Einstellungen, Geheimnis, Spotify-Anmeldung, Freigabe mit
+  Passwort unverändert, keine Paketänderung), Neustart während Radio (Web nach 65 s, davon 39 s Firmware; alle
+  Dienste, Freigabe, Stick, Bluetooth, SELinux-Modul da, kein ungefragtes Weiterspielen).
+* **Dauerlauf am Pi** am 26.10.2026 nach 35 min abgebrochen (unauffällig), um erst alle Fehler zu beheben –
+  danach neu starten. `ks-dauerlauf.sh` (als transienter Dienst per `systemd-run`) schreibt 24 h lang alle 5 min
+  nach `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand,
+  Temperatur, `vcgencmd get_throttled`). Danach: Testplaylist „Test Update“ und Radio-Favorit „Deutschlandfunk“
+  am Pi entfernen.
 
-### Behoben (im Repo, am Alma eingespielt und geprüft; Pi folgt nach dem Dauerlauf)
+### Behoben (im Repo, am Alma eingespielt und geprüft; Pi folgt)
 
 * **NTFS-Sticks:** Installer zieht `ntfs-3g` (RHEL aus EPEL); `ks-netmount` schreibt auch auf `fuseblk`;
   Rip-Ziele nur mit beschreibbarem Dateisystem; scheitert das Speichern auf USB, landet das Album im internen
@@ -122,9 +126,14 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
 * **WebSocket 4401** statt 1006 (geprüft per TestClient); `--reset-password` setzt auch `auth_scope` zurück.
 * Bei `vc4hdmi` steht „Bit-perfekt hier nicht möglich“ am Ausgang. Dienst-Neustart-Wartezeit wird nach
   längerem Lauf zurückgesetzt.
+* **Synology-Ausfall:** Freigabe-Wächter – steht ein Titel von `Netz-*` 15 s still und antwortet der Server
+  nicht, pausiert Klangstation (`pause` kehrt auch im Hänger sofort zurück, `stop` würde blockieren), meldet die
+  Freigabe als „nicht erreichbar – Wiedergabe angehalten“ und setzt nach Rückkehr des Servers an derselben Stelle
+  fort (`seekid`, sonst ginge es nach Aufgeben von CIFS beim nächsten Titel weiter). Geprüft am Alma mit 40 s
+  und 210 s Ausfall. Vorher: ~3 min stumm, dann MPD durch die ganze Warteschlange gesprungen.
 * `GET /api/bluetooth` bleibt bei Stufe „settings“ offen – die Geräteliste steckt ohnehin im Zustand.
 
-### Am Alma mit iPhone geprüft (26.10.2026), am Pi nach dem Dauerlauf wiederholen
+### Am Alma mit iPhone geprüft (26.10.2026), am Pi noch zu wiederholen
 
 * **Bluetooth reißt die Quelle an sich** (pausiertes iPhone, PCM nach Ausgabewechsel kurz `Running`): Übernahme
   jetzt nie bei AVRCP „paused“, sofort bei „playing“, sonst erst nach 3 s laufender PCM. iPhone meldet nach
@@ -137,11 +146,8 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
 
 ### Noch offen
 
-* **Synology-Ausfall:** ~3 min stumm bei „play“ (bis CIFS nach 180 s aufgibt), dann überspringt MPD die ganze
-  Warteschlange mit „Host is down“, die Freigabe gilt weiter als eingehängt. Wünschenswert: Stillstand bei
-  Titeln von `Netz-*` erkennen, anhalten und Freigabe als „nicht erreichbar“ melden. Vorsicht: `stop` blockiert
-  in MPD, solange der Decoder im CIFS-Lesen hängt.
 * Pi-Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Alma.
-* Tests Pi: CEC-Standby, großer Synology-Scan (beide nach dem Dauerlauf), `--tv-headless` auf Pi OS Lite, NFS.
-* Tests Alma: UPnP mit echter App, Neuinstallation von null, NFS, CEC (braucht Fernseher).
+* Tests Pi: neuer Stand einspielen + Störfälle nachtesten, Dauerlauf neu, CEC-Standby, großer Synology-Scan, `--tv-headless` auf Pi OS Lite, NFS.
+* Tests Alma: UPnP mit echter App, Neuinstallation von null, NFS, CEC (braucht Fernseher); mit Audio-CD:
+  Rückfall beim Rippen auf USB, MusicBrainz-Neuversuch über 16 Versuche, echtes Rippen auf einen Stick.

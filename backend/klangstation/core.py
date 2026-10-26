@@ -94,6 +94,8 @@ class Core:
         self._last_mpd: "tuple[Dict[str, str], Dict[str, str]]" = ({}, {})
         # Webradio nach Verbindungsabbruch: {"uri", "until", "next"} solange neu verbunden wird
         self._stream_retry: Optional[Dict[str, Any]] = None
+        # Titel von einer Freigabe wegen Serverausfall angehalten: {"uri", "share"}
+        self._share_hold: Optional[Dict[str, Any]] = None
 
     # ------------------------------------------------------------ Lebenszyklus
     async def start(self) -> None:
@@ -106,6 +108,7 @@ class Core:
             asyncio.create_task(self._guarded("Bluetooth-Ueberwachung", self._bt_loop)),
             asyncio.create_task(self._guarded("CEC-Steuerung", self._cec_loop)),
             asyncio.create_task(self._guarded("Webradio-Waechter", self._stream_loop)),
+            asyncio.create_task(self._guarded("Freigabe-Waechter", self._share_loop)),
         ]
         if self.daemons["airplay"].available:
             self._tasks.append(asyncio.create_task(self._guarded("AirPlay-Metadaten", self.airplay.run)))
@@ -537,6 +540,8 @@ class Core:
             if not now["title"]:
                 now["title"] = os.path.splitext(os.path.basename(uri))[0]
             now["art"] = "/api/art?uri=" + urlquote(uri)
+            if self._share_hold and self._share_hold["uri"] == uri:
+                now["extra"] = f"Freigabe „{self._share_hold['share']['name']}“ nicht erreichbar – angehalten"
         elif kind == "radio":
             st = self.station(uri)
             now["extra"] = st.get("name") or song.get("Name", "")
@@ -709,6 +714,75 @@ class Core:
         except (ConnectionError, MPDError) as exc:
             log.info("Neuverbindung fehlgeschlagen: %s", exc)
         self.push()
+
+    # ------------------------------------------------------------ Freigabe-Waechter
+    SHARE_STALL = 15  # s ohne Fortschritt bei einem Titel von einer Freigabe -> anhalten
+
+    async def _share_loop(self) -> None:
+        """Haelt die Wiedergabe an, wenn der Server einer Freigabe wegbricht, und setzt sie danach fort.
+
+        Ohne das spielt MPD ~3 min nichts (bis CIFS aufgibt) und ueberspringt dann die ganze Warteschlange
+        mit "Host is down". Ein "pause" kehrt auch waehrend des Haengers sofort zurueck und haelt die Stelle.
+        """
+        last: "tuple[str, float]" = ("", -1.0)
+        still_since = 0.0
+        next_check = 0.0
+        while True:
+            await asyncio.sleep(3)
+            now = time.monotonic()
+            try:
+                status = await asyncio.wait_for(self.mpd.dict("status"), 3)
+                song = await asyncio.wait_for(self.mpd.dict("currentsong"), 3)
+            except (ConnectionError, MPDError, asyncio.TimeoutError):
+                continue
+            uri, state = song.get("file", ""), status.get("state")
+            hold = self._share_hold
+            if hold:
+                if uri != hold["uri"] or state != "pause" or self.source != "mpd":
+                    self._share_hold = None  # Nutzer hat selbst weitergemacht oder etwas anderes gewaehlt
+                elif now >= next_check:
+                    next_check = now + 10
+                    if not await shares_mod.reachable(hold["share"]):
+                        log.info("Freigabe %s wieder erreichbar, spiele weiter", hold["share"]["name"])
+                        self._share_hold = None
+                        self.shares.status[hold["share"]["id"]] = {"mounted": True, "error": ""}
+                        self.broadcast({"type": "shares", "data": self.shares_public()})
+                        try:
+                            # an der alten Stelle neu ansetzen: hat CIFS waehrend des Ausfalls aufgegeben,
+                            # ist der angefangene Titel fuer MPD sonst kaputt und es ginge beim naechsten weiter
+                            await self.mpd.run("seekid", hold["id"], f"{hold['elapsed']:.1f}")
+                        except MPDError:
+                            pass
+                        await self.mpd.run("play")
+                        self.push()
+                continue
+            share = self._share_of(uri)
+            if not (share and state == "play" and self.source == "mpd"):
+                last = ("", -1.0)
+                continue
+            elapsed = float(status.get("elapsed", 0) or 0)
+            if (status.get("songid", ""), elapsed) != last:
+                last, still_since = (status.get("songid", ""), elapsed), now
+                continue
+            if now - still_since < self.SHARE_STALL:
+                continue
+            reason = await shares_mod.reachable(share)
+            if not reason:
+                still_since = now  # Server antwortet, MPD puffert nur (z. B. langsames WLAN)
+                continue
+            log.warning("Freigabe %s: %s - halte die Wiedergabe an", share["name"], reason)
+            await self.mpd.run("pause", "1")
+            self._share_hold = {"uri": uri, "share": share, "id": status.get("songid", ""), "elapsed": elapsed}
+            self.shares.status[share["id"]] = {"mounted": False, "error": reason + " – Wiedergabe angehalten"}
+            self.broadcast({"type": "shares", "data": self.shares_public()})
+            self.push()
+            next_check, last = now + 10, ("", -1.0)
+
+    def _share_of(self, uri: str) -> Optional[Dict[str, Any]]:
+        top = uri.split("/", 1)[0]
+        if not top.startswith(shares_mod.PREFIX):
+            return None
+        return next((s for s in self.settings.get("shares") or [] if shares_mod.mount_name(s) == top), None)
 
     # ------------------------------------------------------------ CEC
     async def _resume_mpd(self) -> None:

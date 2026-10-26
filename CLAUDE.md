@@ -124,14 +124,16 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
   längerem Lauf zurückgesetzt.
 * `GET /api/bluetooth` bleibt bei Stufe „settings“ offen – die Geräteliste steckt ohnehin im Zustand.
 
-### Gebaut, Test mit Nutzer offen
+### Am Alma mit iPhone geprüft (26.10.2026), am Pi nach dem Dauerlauf wiederholen
 
 * **Bluetooth reißt die Quelle an sich** (pausiertes iPhone, PCM nach Ausgabewechsel kurz `Running`): Übernahme
   jetzt nie bei AVRCP „paused“, sofort bei „playing“, sonst erst nach 3 s laufender PCM. iPhone meldet nach
-  frischem Verbinden „stopped“, nicht „paused“ – darum die 3 s. Test: Radio läuft, iPhone verbunden und
-  pausiert, Ausgabe/Bit-perfekt wechseln → Radio muss weiterlaufen; danach am iPhone Play → Übernahme.
+  frischem Verbinden „stopped“, nicht „paused“ – darum die 3 s. Alma: Radio lief bei je zwei Bit-perfekt-Wechseln
+  weiter (iPhone pausiert und frisch verbunden), Play am iPhone übernahm sofort. Aber: Am Alma meldete die PCM
+  beim Wechsel gar nicht erst `Running` – der Fehler trat nur am Pi auf, dort ist der eigentliche Nachweis offen.
 * **Spotify bei laufendem AirPlay:** meldet librespot „Busy“ beim Öffnen der Sink, gibt Klangstation das Gerät
-  frei (wie Bluetooth/UPnP). Test: AirPlay läuft, in Spotify Klangstation wählen.
+  frei (wie Bluetooth/UPnP). Alma: Spotify übernahm von AirPlay ohne Absturz von librespot und ohne Pause
+  (die „Busy“-Freigabe wurde dabei gar nicht gebraucht).
 
 ### Noch offen
 

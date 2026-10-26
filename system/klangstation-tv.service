@@ -1,0 +1,26 @@
+# "Laeuft gerade"-Bildschirm auf Systemen ohne Desktop (Raspberry Pi OS Lite & Co.).
+# Nur mit: sudo ./install.sh --tv-headless   (installiert cage und chromium)
+[Unit]
+Description=Klangstation Laeuft-gerade-Bildschirm (Kiosk ohne Desktop)
+After=klangstation.service systemd-user-sessions.service
+Conflicts=getty@tty1.service
+
+[Service]
+User=klangstation
+PAMName=login
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+UtmpMode=user
+ExecStart=/usr/bin/cage -s -- /opt/klangstation/system/ks-tv-kiosk
+Restart=always
+RestartSec=5
+
+[Install]
+# multi-user: Systeme ohne Desktop starten graphical.target gar nicht
+WantedBy=multi-user.target

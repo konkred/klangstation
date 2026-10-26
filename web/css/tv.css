@@ -1,0 +1,89 @@
+/* Klangstation – „Läuft gerade“ im Vollbild (Fernseher/Monitor/Tablet).
+   Größen in vh/vw, damit es von 720p bis 4K gleich aussieht. */
+:root {
+  --glow: #6fd3ff;
+  --glow-strong: #2fb4ff;
+  --ink: #eef5ff;
+  --ink-dim: #9fb6da;
+  --font: Tahoma, Verdana, "Segoe UI", "DejaVu Sans", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font); color: var(--ink); cursor: none;
+  background: radial-gradient(ellipse at 25% 20%, #1d3c78 0%, transparent 55%),
+              radial-gradient(ellipse at 90% 100%, #10285a 0%, transparent 50%), #03070f;
+}
+[hidden] { display: none !important; }
+#bg { position: fixed; inset: 0; width: 100%; height: 100%; opacity: .55; }
+
+.top {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 2.2vh 3vw; font-size: 2.2vh; color: var(--ink-dim);
+  background: linear-gradient(180deg, rgba(0,0,0,.5), transparent);
+}
+.brand { display: flex; align-items: center; gap: 1vh; }
+.brand b { color: var(--ink); letter-spacing: .05em; }
+.brand span:last-child::before { content: "· "; }
+.brand span:last-child:empty::before { content: ""; }
+.orb {
+  width: 3vh; height: 3vh; border-radius: 50%; display: inline-block;
+  background: radial-gradient(circle at 35% 30%, #fff 0, #bdf0ff 12%, #2fb4ff 45%, #0b4fa8 80%, #062a5c 100%);
+  box-shadow: 0 0 1.5vh rgba(111,211,255,.8);
+}
+.clock { font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* ---------------------------------------------------------- Wiedergabe */
+.playing {
+  position: relative; z-index: 1; height: 100%;
+  display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 5vw;
+  padding: 10vh 6vw 8vh;
+}
+.cover {
+  width: 56vh; height: 56vh; position: relative;
+  -webkit-box-reflect: below 1vh linear-gradient(transparent 72%, rgba(255,255,255,.22));
+}
+.cover img, .cover-fallback {
+  width: 100%; height: 100%; object-fit: cover; border-radius: .8vh;
+  border: .2vh solid rgba(143,179,234,.45);
+  box-shadow: 0 0 6vh rgba(47,180,255,.3), 0 2vh 5vh rgba(0,0,0,.7);
+}
+.cover-fallback {
+  display: grid; place-items: center; font-size: 22vh; color: rgba(111,211,255,.45);
+  background: linear-gradient(135deg, #16305f, #050a16);
+}
+.info { min-width: 0; text-shadow: 0 .3vh 1vh #000; }
+.badge {
+  display: inline-block; padding: .4vh 1.4vh; border-radius: 2vh; margin-bottom: 2vh;
+  font-size: 1.8vh; font-weight: bold; letter-spacing: .1em; text-transform: uppercase; text-shadow: none;
+  color: #001b2c; background: linear-gradient(180deg, #c6f1ff, var(--glow));
+}
+.badge:empty { display: none; }
+h1 {
+  margin: 0; font-size: 7vh; line-height: 1.1; font-weight: bold;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.artist { font-size: 4.2vh; color: var(--glow); margin-top: 1.4vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.album { font-size: 3vh; color: var(--ink-dim); margin-top: .8vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.progress { margin-top: 5vh; max-width: 70vh; }
+.bar { height: 1vh; border-radius: 1vh; background: rgba(7,16,31,.85); box-shadow: inset 0 .2vh .4vh #000; overflow: hidden; }
+.fill { height: 100%; width: 0; background: linear-gradient(90deg, #1061c9, var(--glow-strong), #bdf0ff); box-shadow: 0 0 1.5vh var(--glow); transition: width .5s linear; }
+.times { display: flex; justify-content: space-between; font-size: 2.2vh; color: var(--ink-dim); margin-top: 1vh; font-variant-numeric: tabular-nums; }
+.format { font-size: 1.9vh; color: #6c86ad; margin-top: 2vh; }
+.paused h1, .paused .artist, .paused .cover { opacity: .55; }
+
+/* ---------------------------------------------------------- Ruhezustand */
+.idle { position: relative; z-index: 1; height: 100%; }
+.idle-box { position: absolute; text-align: center; transition: left 3s ease, top 3s ease; }
+.idle-time { font-size: 18vh; font-weight: bold; font-variant-numeric: tabular-nums; color: rgba(238,245,255,.75); text-shadow: 0 0 4vh rgba(47,180,255,.35); }
+.idle-date { font-size: 3.5vh; color: var(--ink-dim); }
+.idle-hint { font-size: 2.4vh; color: #4f6890; margin-top: 2vh; }
+
+@media (orientation: portrait) {
+  .playing { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 4vh; padding-top: 12vh; }
+  .cover { width: 70vw; height: 70vw; -webkit-box-reflect: unset; }
+  h1 { font-size: 4.5vh; }
+  .progress { margin-left: auto; margin-right: auto; width: 80vw; }
+}

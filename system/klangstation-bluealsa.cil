@@ -1,0 +1,7 @@
+; Klangstation: SELinux-Ergaenzung fuer das aus dem Quellcode gebaute bluez-alsa (RHEL/Alma/Rocky/Fedora).
+; bluealsa laeuft als Dienst (unconfined_service_t) und reicht beim Oeffnen eines Bluetooth-PCMs eine
+; Pipe und einen Steuer-Socket ueber D-Bus an bluealsa-aplay weiter. Ohne diese Regeln verwirft SELinux
+; die Deskriptoren stillschweigend (dontaudit), dbus-broker trennt bluealsa und es kommt kein Ton.
+; Entfernen: semodule -r klangstation-bluealsa
+(allow system_dbusd_t unconfined_service_t (fifo_file (getattr read write append ioctl lock)))
+(allow system_dbusd_t unconfined_service_t (unix_stream_socket (getattr read write append ioctl)))

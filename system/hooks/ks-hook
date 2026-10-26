@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""Ereignis-Hook fuer shairport-sync und librespot -> Klangstation-API.
+
+shairport-sync ruft:  ks-hook airplay start|stop
+librespot ruft:       ks-hook  (Ereignis steht in PLAYER_EVENT)
+"""
+import json
+import os
+import sys
+import urllib.request
+
+SPOTIFY_KEYS = ("PLAYER_EVENT", "NAME", "ARTISTS", "ALBUM", "COVERS", "DURATION_MS", "POSITION_MS",
+                "TRACK_ID", "URI", "CLIENT_ID", "CLIENT_NAME", "CLIENT_BRAND_NAME", "CLIENT_MODEL_NAME",
+                "VOLUME", "SINK_STATUS")
+
+
+def main() -> int:
+    url = os.environ.get("KS_HOOK_URL")
+    token = os.environ.get("KS_HOOK_TOKEN", "")
+    if not url:
+        return 0
+    if os.environ.get("PLAYER_EVENT"):
+        payload = {"source": "spotify", "event": os.environ["PLAYER_EVENT"],
+                   "env": {k: os.environ[k] for k in SPOTIFY_KEYS if k in os.environ}}
+    elif len(sys.argv) >= 3:
+        payload = {"source": sys.argv[1], "event": sys.argv[2], "env": {}}
+    else:
+        return 0
+    req = urllib.request.Request(url, data=json.dumps(payload).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "X-Klangstation-Token": token})
+    try:
+        urllib.request.urlopen(req, timeout=15).read()
+    except OSError:
+        pass
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

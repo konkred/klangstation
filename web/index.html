@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1e3d">
+<title>Klangstation</title>
+<link rel="icon" href="img/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" fill="currentColor"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" fill="currentColor"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z" fill="currentColor"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M10.6 9.2 5.4 4 4 5.4l5.2 5.2zM14.5 4l2 2L4 18.6 5.4 20 18 7.5l2 2V4zm.3 9.4-1.4 1.4 3.1 3.1-2 2H20v-5.5l-2 2z" fill="currentColor"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z" fill="currentColor"/></symbol>
+    <symbol id="i-vol" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z" fill="currentColor"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9zm18.4 6L19 12.6l2.4-2.4-1.4-1.4-2.4 2.4-2.4-2.4-1.4 1.4 2.4 2.4-2.4 2.4 1.4 1.4 2.4-2.4 2.4 2.4z" fill="currentColor"/></symbol>
+    <symbol id="i-now" viewBox="0 0 24 24"><path d="M4 18h2V9H4zm4 0h2V4H8zm4 0h2v-6h-2zm4 0h2V7h-2zM2 20h20v1.5H2z" fill="currentColor"/></symbol>
+    <symbol id="i-lib" viewBox="0 0 24 24"><path d="M4 4h3v16H4zm5 0h3v16H9zm5.5.6 2.9-.8 4.1 15.4-2.9.8z" fill="currentColor"/></symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24"><path d="M20 7H8.3l8.3-3.4-.7-1.8L3.3 7A2 2 0 0 0 2 9v11c0 1.1.9 2 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM7 19a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm13-7h-8v-2h8z" fill="currentColor"/></symbol>
+    <symbol id="i-cd" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7zm0-5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" fill="currentColor"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1l.4 2.6h4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" fill="currentColor" transform="translate(-1 0)"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 17.3 6.2 3.7-1.6-7 5.4-4.7-7.2-.6L12 2 9.2 8.7 2 9.3l5.4 4.7-1.6 7z" fill="currentColor"/></symbol>
+    <symbol id="i-eject" viewBox="0 0 24 24"><path d="M5 17h14v2H5zm7-12-7 10h14z" fill="currentColor"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" fill="currentColor"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6 10.6 12 5 6.4z" fill="currentColor"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M10 4H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8z" fill="currentColor"/></symbol>
+    <symbol id="i-usb" viewBox="0 0 24 24"><path d="M15 7v4h1v2h-3V5h2l-3-4-3 4h2v8H8v-2.1A2 2 0 1 0 6 11v2a2 2 0 0 0 2 2h3v3.1a2.5 2.5 0 1 0 2 0V15h3a2 2 0 0 0 2-2v-2h1V7z" fill="currentColor"/></symbol>
+    <symbol id="i-bt" viewBox="0 0 24 24"><path d="M17.7 7.7 12 2h-1v7.6L6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l4.6-4.6V22h1l5.7-5.7-4.3-4.3zM13 5.8l1.9 1.9L13 9.6zm1.9 10.5L13 18.2v-3.8z" fill="currentColor"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 5h12v2H3zm0 4h12v2H3zm0 4h8v2H3zm13 0v-2h2v2h3v2h-3v3h-2v-3h-3v-2z" fill="currentColor"/></symbol>
+    <symbol id="i-net" viewBox="0 0 24 24"><path d="M4 4h16v8H4zm2 2v4h12V6zm5 8h2v3h4v2H7v-2h4z" fill="currentColor"/></symbol>
+    <symbol id="i-rip" viewBox="0 0 24 24"><path d="M11 2h2v9.2l3.3-3.3 1.4 1.4L12 15 6.3 9.3l1.4-1.4 3.3 3.3zM4 17h16v5H4zm2 2v1h12v-1z" fill="currentColor"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="wmp" id="app">
+  <header class="titlebar">
+    <div class="orb" aria-hidden="true"></div>
+    <div class="titletext">
+      <strong>Klangstation</strong>
+      <span id="tb-device">–</span>
+    </div>
+    <div class="lamps" id="lamps" aria-label="Dienststatus"></div>
+  </header>
+
+  <div class="frame">
+    <nav class="taskbar" id="taskbar">
+      <a href="#now" data-view="now"><svg><use href="#i-now"/></svg><span>Wiedergabe</span></a>
+      <a href="#library" data-view="library"><svg><use href="#i-lib"/></svg><span>Medienbibliothek</span></a>
+      <a href="#radio" data-view="radio"><svg><use href="#i-radio"/></svg><span>Radio</span></a>
+      <a href="#cd" data-view="cd"><svg><use href="#i-cd"/></svg><span>Audio-CD</span></a>
+      <a href="#settings" data-view="settings"><svg><use href="#i-gear"/></svg><span>Optionen</span></a>
+      <div class="taskbar-foot" id="tb-output"></div>
+    </nav>
+
+    <main class="content">
+      <!-- ============ Wiedergabe ============ -->
+      <section class="view" id="view-now">
+        <div class="stage">
+          <canvas id="vis"></canvas>
+          <div class="stage-info">
+            <div class="cover-wrap"><img id="np-art" alt="" hidden><div class="cover-fallback" id="np-fallback"><svg><use href="#i-note"/></svg></div></div>
+            <div class="np-text">
+              <div class="np-source" id="np-source"></div>
+              <div class="np-title" id="np-title">Keine Wiedergabe</div>
+              <div class="np-artist" id="np-artist"></div>
+              <div class="np-album" id="np-album"></div>
+              <div class="np-format" id="np-format"></div>
+            </div>
+          </div>
+          <button class="vis-switch" id="vis-switch" title="Visualisierung wechseln">Balken</button>
+        </div>
+        <aside class="playlist-pane">
+          <div class="pane-head">
+            <span>Aktuelle Wiedergabeliste</span>
+            <span>
+              <button class="mini" id="q-save" title="Als Wiedergabeliste speichern">Speichern</button>
+              <button class="mini" id="q-clear" title="Liste leeren">Leeren</button>
+            </span>
+          </div>
+          <ol class="queue" id="queue"></ol>
+        </aside>
+      </section>
+
+      <!-- ============ Bibliothek ============ -->
+      <section class="view light" id="view-library" hidden>
+        <div class="toolbar">
+          <div class="seg" id="lib-tabs">
+            <button data-tab="albums" class="on">Alben</button>
+            <button data-tab="folders">Ordner &amp; Laufwerke</button>
+            <button data-tab="playlists">Wiedergabelisten</button>
+          </div>
+          <input type="search" id="lib-search" placeholder="Bibliothek durchsuchen…" autocomplete="off">
+          <button class="mini" id="lib-update" title="Bibliothek neu einlesen">Aktualisieren</button>
+        </div>
+        <div class="crumbs" id="lib-crumbs"></div>
+        <div class="lib-body" id="lib-body"></div>
+      </section>
+
+      <!-- ============ Radio ============ -->
+      <section class="view light" id="view-radio" hidden>
+        <div class="toolbar">
+          <div class="seg" id="radio-tabs">
+            <button data-tab="favorites" class="on">Favoriten</button>
+            <button data-tab="top">Beliebt</button>
+            <button data-tab="genres">Genres</button>
+          </div>
+          <input type="search" id="radio-search" placeholder="Sender suchen…" autocomplete="off">
+          <select id="radio-country" title="Land"><option value="">Alle Länder</option></select>
+        </div>
+        <div class="crumbs" id="radio-crumbs"></div>
+        <div class="lib-body" id="radio-body"></div>
+        <div class="credit">Senderdaten: <a href="https://www.radio-browser.info" target="_blank" rel="noopener">radio-browser.info</a></div>
+      </section>
+
+      <!-- ============ CD ============ -->
+      <section class="view light" id="view-cd" hidden>
+        <div class="cd-head">
+          <div class="cd-art"><img id="cd-art" alt="" hidden><svg id="cd-art-fallback"><use href="#i-cd"/></svg></div>
+          <div class="cd-meta">
+            <h2 id="cd-title">Audio-CD</h2>
+            <div id="cd-artist"></div>
+            <div class="cd-status" id="cd-status"></div>
+            <div class="cd-actions">
+              <button class="btn primary" id="cd-play"><svg><use href="#i-play"/></svg>CD abspielen</button>
+              <button class="btn" id="cd-eject"><svg><use href="#i-eject"/></svg>Auswerfen</button>
+              <label class="check"><input type="checkbox" id="cd-autoplay"> Automatisch abspielen, wenn eine CD eingelegt wird</label>
+            </div>
+            <div class="cd-rip" id="cd-rip" hidden>
+              <div class="rip-form" id="rip-form">
+                <label>Als FLAC speichern auf <select id="rip-target"></select></label>
+                <label class="check"><input type="checkbox" id="rip-eject"> Danach auswerfen</label>
+                <button class="btn" id="rip-start"><svg><use href="#i-rip"/></svg>CD rippen</button>
+              </div>
+              <div class="rip-run" id="rip-run" hidden>
+                <div class="scanbar"><i id="rip-bar"></i></div>
+                <button class="btn" id="rip-cancel"><svg><use href="#i-x"/></svg>Abbrechen</button>
+              </div>
+              <small class="rip-note" id="rip-note"></small>
+            </div>
+          </div>
+        </div>
+        <div class="lib-body" id="cd-body"></div>
+      </section>
+
+      <!-- ============ Optionen ============ -->
+      <section class="view light" id="view-settings" hidden>
+        <div class="dialog">
+          <div class="dlg-tabs" id="set-tabs">
+            <button data-tab="out" class="on">Ausgabe</button>
+            <button data-tab="svc">Dienste</button>
+            <button data-tab="meta">CD &amp; Metadaten</button>
+            <button data-tab="tv">Fernseher</button>
+            <button data-tab="shares">Freigaben</button>
+            <button data-tab="access">Zugang</button>
+            <button data-tab="about">Info</button>
+          </div>
+          <form class="dlg-body" id="settings-form" autocomplete="off">
+            <fieldset data-pane="out">
+              <legend>Audiogerät</legend>
+              <p class="hint">Wähle, wo der Ton herauskommen soll. Alle Quellen (Bibliothek, Radio, CD, AirPlay, Spotify) verwenden dieses Gerät.</p>
+              <div id="out-list" class="out-list"></div>
+              <label class="check"><input type="checkbox" name="bitperfect"> Bit-perfekt (keine Umrechnung, Lautstärke nur am Verstärker)</label>
+            </fieldset>
+            <fieldset data-pane="svc" hidden>
+              <legend>Gerät &amp; Dienste</legend>
+              <label class="field">Gerätename (für AirPlay, Spotify, UPnP und Bluetooth)<input name="device_name" maxlength="40" required></label>
+              <label class="check"><input type="checkbox" name="airplay_enabled"> Apple AirPlay-Empfänger</label>
+              <label class="check"><input type="checkbox" name="spotify_enabled"> Spotify Connect (Premium-Konto in der Spotify-App erforderlich)</label>
+              <label class="field">Spotify-Qualität
+                <select name="spotify_bitrate"><option value="96">Niedrig (96 kbit/s)</option><option value="160">Normal (160 kbit/s)</option><option value="320">Hoch (320 kbit/s)</option></select>
+              </label>
+              <label class="check"><input type="checkbox" name="upnp_enabled"> UPnP/DLNA-Empfänger (z. B. für BubbleUPnP, Hi-Fi Cast, Windows „Wiedergeben auf“)</label>
+              <label class="check"><input type="checkbox" name="bluetooth_enabled"> Bluetooth-Empfänger</label>
+              <div class="bt-box" id="bt-box"></div>
+              <div id="svc-list" class="svc-list"></div>
+            </fieldset>
+            <fieldset data-pane="meta" hidden>
+              <legend>CD &amp; Online-Metadaten</legend>
+              <label class="check"><input type="checkbox" name="cd_autoplay"> Audio-CD beim Einlegen automatisch abspielen</label>
+              <label class="check"><input type="checkbox" name="metadata_online"> Titel und Cover von MusicBrainz / Cover Art Archive laden</label>
+              <label class="field">Kontakt für MusicBrainz (E-Mail oder URL, empfohlen)
+                <input name="musicbrainz_contact" maxlength="200" placeholder="du@example.org">
+              </label>
+              <p class="hint">MusicBrainz bittet um einen Kontakt im User-Agent. Anfragen werden auf eine pro Sekunde begrenzt und dauerhaft zwischengespeichert.</p>
+              <label class="field">Standardland für Radio
+                <select name="radio_country" id="set-country"><option value="">Alle</option></select>
+              </label>
+            </fieldset>
+            <fieldset data-pane="tv" hidden>
+              <legend>„Läuft gerade“-Bildschirm</legend>
+              <label class="check"><input type="checkbox" name="tv_enabled"> Am HDMI-Ausgang Cover, Titel und Fortschritt im Vollbild zeigen</label>
+              <p class="hint">Auch in jedem Browser erreichbar unter <a href="/tv" target="_blank" rel="noopener">/tv</a>, z. B. für ein Tablet an der Wand. Am Pi schließt Alt+F4 den Bildschirm.</p>
+              <button type="button" class="btn" id="tv-show">Jetzt am HDMI-Ausgang anzeigen</button>
+              <h4 class="subhead">HDMI-CEC</h4>
+              <label class="check"><input type="checkbox" name="cec_enabled"> HDMI-CEC verwenden (Fernseher/AV-Receiver steuern, TV-Fernbedienung nutzen)</label>
+              <label class="check"><input type="checkbox" name="cec_tv_on"> Beim Abspielen Fernseher einschalten und auf den Pi umschalten</label>
+              <label class="check"><input type="checkbox" name="cec_pause_on_tv_off"> Wiedergabe pausieren, wenn der Fernseher ausgeschaltet wird</label>
+              <label class="field">Fernseher ausschalten nach Stille
+                <select name="cec_standby_minutes"><option value="0">Nie</option><option value="5">5 Minuten</option><option value="10">10 Minuten</option><option value="30">30 Minuten</option><option value="60">60 Minuten</option></select>
+              </label>
+              <p class="hint">Ausgeschaltet wird nur ein Fernseher, den Klangstation selbst eingeschaltet hat.</p>
+              <p class="cec-status" id="cec-status"></p>
+            </fieldset>
+            <fieldset data-pane="shares" hidden>
+              <legend>Netzwerkfreigaben</legend>
+              <p class="hint">Musik von einem NAS oder PC im Netzwerk (Windows-Freigabe/SMB oder NFS). Sie erscheint danach in der Medienbibliothek unter „Ordner &amp; Laufwerke“.</p>
+              <div id="share-list" class="share-list"></div>
+              <div class="share-form" id="share-form">
+                <label class="field">Name<input data-f="name" maxlength="40" placeholder="NAS Musik"></label>
+                <label class="field">Art
+                  <select data-f="type"><option value="smb">Windows-Freigabe / SMB</option><option value="nfs">NFS</option></select>
+                </label>
+                <label class="field">Server<input data-f="host" placeholder="nas.local oder 192.168.1.10"></label>
+                <label class="field">Freigabe / Pfad<input data-f="path" placeholder="Musik"></label>
+                <label class="field smb-only">Benutzer (leer = Gast)<input data-f="user" autocomplete="off"></label>
+                <label class="field smb-only">Passwort<input data-f="password" type="password" autocomplete="new-password"></label>
+                <button type="button" class="btn primary" id="share-add">Freigabe einbinden</button>
+              </div>
+            </fieldset>
+            <fieldset data-pane="access" hidden>
+              <legend>Zugangsschutz</legend>
+              <p id="auth-state" class="auth-state"></p>
+              <label class="field">Schützen
+                <select id="auth-scope">
+                  <option value="settings">Nur Optionen, Bluetooth-Kopplung und Freigaben</option>
+                  <option value="all">Die gesamte Oberfläche</option>
+                </select>
+              </label>
+              <label class="field">Neues Passwort (mind. 6 Zeichen)<input type="password" id="auth-pw" autocomplete="new-password"></label>
+              <label class="field">Passwort wiederholen<input type="password" id="auth-pw2" autocomplete="new-password"></label>
+              <div class="auth-buttons">
+                <button type="button" class="btn primary" id="auth-set">Passwort speichern</button>
+                <button type="button" class="btn" id="auth-remove">Schutz entfernen</button>
+                <button type="button" class="btn" id="auth-logout">Abmelden</button>
+              </div>
+              <p class="hint">Die Verbindung ist unverschlüsseltes HTTP. Das Passwort schützt vor Mitbewohnern und Gästen im WLAN, nicht vor jemandem, der den Netzwerkverkehr mitschneidet. Vergessen? Am Pi: <code>sudo /opt/klangstation/system/ks-reset-password</code></p>
+            </fieldset>
+            <fieldset data-pane="about" hidden>
+              <legend>Über Klangstation</legend>
+              <p id="about-text"></p>
+            </fieldset>
+            <div class="dlg-buttons">
+              <span class="save-msg" id="save-msg"></span>
+              <button type="submit" class="btn primary">Übernehmen</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="transport">
+    <div class="seekrow">
+      <span class="time" id="t-elapsed">0:00</span>
+      <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Position">
+      <span class="time" id="t-total">0:00</span>
+    </div>
+    <div class="controls">
+      <div class="mini-now" id="mini-now">
+        <span class="ticker"><span id="mini-text">Bereit</span></span>
+      </div>
+      <div class="buttons">
+        <button class="tbtn small" id="b-shuffle" title="Zufällige Wiedergabe"><svg><use href="#i-shuffle"/></svg></button>
+        <button class="tbtn small" id="b-repeat" title="Wiederholen"><svg><use href="#i-repeat"/></svg></button>
+        <button class="tbtn" id="b-stop" title="Stopp"><svg><use href="#i-stop"/></svg></button>
+        <button class="tbtn" id="b-prev" title="Zurück"><svg><use href="#i-prev"/></svg></button>
+        <button class="playorb" id="b-play" title="Wiedergabe"><svg><use href="#i-play" id="play-icon"/></svg></button>
+        <button class="tbtn" id="b-next" title="Weiter"><svg><use href="#i-next"/></svg></button>
+        <div class="volume">
+          <button class="tbtn small" id="b-mute" title="Stumm"><svg><use href="#i-vol" id="vol-icon"/></svg></button>
+          <input type="range" id="vol" min="0" max="100" value="50" aria-label="Lautstärke">
+        </div>
+      </div>
+      <div class="status-right" id="status-right"></div>
+    </div>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<div class="modal" id="login" hidden>
+  <form class="modal-box" id="login-form">
+    <div class="modal-title"><span class="orb"></span>Klangstation – Anmeldung</div>
+    <div class="modal-body">
+      <p id="login-msg">Bitte gib das Passwort ein.</p>
+      <input type="password" id="login-pw" autocomplete="current-password" required>
+      <p class="login-err" id="login-err"></p>
+    </div>
+    <div class="dlg-buttons">
+      <button type="button" class="btn" id="login-cancel">Abbrechen</button>
+      <button type="submit" class="btn primary">Anmelden</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal" id="pl-pick" hidden>
+  <div class="modal-box">
+    <div class="modal-title"><span class="orb"></span>Zur Wiedergabeliste hinzufügen</div>
+    <div class="modal-body">
+      <div class="pl-pick-list" id="pl-pick-list"></div>
+      <label class="field">Oder neue Liste<input id="pl-pick-new" maxlength="80" placeholder="Name der neuen Liste"></label>
+    </div>
+    <div class="dlg-buttons">
+      <button type="button" class="btn" id="pl-pick-cancel">Abbrechen</button>
+      <button type="button" class="btn primary" id="pl-pick-create">Neue Liste anlegen</button>
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>

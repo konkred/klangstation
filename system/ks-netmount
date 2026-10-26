@@ -1,0 +1,242 @@
+#!/usr/bin/python3 -I
+"""Von systemd (ks-netmount.socket) als root gestartet: Einhaengearbeiten fuer Klangstation.
+
+Erlaubt ist ausschliesslich:
+  * SMB/NFS nur lesend unter /media/klangstation/Netz-<Name> ein- und aushaengen und auflisten
+  * eine gerippte CD (FLAC/JPEG aus /var/lib/klangstation/rip/<Ordner>) auf einen USB-/SD-Datentraeger
+    unter /media/klangstation/<UUID> kopieren; der Datentraeger ist nur waehrend des Kopierens beschreibbar
+Den Socket erreicht nur die Gruppe klangstation.
+Anfrage: eine JSON-Zeile auf stdin, Antwort: eine JSON-Zeile auf stdout.
+"""
+import json
+import os
+import pwd
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+
+ROOT = "/media/klangstation"
+RIP_ROOT = "/var/lib/klangstation/rip"
+SVC_USER = "klangstation"
+CRED_DIR = "/run/ks-netmount"
+NET_TYPES = ("cifs", "smb3", "nfs", "nfs4")
+DISK_TYPES = ("vfat", "exfat", "ext2", "ext3", "ext4", "ntfs3", "btrfs", "xfs", "f2fs")
+DISK_DIR = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+RIP_DIR_NAME = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}$")   # MusicBrainz-Disc-ID
+RIP_FILE = re.compile(r"^[^/\x00-\x1f]{1,200}\.(flac|jpg)$")
+# Ordnerkomponente: wie ripper.safe_name sie erzeugt (keine FAT-verbotenen Zeichen, kein fuehrender Punkt)
+FOLDER_PART = re.compile(r'^[^\x00-\x1f\x7f/\\:*?"<>|.][^\x00-\x1f\x7f/\\:*?"<>|]{0,130}$')
+
+NAME = re.compile(r"^Netz-[A-Za-z0-9_-]{1,30}$")
+HOST = re.compile(r"^[A-Za-z0-9\[][A-Za-z0-9._:\[\]-]{0,252}$")
+# keine Steuerzeichen, kein Komma (Mount-Optionen), nichts was mit "-" beginnt
+SHARE_PATH = re.compile(r"^[^\x00-\x1f\x7f,-][^\x00-\x1f\x7f,]{0,499}$")
+USER = re.compile(r"^[^\x00-\x1f\x7f,=]{0,100}$")
+
+
+def answer(ok, error="", **extra):
+    sys.stdout.write(json.dumps(dict(ok=ok, error=error, **extra)) + "\n")
+    sys.stdout.flush()
+    sys.exit(0)
+
+
+def net_mounts():
+    """Einbindungen unter ROOT/Netz-*: {Name: Dateisystemtyp}."""
+    out = {}
+    with open("/proc/self/mountinfo", encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            left, _, right = line.partition(" - ")
+            mnt = left.split()[4].replace("\\040", " ")
+            fstype = right.split()[0] if right else ""
+            if os.path.dirname(mnt) == ROOT and NAME.match(os.path.basename(mnt)) and fstype in NET_TYPES:
+                out[os.path.basename(mnt)] = fstype
+    return out
+
+
+def run(cmd, timeout):
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+                             env={"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LC_ALL": "C"})
+    except subprocess.TimeoutExpired:
+        return "Server antwortet nicht"
+    except FileNotFoundError:
+        return "mount fehlt"
+    if res.returncode == 0:
+        return ""
+    lines = (res.stderr or res.stdout).strip().splitlines()
+    # mount.cifs haengt noch "Refer to the mount.cifs(8) manual page..." an - die Fehlerzeile ist interessanter
+    lines = [ln for ln in lines if "error" in ln.lower()] or lines
+    return lines[-1] if lines else f"{cmd[0]} beendet mit Code {res.returncode}"
+
+
+def do_mount(req):
+    name, kind, host, path = req.get("name", ""), req.get("type", ""), req.get("host", ""), req.get("path", "")
+    user, password = req.get("user", ""), req.get("password", "")
+    if not (isinstance(name, str) and NAME.match(name)):
+        answer(False, "Ungueltiger Name")
+    if kind not in ("smb", "nfs"):
+        answer(False, "Ungueltiger Typ")
+    if not (isinstance(host, str) and HOST.match(host)):
+        answer(False, "Ungueltiger Servername")
+    path = path.strip("/") if isinstance(path, str) else ""
+    if not SHARE_PATH.match(path) or ".." in path.split("/"):
+        answer(False, "Ungueltiger Pfad")
+    if not (isinstance(user, str) and USER.match(user)) or not isinstance(password, str) \
+            or "\n" in password or "\x00" in password or len(password) > 200:
+        answer(False, "Ungueltige Zugangsdaten")
+
+    if name in net_mounts():
+        answer(True)
+    target = os.path.join(ROOT, name)
+    try:
+        os.mkdir(target, 0o755)
+    except FileExistsError:
+        pass
+    st = os.lstat(target)
+    if not os.path.isdir(target) or os.path.islink(target) or st.st_uid != 0 or os.path.ismount(target):
+        answer(False, "Einhaengepunkt belegt")
+
+    acct = pwd.getpwnam(SVC_USER)
+    opts = "ro,nosuid,nodev,noexec"
+    cred = None
+    if kind == "smb":
+        source = f"//{host}/{path}"
+        # cache=none: kein Vorauslesen. Sonst holt der Kernel bei jedem Zugriff auf die Tags am Dateianfang
+        # und -ende mehrere MB nach - beim Einlesen ueber WLAN fast die ganze Datei. MPD puffert selbst.
+        opts += (f",uid={acct.pw_uid},gid={acct.pw_gid},file_mode=0444,dir_mode=0555,iocharset=utf8,soft"
+                 ",cache=none,rsize=131072")
+        if user:
+            # Zugangsdaten als Datei statt in der Befehlszeile (dort waeren sie fuer alle sichtbar)
+            os.makedirs(CRED_DIR, mode=0o700, exist_ok=True)
+            fd, cred = tempfile.mkstemp(dir=CRED_DIR)
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(f"username={user}\npassword={password}\n")
+            opts += f",credentials={cred}"
+        else:
+            opts += ",guest"
+        cmd = ["mount", "-t", "cifs", "-o", opts, source, target]
+    else:
+        source = f"{host}:/{path}"
+        opts += ",soft,timeo=50,retrans=2,rsize=131072"
+        cmd = ["mount", "-t", "nfs", "-o", opts, source, target]
+    try:
+        error = run(cmd, 30)
+    finally:
+        if cred:
+            os.unlink(cred)
+    if error:
+        try:
+            os.rmdir(target)
+        except OSError:
+            pass
+        answer(False, error)
+    answer(True)
+
+
+def do_umount(req):
+    name = req.get("name", "")
+    if not (isinstance(name, str) and NAME.match(name)):
+        answer(False, "Ungueltiger Name")
+    target = os.path.join(ROOT, name)
+    if name in net_mounts():
+        # haengt der Server, kehrt umount nicht zurueck: dann "lazy" aushaengen
+        if run(["umount", target], 15):
+            run(["umount", "-l", target], 15)
+    if name in net_mounts():
+        answer(False, "Aushaengen fehlgeschlagen")
+    try:
+        os.rmdir(target)
+    except OSError:
+        pass
+    answer(True)
+
+
+def disk_mount(name):
+    """Dateisystemtyp, falls ROOT/name ein eingehaengter USB-/SD-Datentraeger ist, sonst None."""
+    with open("/proc/self/mountinfo", encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            left, _, right = line.partition(" - ")
+            mnt = left.split()[4].replace("\\040", " ")
+            if mnt == os.path.join(ROOT, name) and right:
+                fstype, source = right.split()[:2]
+                if fstype in DISK_TYPES and source.startswith("/dev/"):
+                    return fstype
+    return None
+
+
+def do_store(req):
+    src, dest, folder = req.get("src", ""), req.get("dest", ""), req.get("folder", "")
+    if not (isinstance(src, str) and RIP_DIR_NAME.match(src)):
+        answer(False, "Ungueltige Quelle")
+    if not (isinstance(dest, str) and DISK_DIR.match(dest)) or dest.startswith("Netz-") or dest == "Lokal":
+        answer(False, "Ungueltiges Ziel")
+    parts = folder.split("/") if isinstance(folder, str) else []
+    if not 1 <= len(parts) <= 3 or not all(FOLDER_PART.match(p) and p.strip() == p for p in parts):
+        answer(False, "Ungueltiger Ordnername")
+    srcdir = os.path.join(RIP_ROOT, src)
+    try:
+        is_dir = stat.S_ISDIR(os.lstat(srcdir).st_mode)
+    except OSError:
+        is_dir = False
+    if not is_dir:
+        answer(False, "Quelle fehlt")
+    files = []
+    for name in sorted(os.listdir(srcdir)):
+        path = os.path.join(srcdir, name)
+        if RIP_FILE.match(name) and stat.S_ISREG(os.lstat(path).st_mode):
+            files.append(name)
+    if not any(f.endswith(".flac") for f in files):
+        answer(False, "Keine FLAC-Dateien gefunden")
+    if not disk_mount(dest):
+        answer(False, "Ziel-Datentraeger ist nicht eingehaengt")
+
+    target = os.path.join(ROOT, dest)
+    error = run(["mount", "-o", "remount,rw", target], 30)
+    if error:
+        answer(False, f"Datentraeger laesst sich nicht beschreibbar machen: {error}")
+    result = ""
+    try:
+        base, n = os.path.join(target, *parts), 2
+        final = base
+        while os.path.exists(final):
+            final, n = f"{base} ({n})", n + 1
+        os.makedirs(final, mode=0o755)
+        for name in files:
+            # Nur Inhalte kopieren (keine Rechte/Eigentuemer) - Symlinks wurden oben schon ausgeschlossen
+            with open(os.path.join(srcdir, name), "rb") as fin, open(os.path.join(final, name), "xb") as fout:
+                shutil.copyfileobj(fin, fout, 1024 * 1024)
+        os.sync()
+        result = os.path.relpath(final, target)
+    except OSError as exc:
+        error = f"Kopieren fehlgeschlagen: {exc.strerror or exc}"
+    finally:
+        run(["mount", "-o", "remount,ro", target], 60)
+    if error:
+        answer(False, error)
+    answer(True, folder=result)
+
+
+def main():
+    try:
+        req = json.loads(sys.stdin.readline(4096) or "{}")
+    except ValueError:
+        answer(False, "Ungueltige Anfrage")
+    if not isinstance(req, dict):
+        answer(False, "Ungueltige Anfrage")
+    action = req.get("action")
+    if action == "mount":
+        do_mount(req)
+    elif action == "umount":
+        do_umount(req)
+    elif action == "store":
+        do_store(req)
+    elif action == "list":
+        answer(True, mounts=sorted(net_mounts()))
+    answer(False, "Unbekannte Aktion")
+
+
+if __name__ == "__main__":
+    main()

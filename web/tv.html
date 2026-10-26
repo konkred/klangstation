@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klangstation – Läuft gerade</title>
+<link rel="icon" href="img/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/tv.css">
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<header class="top">
+  <div class="brand"><span class="orb"></span><b>Klangstation</b><span id="device"></span></div>
+  <div class="clock" id="clock"></div>
+</header>
+
+<main class="playing" id="playing" hidden>
+  <div class="cover">
+    <img id="art" alt="" hidden>
+    <div class="cover-fallback" id="art-fallback">♪</div>
+  </div>
+  <div class="info">
+    <div class="badge" id="badge"></div>
+    <h1 id="title"></h1>
+    <div class="artist" id="artist"></div>
+    <div class="album" id="album"></div>
+    <div class="progress" id="progress">
+      <div class="bar"><div class="fill" id="fill"></div></div>
+      <div class="times"><span id="elapsed">0:00</span><span id="total"></span></div>
+    </div>
+    <div class="format" id="format"></div>
+  </div>
+</main>
+
+<main class="idle" id="idle">
+  <div class="idle-box" id="idle-box">
+    <div class="idle-time" id="idle-time"></div>
+    <div class="idle-date" id="idle-date"></div>
+    <div class="idle-hint" id="idle-hint">Bereit</div>
+  </div>
+</main>
+
+<script src="js/tv.js"></script>
+</body>
+</html>

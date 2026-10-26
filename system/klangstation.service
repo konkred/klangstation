@@ -1,0 +1,28 @@
+[Unit]
+Description=Klangstation Musik-Streamer
+Wants=network-online.target avahi-daemon.service sound.target
+After=network-online.target avahi-daemon.service sound.target
+
+[Service]
+Type=simple
+User=klangstation
+Group=klangstation
+Environment=KS_DATA_DIR=/var/lib/klangstation
+Environment=KS_MEDIA_ROOT=/media/klangstation
+Environment=KS_PORT=@PORT@
+Environment=PATH=/opt/klangstation/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin
+WorkingDirectory=/opt/klangstation/backend
+ExecStart=/opt/klangstation/venv/bin/python -m klangstation
+Restart=on-failure
+RestartSec=3
+# mixed: SIGTERM nur an Klangstation, das seine Dienste selbst sauber beendet; Reste raeumt systemd danach ab
+KillMode=mixed
+TimeoutStopSec=20
+Nice=-5
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

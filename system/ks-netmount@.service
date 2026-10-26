@@ -1,0 +1,11 @@
+[Unit]
+Description=Klangstation: Netzwerkfreigabe einhaengen
+CollectMode=inactive-or-failed
+
+[Service]
+# Bewusst ohne eigenen Mount-Namensraum: die Einbindung muss systemweit sichtbar sein
+ExecStart=/opt/klangstation/system/ks-netmount
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+TimeoutSec=60

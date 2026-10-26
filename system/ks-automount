@@ -1,0 +1,32 @@
+#!/bin/sh
+# Von udev aufgerufen: haengt USB-/SD-Datentraeger nur lesend unter /media/klangstation/<UUID> ein.
+# Systemlaufwerke (z. B. Pi mit Root auf USB-SSD) und bereits eingehaengte Partitionen werden uebersprungen.
+DEV="$1"
+UUID="$2"
+FSTYPE="$3"
+ROOT="/media/klangstation"
+
+[ -b "$DEV" ] || exit 0
+[ -n "$UUID" ] || exit 0
+
+# schon eingehaengt?
+if findmnt -rn -S "$DEV" >/dev/null 2>&1; then
+    exit 0
+fi
+
+# gehoert zur Systemplatte?
+ROOT_SRC="$(findmnt -rno SOURCE / 2>/dev/null)"
+ROOT_DISK="$(lsblk -rno PKNAME "$ROOT_SRC" 2>/dev/null | head -n1)"
+DEV_DISK="$(lsblk -rno PKNAME "$DEV" 2>/dev/null | head -n1)"
+[ -n "$DEV_DISK" ] || DEV_DISK="$(basename "$DEV")"
+if [ -n "$ROOT_DISK" ] && [ "$ROOT_DISK" = "$DEV_DISK" ]; then
+    exit 0
+fi
+
+OPTS="ro,noatime"
+case "$FSTYPE" in
+    # Kernel-Standard ist oft iocharset=ascii -> Umlaute in Dateinamen waeren kaputt
+    vfat) OPTS="$OPTS,utf8,shortname=mixed" ;;
+esac
+
+exec /usr/bin/systemd-mount --no-block --collect --options="$OPTS" "$DEV" "$ROOT/$UUID"

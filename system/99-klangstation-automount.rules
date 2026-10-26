@@ -1,0 +1,21 @@
+# Klangstation: Musik-Datentraeger automatisch einhaengen (nur lesend).
+# Abgezogene Laufwerke haengt systemd selbst aus (systemd-mount bindet den Mount ans Geraet).
+
+# CD-/DVD-Laufwerke gehoeren Klangstation: der Desktop (gvfsd-cdda) wuerde Audio-CDs sonst selbst
+# oeffnen, das Laufwerk offen halten und damit Auswerfen, Abspielen und Rippen blockieren.
+SUBSYSTEM=="block", KERNEL=="sr[0-9]*", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_AUTO}="0"
+
+ACTION!="add", GOTO="klangstation_end"
+SUBSYSTEM!="block", GOTO="klangstation_end"
+ENV{ID_FS_USAGE}!="filesystem", GOTO="klangstation_end"
+ENV{ID_FS_UUID}=="", GOTO="klangstation_end"
+
+# UDISKS_AUTO=0: Desktop-Automounter (pcmanfm/gvfs) haengen den Datentraeger nicht selbst ein.
+# Sonst gewinnt der Desktop das Rennen, mountet nach /media/<benutzer> und Klangstation darf dort nicht lesen.
+
+# USB-Sticks, USB-Festplatten, USB-Kartenleser
+SUBSYSTEMS=="usb", ENV{UDISKS_AUTO}="0", RUN{program}+="/opt/klangstation/system/ks-automount $devnode $env{ID_FS_UUID} $env{ID_FS_TYPE}", GOTO="klangstation_end"
+# eingebaute SD-Kartenleser (mmcblk0 ist beim Raspberry Pi das System und wird ausgelassen)
+KERNEL=="mmcblk[1-9]*", ENV{UDISKS_AUTO}="0", RUN{program}+="/opt/klangstation/system/ks-automount $devnode $env{ID_FS_UUID} $env{ID_FS_TYPE}"
+
+LABEL="klangstation_end"

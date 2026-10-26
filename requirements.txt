@@ -1,0 +1,6 @@
+# Nur reine Python-Pakete: laufen ohne Compiler auf armv7, aarch64 und x86_64
+starlette==0.41.3
+uvicorn==0.32.1
+websockets==13.1
+httpx==0.27.2
+dbus-next==0.2.3

@@ -1,0 +1,40 @@
+#!/bin/bash
+# Zeigt den "Laeuft gerade"-Bildschirm von Klangstation im Vollbild.
+# Desktop: per XDG-Autostart in der Sitzung gestartet. Ohne Desktop: unter cage (klangstation-tv.service).
+# Ist der Bildschirm in den Optionen aus, wird das Fenster geschlossen. Von Hand geschlossen (Alt+F4)
+# bleibt es zu, bis in den Optionen "Jetzt am HDMI-Ausgang anzeigen" gedrueckt wird.
+URL="http://127.0.0.1:@PORT@"
+BROWSER="$(command -v chromium || command -v chromium-browser || command -v firefox || true)"
+[ -n "$BROWSER" ] || { echo "Kein Browser (chromium/firefox) gefunden" >&2; exit 0; }
+PROFILE="${XDG_RUNTIME_DIR:-/tmp}/klangstation-tv-$(id -u)"
+
+start_browser() {
+    if [[ "$BROWSER" == *firefox* ]]; then
+        "$BROWSER" --kiosk --new-instance --profile "$PROFILE" "$URL/tv" &
+    else
+        "$BROWSER" --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-session-crashed-bubble \
+            --password-store=basic --check-for-update-interval=31536000 --user-data-dir="$PROFILE" \
+            --app="$URL/tv" >/dev/null 2>&1 &
+    fi
+    pid=$!
+}
+
+mkdir -p "$PROFILE"
+pid="" last=""
+while true; do
+    status="$(curl -s -m 3 "$URL/api/tv")"
+    if [ -n "$status" ]; then
+        enabled="$(printf '%s' "$status" | grep -o '"enabled":[a-z]*' | cut -d: -f2)"
+        launch="$(printf '%s' "$status" | grep -o '"launch":[0-9]*' | cut -d: -f2)"
+        running=0
+        [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && running=1
+        if [ "$enabled" = "true" ] && [ "$running" = 0 ] && [ "$launch" != "$last" ]; then
+            start_browser
+            last="$launch"
+        elif [ "$enabled" != "true" ] && [ "$running" = 1 ]; then
+            kill "$pid" 2>/dev/null
+            pid=""
+        fi
+    fi
+    sleep 3
+done

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Klangstation – Läuft gerade
+Comment=Zeigt Cover und Titel der aktuellen Wiedergabe im Vollbild
+Exec=/opt/klangstation/system/ks-tv-kiosk
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

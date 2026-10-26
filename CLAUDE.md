@@ -98,7 +98,14 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
 * **Pi bestanden:** MusicBrainz-Neuversuch (Sperre per `/etc/hosts`), Rippen in den internen Speicher (sofort in
   der Bibliothek), Rippen abbrechen, Zugangsschutz (beide Stufen, Sperre, lokale Zugriffe, Kiosk,
   `ks-reset-password`), Update per `install.sh` (alles bleibt erhalten), Quellenwechsel, Ausgabewechsel ohne
-  Bluetooth, Neustart während Spotify (Web nach 32 s, alles wieder da, kein ungefragtes Weiterspielen).
+  Bluetooth, Neustart während Spotify (Web nach 32 s, alles wieder da, kein ungefragtes Weiterspielen),
+  Update auf den neuen Stand (Daten erhalten; apt hob nur `ntfs-3g` auf deb13u3), CEC am Fernseher: Abspielen
+  schaltet ihn ein, Ausschalten per TV-Fernbedienung pausiert Radio (Spotify/AirPlay bewusst nicht), nach
+  5 min Stille schaltet Klangstation ihn aus (`cec_standby_minutes` danach wieder 0),
+  Bluetooth-Übernahme mit iPhone (Ausgang HDMI ↔ Klinke bei pausiertem iPhone: keine Übernahme; die PCM meldete
+  dabei wie früher kurz `Running` bei AVRCP „paused“ – jetzt abgefangen), Synology-Scan über WLAN
+  (`Netz-Synology-Test2`, 928 Titel in 2 min 10 s ≈ 7 Titel/s, Last bis 3,5, 49 °C, nicht gedrosselt,
+  Speicher stabil, `/api/state` meist 0,01 s, einmal 3,5 s).
 * **Alma bestanden:** Rippen in den internen Speicher (3 min 15 s), Auswerfen per Taste während des Rippens,
   FAT32-Umlaute, Bluetooth übersteht Neustart, Bluetooth-Stick wird im laufenden Betrieb erkannt,
   Update per `install.sh --tv-headless` (1 min 47 s; Einstellungen, Geheimnis, Spotify-Anmeldung, Freigabe mit
@@ -146,8 +153,16 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
 
 ### Noch offen
 
+* **Freigabe eintragen (behoben 26.10.2026):** Pfad mit Backslashes (`\Ordner\Unterordner`) ergab
+  „mount error(22)“ ohne Erklärung → `\` wird zu `/`, Fehler 22 bekommt eine Meldung; „Neu einlesen“ bei nicht
+  eingebundener Freigabe zeigte fälschlich „wird eingelesen“ → versucht jetzt neu einzubinden.
+* **Radio hängt nach Ausgabewechsel am Pi:** Nach dem Wechsel Klinke → HDMI 0 (MPD-Neustart, Wiederaufnahme per
+  `_resume_mpd`) stand `elapsed` still bei „play“, der Nutzer hörte Stille. Der Webradio-Wächter verbindet nach
+  20 s neu (19:47:10 → läuft 19:47:15) – Ursache offen (MPD/vc4hdmi nach Neustart?). Trat schon beim ersten
+  Quellenwechsel-Test auf („seit Ausgangswechsel stumm“).
 * Pi-Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Alma.
-* Tests Pi: neuer Stand einspielen + Störfälle nachtesten, Dauerlauf neu, CEC-Standby, großer Synology-Scan, `--tv-headless` auf Pi OS Lite, NFS.
+* Tests Pi: Störfälle mit neuem Stand nachtesten, Dauerlauf neu (erst wenn der Nutzer will), Scan einer
+  noch größeren Bibliothek (falls vorhanden), `--tv-headless` auf Pi OS Lite, NFS.
 * Tests Alma: UPnP mit echter App, Neuinstallation von null, NFS, CEC (braucht Fernseher); mit Audio-CD:
   Rückfall beim Rippen auf USB, MusicBrainz-Neuversuch über 16 Versuche, echtes Rippen auf einen Stick.

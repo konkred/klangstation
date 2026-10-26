@@ -914,6 +914,10 @@ class Core:
             share = next((s for s in current if s["id"] == data.get("id")), None)
             if not share:
                 raise ValueError("Unbekannte Freigabe")
+            if not self.shares.status.get(share["id"], {}).get("mounted"):
+                # Nicht eingebunden: "Neu einlesen" heisst dann "nochmal versuchen" (nicht leer einlesen)
+                await self._sync_shares()
+                return self.shares_public()
             await self.shares.rescan(share)
             return self.shares_public()
         else:

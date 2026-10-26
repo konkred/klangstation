@@ -51,6 +51,7 @@ _ERRORS = [
     (("no route", "unreachable", "timed out", "timeout", "host is down", "antwortet nicht"), "Server nicht erreichbar"),
     (("name or service not known", "could not resolve", "resolve"), "Servername unbekannt"),
     (("operation not supported", "error(95)"), "Server unterstützt die SMB-Version nicht"),
+    (("invalid argument", "error(22)"), "Ungültige Angaben – Freigabe als „Musik“ oder „Musik/Alben“ angeben"),
 ]
 
 
@@ -85,8 +86,10 @@ def validate(data: Dict[str, Any], existing: List[Dict[str, Any]]) -> Dict[str, 
         "id": str(data.get("id") or secrets.token_hex(4)),
         "name": str(data.get("name", "")).strip()[:40],
         "type": data.get("type") if data.get("type") in ("smb", "nfs") else "smb",
-        "host": str(data.get("host", "")).strip().strip("/").removeprefix("smb:").removeprefix("nfs:").strip("/"),
-        "path": str(data.get("path", "")).strip().strip("/"),
+        # Windows-Schreibweise (\\server\freigabe\ordner) wie Pfade mit "/" behandeln
+        "host": str(data.get("host", "")).strip().replace("\\", "/").strip("/")
+                .removeprefix("smb:").removeprefix("nfs:").strip("/"),
+        "path": str(data.get("path", "")).strip().replace("\\", "/").strip("/"),
         "user": str(data.get("user", "")).strip()[:100],
         "password": str(data.get("password", ""))[:200],
     }

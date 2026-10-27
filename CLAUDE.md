@@ -47,6 +47,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | PC (Hostname `KlangStationAlma`), AlmaLinux 10.2, x86_64, ohne Desktop, SELinux enforcing | `ssh root@10.0.0.162` (SSH-Key, zu Hause) | Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
+| NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben „Testkünstler“ (u. a. 10 min Rauschen) und „Ölfass & Söhne“ von Claude erzeugt |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
 
 Gearbeitet wird auf einem Laptop mit AlmaLinux 10.2 (`konnis-Latitude`, Bash). Dessen SSH-Key ist auf den
@@ -69,6 +70,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **Stumm testen:** MPD-Lautstärke per `setvol 0` auf Port 6600, danach wieder auf den alten Wert. Die
   Lautstärke-API lehnt ab, solange Spotify o. Ä. Quelle ist. CEC-Einschalten vorher in den Einstellungen aus
   (`cec_tv_on`), danach wieder an. `GET /api/settings` liefert die Werte unter `settings`.
+* **Ausfall testen mit Rauschen**, nicht mit Sinus: Ein Sinus-FLAC ist winzig und liegt nach dem Start ganz im
+  Seiten-Cache, dann spielt er ohne Server einfach weiter.
+* Sperrt die Blackhole-Route den Rechner, von dem aus per SSH gearbeitet wird (NFS auf dem Laptop), den Test
+  per `sudo setsid nohup …` losgelöst starten und das Protokoll danach lesen.
 * **Netzausfall:** `ip route add blackhole <IP>` (Radio: alle IPs des Stream-Hosts plus die verbundene aus `ss`;
   Synology: `<IP>/32`), im `finally` wieder entfernen.
 * **USB abziehen:** `echo 0 > /sys/bus/usb/devices/<port>/authorized` (wieder 1 = anstecken).
@@ -145,10 +150,9 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 
 ### Noch offen
 
-* **Alma:** Neuinstallation von null, UPnP mit echter App, NFS, CEC (braucht Fernseher).
+* **Alma:** Neuinstallation von null, UPnP mit echter App, NFS (Laptop-Freigabe siehe Testgeräte), CEC (braucht Fernseher).
 * **Alma mit Audio-CD:** Rückfall beim Rippen (USB scheitert → interner Speicher), MusicBrainz-Neuversuch über
   16 Versuche, echtes Rippen auf einen Stick (Zustimmung des Nutzers).
-* **Pi:** NFS.
 * **Alma:** `ks-spotify-sink` einspielen (Update per `install.sh`) und AirPlay ↔ Spotify mit iPhone prüfen.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
@@ -186,6 +190,9 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 * Neustart: Boot 24 s, Web nach 26 s, alles wieder da, kein ungefragtes Weiterspielen; Spotify vom Handy spielt.
 * AirPlay ↔ Spotify mit iPhone: vorher 30–60 s bis Spotify spielte, beim zweiten Mal gar nicht; mit
   `ks-spotify-sink` je ~3 s in beide Richtungen, auch beim zweiten Wechsel, Pause/Weiter sofort.
+* NFS (Laptop, NFS 4.2, `soft,timeo=50,retrans=2`): einhängen, 7 Titel in 6 s eingelesen, Umlaute und „&“ in
+  Pfaden und Tags; Ausfall 90 s (stumm): Puffer reicht ~27 s, nach 15 s Stillstand pausiert, 4 s nach Rückkehr
+  an derselben Stelle weiter.
 
 **Alma, 26.10.2026**
 

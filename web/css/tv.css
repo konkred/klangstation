@@ -94,6 +94,11 @@ h1 {
 }
 .lyrics .line.now { color: var(--ink); transform: scale(1.08); text-shadow: 0 0 2vh rgba(47,180,255,.55); }
 .lyrics .line.gap { min-height: 2vh; }
+.lyrics .line.note span { display: inline-block; margin-right: 1.6vh; opacity: .45; transition: opacity .5s, color .5s; }
+.lyrics .line.note.now span.on { opacity: 1; color: var(--glow); animation: note-bob 1.4s ease-in-out infinite; }
+.lyrics .line.note.now span.on:nth-child(2) { animation-delay: .2s; }
+.lyrics .line.note.now span.on:nth-child(3) { animation-delay: .4s; }
+@keyframes note-bob { 50% { transform: translateY(-.6vh); text-shadow: 0 0 2vh rgba(111,211,255,.9); } }
 .lyrics .plain { font-size: 3vh; line-height: 1.5; color: rgba(238,245,255,.85); white-space: pre-line; }
 .lyrics .source { font-size: 1.6vh; color: #4f6890; padding-top: 3vh; }
 

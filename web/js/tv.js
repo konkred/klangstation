@@ -4,7 +4,7 @@ const $ = (s) => document.querySelector(s);
 const KIND = { file: "Bibliothek", radio: "Webradio", cd: "Audio-CD", spotify: "Spotify Connect", airplay: "AirPlay",
   upnp: "UPnP/DLNA", bluetooth: "Bluetooth" };
 
-let S = null, receivedAt = 0, lastArt = null;
+let S = null, receivedAt = 0, lastArt = null, webBuild = null;
 // Liedtext zum aktuellen Titel: {key, data} - data null = (noch) keiner
 let lyr = { key: null, data: null, line: -1 };
 
@@ -78,7 +78,30 @@ function esc(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
+// Instrumental-Pausen wie bei Spotify als Notenzeile: im Vorspiel, an leeren Zeilen und in langen Luecken
+const NOTE_MIN = 5;  // kuerzere Pausen bleiben eine Leerzeile
+function withBreaks(lines) {
+  const out = [];
+  if (lines.length && lines[0].t >= NOTE_MIN) out.push({ t: 0, end: lines[0].t, note: true });
+  lines.forEach((l, i) => {
+    const next = lines[i + 1];
+    if (!l.text) {
+      if (next && next.t - l.t >= NOTE_MIN) out.push({ t: l.t, end: next.t, note: true });
+      else if (next) out.push({ t: l.t, text: "" });
+      return;
+    }
+    out.push(l);
+    // Ohne Leerzeile in der LRC: nach der (geschaetzten) Singdauer der Zeile Noten bis zur naechsten
+    if (next && next.text) {
+      const sung = Math.min(7, Math.max(3, l.text.length * 0.3));
+      if (next.t - (l.t + sung) >= NOTE_MIN + 3) out.push({ t: l.t + sung, end: next.t, note: true });
+    }
+  });
+  return out;
+}
+
 function showLyrics(data) {
+  if (data && data.kind === "synced") data = Object.assign({}, data, { lines: withBreaks(data.lines) });
   lyr.data = data; lyr.line = -1;
   const box = $("#lyrics"), inner = $("#lyrics-inner");
   $("#playing").classList.toggle("with-lyrics", !!data);
@@ -88,7 +111,9 @@ function showLyrics(data) {
   if (!data) { inner.innerHTML = ""; return; }
   const src = data.source ? `<div class="source">Text: ${esc(data.source)}</div>` : "";
   inner.innerHTML = data.kind === "synced"
-    ? data.lines.map((l, i) => `<div class="line${l.text ? "" : " gap"}" data-i="${i}">${esc(l.text)}</div>`).join("") + src
+    ? data.lines.map((l, i) => l.note
+        ? `<div class="line note" data-i="${i}"><span>♪</span><span>♪</span><span>♪</span></div>`
+        : `<div class="line${l.text ? "" : " gap"}" data-i="${i}">${esc(l.text)}</div>`).join("") + src
     : `<div class="plain">${esc(data.text)}</div>` + src;
   lyricsTick();
 }
@@ -121,6 +146,12 @@ function lyricsTick() {
     // Zeile etwas frueher hervorheben, damit sie beim Singen schon steht
     let i = -1;
     for (let k = 0; k < d.lines.length && d.lines[k].t <= e + 0.3; k++) i = k;
+    const cur = d.lines[i];
+    if (cur && cur.note) {
+      // Noten leuchten nacheinander auf, bis die naechste Zeile kommt
+      const lit = Math.min(3, 1 + Math.floor(((e - cur.t) / Math.max(1, cur.end - cur.t)) * 3));
+      inner.querySelectorAll(`[data-i="${i}"] span`).forEach((s, k) => s.classList.toggle("on", k < lit));
+    }
     if (i === lyr.line) return;
     const old = inner.querySelector(".line.now");
     if (old) old.classList.remove("now");
@@ -158,7 +189,12 @@ function connect() {
   const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws");
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
-    if (msg.type === "state") { S = msg.data; receivedAt = performance.now(); render(); }
+    if (msg.type === "state") {
+      // Nach einem Update liefert Klangstation neue Oberflaechen-Dateien: der Kiosk-Browser laedt sonst nie neu
+      if (webBuild && msg.data.web_build && msg.data.web_build !== webBuild) { location.reload(); return; }
+      webBuild = webBuild || msg.data.web_build;
+      S = msg.data; receivedAt = performance.now(); render();
+    }
   };
   ws.onclose = (ev) => {
     $("#idle-hint").textContent = ev.code === 4401

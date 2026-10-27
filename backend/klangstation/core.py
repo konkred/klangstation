@@ -20,7 +20,7 @@ from .cache import Cache
 from .cec import Cec
 from .config import (BIN_BLUEALSA_APLAY, BIN_GMEDIARENDER, BIN_LIBRESPOT, BIN_MPD, BIN_SHAIRPORT, CD_DEVICE,
                      COVER_DIR, DATA_DIR, HOOK_PATH, MEDIA_ROOT, MPD_HOST, MPD_PORT, PORT, RUN_DIR, SPOTIFY_SINK,
-                     SPOTIFY_ZEROCONF_PORT, Settings)
+                     SPOTIFY_ZEROCONF_PORT, WEB_BUILD, Settings)
 from .daemons import Daemon
 from .lyrics import Lyrics
 from .mpd import MPD, MPDError, build, to_objects
@@ -455,6 +455,7 @@ class Core:
             "services": {n: {"available": d.available, "running": d.running} for n, d in self.daemons.items()},
             "bluetooth": self.bt.public(),
             "tv_lyrics": self.settings.get("tv_lyrics"),
+            "web_build": WEB_BUILD,
             "ts": time.time(),
         }
         status: Dict[str, str] = {}

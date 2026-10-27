@@ -25,7 +25,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Wiedergabelisten | speichern, laden, ab Eintrag abspielen, umbenennen, Einträge entfernen; auch Radiosender |
 | HDMI-CEC | TV beim Abspielen einschalten und Eingang wählen, TV-Fernbedienung, Pause bei TV aus, optional Standby |
 | „Läuft gerade“ | Vollbild unter `/tv` (Cover, Titel, Fortschritt, Bildschirmschoner) am HDMI-Ausgang oder in jedem Browser |
-| Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend: aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key), gecacht; nicht bei Webradio |
+| Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend, Instrumental-Pausen als Noten: aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key), gecacht; nicht bei Webradio |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
 ## Unterstützte Systeme

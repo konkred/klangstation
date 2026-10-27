@@ -1,6 +1,7 @@
 """Pfade, Umgebungsvariablen und persistente Einstellungen."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import socket
@@ -19,6 +20,18 @@ MEDIA_ROOT = Path(os.environ.get("KS_MEDIA_ROOT", "/media/klangstation"))
 WEB_DIR = Path(os.environ.get("KS_WEB_DIR", str(_ROOT / "web")))
 HOOK_PATH = Path(os.environ.get("KS_HOOK", str(_ROOT / "system" / "hooks" / "ks-hook")))
 SPOTIFY_SINK = _ROOT / "system" / "ks-spotify-sink"
+
+
+def _web_build() -> str:
+    """Kennung der Oberflaechen-Dateien: aendert sich mit jedem Update, offene Bildschirme laden dann neu."""
+    h = hashlib.sha1()
+    for path in sorted(p for p in WEB_DIR.rglob("*") if p.is_file()):
+        st = path.stat()
+        h.update(f"{path.relative_to(WEB_DIR)}:{st.st_size}:{st.st_mtime_ns};".encode())
+    return h.hexdigest()[:12]
+
+
+WEB_BUILD = _web_build()
 
 HOST = os.environ.get("KS_HOST", "0.0.0.0")
 PORT = int(os.environ.get("KS_PORT", "8080"))

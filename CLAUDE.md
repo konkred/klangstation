@@ -141,8 +141,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `multi-user.target`, nicht `graphical.target`.
 * **Chromium auf englischem System** bietet im Kiosk an, die deutsche Seite zu übersetzen →
   `--disable-features=Translate --lang=de` in `ks-tv-kiosk`, `tv.html` mit `translate="no"`.
-* **Kiosk lädt neue Oberflächen-Dateien nicht von selbst** → nach dem Einspielen Firefox/Chromium beenden und
-  `POST /api/tv/show` (erhöht `launch`, `ks-tv-kiosk` startet den Browser neu).
+* **Kiosk lädt neue Oberflächen-Dateien nicht von selbst** → `web_build` im Zustand (Kennung aus Pfad, Größe und
+  Änderungszeit der Dateien in `web/`, beim Start berechnet): ändert sie sich, lädt `/tv` neu. Greift also erst nach
+  einem Neustart von Klangstation. Einzeln eingespielte Web-Dateien ohne Neustart: Browser beenden und
+  `POST /api/tv/show` (erhöht `launch`, `ks-tv-kiosk` startet ihn neu).
 * **Liedtexte:** eingebettete Texte (Tag `LYRICS`) nicht über MPD `readcomments` lesen – mehrzeilige Werte
   passen nicht ins Zeilenprotokoll. Darum nur `.lrc` neben der Datei und LRCLIB.
 * **WebSocket-Ablehnung** erst nach `websocket.accept` schließen, sonst sieht der Browser 1006 statt 4401.

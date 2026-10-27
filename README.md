@@ -2,16 +2,18 @@
 
 Headless-Musik-Streamer mit Weboberfläche für Raspberry Pi und Mini-PCs. Ein Gerät am Verstärker,
 Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet oder PC.
-Läuft auf Debian, Ubuntu und Raspberry Pi OS sowie auf RHEL, AlmaLinux, Rocky und Fedora,
-jeweils auf x86_64, aarch64 und armv7.
+
+**Inhalt:** [Funktionen](#funktionen) · [Unterstützte Systeme](#unterstützte-systeme) ·
+[Installation](#installation) · [Bedienung](#bedienung) · [Fehlersuche](#fehlersuche) ·
+[Technik](#technik) · [API](#api-auszug)
 
 ## Funktionen
 
 | Quelle / Funktion | Umsetzung |
 |---|---|
 | USB-Sticks, USB-Platten, SD-Karten | udev + `systemd-mount` hängen sie automatisch nur lesend ein, MPD liest sie ein |
-| Netzwerkfreigaben | SMB/NFS (z. B. Synology, Windows-Freigabe), vom System nur lesend eingehängt, mit Fortschrittsbalken beim Einlesen |
-| Webradio | [Radio Browser API](https://api.radio-browser.info) (frei, ohne Key), Suche nach Land und Genre, Favoriten |
+| Netzwerkfreigaben | SMB/NFS (z. B. Synology, Windows-Freigabe), vom System nur lesend eingehängt, mit Fortschrittsbalken beim Einlesen; fällt der Server aus, hält die Wiedergabe an und geht danach an derselben Stelle weiter |
+| Webradio | [Radio Browser API](https://api.radio-browser.info) (frei, ohne Key), Suche nach Land und Genre, Favoriten; verbindet nach Netzausfall von selbst neu |
 | Apple AirPlay | `shairport-sync`, mit Titel, Interpret und Cover |
 | Spotify Connect | `librespot` (Premium-Konto nötig, Anmeldung über die Spotify-App) |
 | UPnP/DLNA | `gmediarender` als Renderer (z. B. BubbleUPnP, Hi-Fi Cast, Windows „Wiedergeben auf“) |
@@ -19,21 +21,27 @@ jeweils auf x86_64, aarch64 und armv7.
 | Audio-CD (USB-Laufwerk) | Erkennung per ioctl, Titelliste über MusicBrainz, Wiedergabe per MPD, optional Autoplay |
 | CD rippen | `cdparanoia` (Fehlerkorrektur) + `flac`, mit Tags und Cover, in den internen Speicher oder auf USB |
 | Metadaten & Cover | MusicBrainz + Cover Art Archive, gedrosselt und dauerhaft gecacht |
-| Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), wahlweise bit-perfekt |
+| Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), automatische Wahl, wahlweise bit-perfekt |
 | Wiedergabelisten | speichern, laden, ab Eintrag abspielen, umbenennen, Einträge entfernen; auch Radiosender |
 | HDMI-CEC | TV beim Abspielen einschalten und Eingang wählen, TV-Fernbedienung, Pause bei TV aus, optional Standby |
 | „Läuft gerade“ | Vollbild unter `/tv` (Cover, Titel, Fortschritt, Bildschirmschoner) am HDMI-Ausgang oder in jedem Browser |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
+## Unterstützte Systeme
+
+Debian, Ubuntu und Raspberry Pi OS sowie RHEL, AlmaLinux, Rocky und Fedora, jeweils auf x86_64, aarch64 und
+armv7. Mit Desktop oder ohne (dann zeigt `--tv-headless` den „Läuft gerade“-Bildschirm am Fernseher).
+
 ### Getestet auf
 
 | System | Ergebnis |
 |---|---|
-| Raspberry Pi, Raspberry Pi OS (Debian 13 „trixie“), aarch64, mit Desktop | alle Quellen, CD-Wiedergabe und Rippen (USB-Laufwerk), Synology per SMB, CEC, HDMI-Ton |
-| PC, AlmaLinux 10.2, x86_64, ohne Desktop (SELinux aktiv) | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio, AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (USB-Stick RTL8761BU, iPhone, Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Stick, Synology per SMB, CD-Wiedergabe (internes SATA-Laufwerk) und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless` inkl. Neustart |
+| Raspberry Pi 4, Raspberry Pi OS (Debian 13 „trixie“), aarch64, mit Desktop | alle Quellen, CD-Wiedergabe und Rippen (USB-Laufwerk), Synology per SMB (auch Serverausfall), Webradio bei Netzausfall, CEC, HDMI-Ton und Klinke, Bluetooth mit iPhone, Update und Neustart |
+| Raspberry Pi 4, Raspberry Pi OS Lite (Debian 13), aarch64, ohne Desktop | Installation von null mit `--tv-headless`, alle Dienste, „Läuft gerade“ am Fernseher, Spotify, Neustart |
+| PC, AlmaLinux 10.2, x86_64, ohne Desktop (SELinux aktiv) | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (USB-Stick RTL8761BU, iPhone, Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks mit FAT32 und NTFS (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe (internes SATA-Laufwerk) und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Update und Neustart |
 
-Noch nicht geprüft: CEC unter RHEL-Systemen, NFS-Freigaben, UPnP mit einer echten App unter RHEL,
-`--tv-headless` auf Raspberry Pi OS Lite, eine Installation auf einem frischen RHEL-System von null.
+Noch nicht geprüft: NFS-Freigaben, CEC unter RHEL-Systemen, UPnP mit einer echten App unter RHEL, eine
+Installation auf einem frischen RHEL-System von null.
 
 ## Installation
 
@@ -98,30 +106,6 @@ sudo ./install.sh --no-spotify --no-upnp --no-bluetooth
 sudo ./install.sh --tv-headless --no-bluetooth
 ```
 
-### Was der Installer macht
-
-* **Debian/Raspberry Pi OS:** Pakete aus den offiziellen Quellen: `mpd`, `shairport-sync`, `gmediarender`,
-  `bluez-alsa-utils`, `avahi-daemon`, `cdparanoia`, `flac`, `cifs-utils`, `nfs-common`, `alsa-utils`,
-  `v4l-utils` (CEC). `librespot` kommt aus dem Raspotify-Archiv (amd64/arm64/armhf), sonst per Cargo.
-* **RHEL/Alma/Rocky/Fedora:** Aktiviert EPEL, CRB und RPM Fusion Free. Was dort nicht als Paket existiert, wird
-  aus dem Quellcode gebaut und nach `/usr/local` installiert: unter EL10 `mpd` (neueste 0.24.x),
-  `shairport-sync`, `gmediarender`, `bluez-alsa`; `librespot` immer per Cargo.
-* Legt den Systembenutzer `klangstation` an (Gruppen `audio`, `cdrom`, `video`, `render`, `input`), installiert
-  die Anwendung mit Python-venv nach `/opt/klangstation` und richtet den Dienst `klangstation` ein.
-* Richtet die udev-Regel für USB/SD-Medien, den Hilfsdienst `ks-netmount` (Freigaben, Speichern gerippter CDs)
-  und die Firewall (firewalld bzw. ufw) ein.
-* Schaltet die distributionseigenen Dienste `mpd`, `shairport-sync`, `raspotify`, `gmediarender` und
-  `bluealsa-aplay` ab. Klangstation startet eigene Instanzen, damit es das Audiogerät zwischen den Quellen
-  umschalten kann.
-* Mit Bluetooth: `bluealsa` nur als Empfänger, Gerätetyp „Lautsprecher“ (auch auf PCs, deren Gehäusetyp BlueZ
-  sonst „Desktop-Computer“ melden lässt); auf Desktops überlässt WirePlumber Bluetooth-Audio an `bluez-alsa`
-  (rückgängig: `/etc/wireplumber/*/90-klangstation*` löschen). Mit SELinux lädt er das Modul
-  `klangstation-bluealsa`: Ohne es darf bluealsa als Dienst den Tonkanal nicht über D-Bus weiterreichen und
-  stürzt beim ersten Abspielen ab (rückgängig: `semodule -r klangstation-bluealsa`).
-* „Läuft gerade“: mit Desktop ein Autostart-Eintrag (`/etc/xdg/autostart/klangstation-tv.desktop`), mit
-  `--tv-headless` der Dienst `klangstation-tv`. Für dessen Sitzung werden PipeWire und WirePlumber gesperrt:
-  Chromium würde sie sonst starten, und WirePlumber setzt die ALSA-Regler zurück (HDMI/DP nach dem Booten stumm).
-
 ### Aktualisieren
 
 Neue Version holen und den Installer mit denselben Optionen erneut aufrufen:
@@ -150,7 +134,40 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 | 4070/tcp | Spotify Connect |
 | 1900/udp, 49494–49504/tcp | UPnP/DLNA |
 
+### Was der Installer macht
+
+* **Debian/Raspberry Pi OS:** Pakete aus den offiziellen Quellen: `mpd`, `shairport-sync`, `gmediarender`,
+  `bluez-alsa-utils`, `avahi-daemon`, `cdparanoia`, `flac`, `cifs-utils`, `nfs-common`, `alsa-utils`,
+  `ntfs-3g`, `v4l-utils` (CEC). `librespot` kommt aus dem Raspotify-Archiv (amd64/arm64/armhf), sonst per Cargo.
+* **RHEL/Alma/Rocky/Fedora:** Aktiviert EPEL, CRB und RPM Fusion Free. Was dort nicht als Paket existiert, wird
+  aus dem Quellcode gebaut und nach `/usr/local` installiert: unter EL10 `mpd` (neueste 0.24.x),
+  `shairport-sync`, `gmediarender`, `bluez-alsa`; `librespot` immer per Cargo. `ntfs-3g` kommt aus EPEL
+  (die EL-Kernel lesen NTFS nicht selbst).
+* Legt den Systembenutzer `klangstation` an (Gruppen `audio`, `cdrom`, `video`, `render`, `input`), installiert
+  die Anwendung mit Python-venv nach `/opt/klangstation` und richtet den Dienst `klangstation` ein.
+* Richtet die udev-Regel für USB/SD-Medien, den Hilfsdienst `ks-netmount` (Freigaben, Speichern gerippter CDs)
+  und die Firewall (firewalld bzw. ufw) ein.
+* Schaltet die distributionseigenen Dienste `mpd`, `shairport-sync`, `raspotify`, `gmediarender` und
+  `bluealsa-aplay` ab. Klangstation startet eigene Instanzen, damit es das Audiogerät zwischen den Quellen
+  umschalten kann.
+* Mit Bluetooth: `bluealsa` nur als Empfänger, Gerätetyp „Lautsprecher“ (auch auf PCs, deren Gehäusetyp BlueZ
+  sonst „Desktop-Computer“ melden lässt); auf Desktops überlässt WirePlumber Bluetooth-Audio an `bluez-alsa`
+  (rückgängig: `/etc/wireplumber/*/90-klangstation*` löschen). Mit SELinux lädt er das Modul
+  `klangstation-bluealsa`: Ohne es darf bluealsa als Dienst den Tonkanal nicht über D-Bus weiterreichen und
+  stürzt beim ersten Abspielen ab (rückgängig: `semodule -r klangstation-bluealsa`).
+* „Läuft gerade“: mit Desktop ein Autostart-Eintrag (`/etc/xdg/autostart/klangstation-tv.desktop`), mit
+  `--tv-headless` der Dienst `klangstation-tv`. Für dessen Sitzung werden PipeWire und WirePlumber gesperrt:
+  Chromium würde sie sonst starten, und WirePlumber setzt die ALSA-Regler zurück (HDMI/DP nach dem Booten stumm).
+
 ## Bedienung
+
+### Ausgabe
+
+*Optionen › Ausgabe* listet alle Tonausgänge. Hinter HDMI-/DP-Ausgängen steht, ob ein Monitor oder Fernseher
+angeschlossen ist. Solange dort nichts von Hand gewählt ist, nimmt Klangstation in dieser Reihenfolge:
+USB-DAC oder I²S-HAT, dann HDMI/DP mit erkanntem Gerät, dann die Klinke. Ein HDMI-Ausgang ohne
+angeschlossenes Gerät wird nie automatisch gewählt. Beim Wechsel spielt laufende Musik nach wenigen Sekunden
+am neuen Ausgang weiter.
 
 ### „Läuft gerade“-Bildschirm
 
@@ -180,7 +197,8 @@ Ordner schon, wird „(2)“ angehängt. Unbekannte CDs landen unter `Unbekannte
 
 * **Interner Speicher:** `/media/klangstation/Lokal`.
 * **USB-Stick/-Platte:** wird nur für das Kopieren beschreibbar gemacht und danach wieder lesend eingehängt
-  (FAT, exFAT, ext2/3/4, NTFS, Btrfs, XFS, F2FS).
+  (FAT, exFAT, ext2/3/4, NTFS, Btrfs, XFS, F2FS). Klappt das Speichern dort nicht (Stick voll, abgezogen),
+  landet das Album im internen Speicher, und die Oberfläche sagt das.
 * Fortschritt und Restzeit stehen im CD-Bereich. Auf Wunsch wirft Klangstation die CD am Ende aus.
 * Während des Rippens lassen sich CD-Wiedergabe und Auswerfen nicht nutzen. „Abbrechen“ verwirft alle
   angefangenen Dateien. Zwischengespeichert wird in `/var/lib/klangstation/rip` (pro CD etwa 300–450 MB).
@@ -198,7 +216,40 @@ Die Verbindung ist unverschlüsseltes HTTP, also nur für das Heimnetz gedacht. 
 sudo /opt/klangstation/system/ks-reset-password
 ```
 
-## Architektur
+## Fehlersuche
+
+```bash
+journalctl -u klangstation -f       # Hauptdienst
+journalctl -u klangstation-tv -b    # "Läuft gerade" ohne Desktop
+systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
+```
+
+* **Kein Ton:** Unter *Optionen › Ausgabe* den richtigen Ausgang wählen. Hinter HDMI-/DP-Ausgängen steht,
+  ob ein Monitor angeschlossen ist. Ob ALSA selbst Ton ausgibt: `speaker-test -D plughw:CARD=<Karte>,DEV=<n> -c 2 -l 1`.
+* **Kein Ton über HDMI am Pi:** Monitor muss beim Booten angeschlossen sein. Klangstation verwendet für `vc4hdmi`
+  automatisch `default:CARD=…`.
+* **Klinke am Pi fehlt:** In `/boot/firmware/config.txt` muss `dtparam=audio=on` stehen.
+* **I²S-HAT (HiFiBerry & Co.):** Das passende `dtoverlay=` eintragen. Danach erscheint der HAT unter *Optionen › Ausgabe*.
+* **Freigabe lässt sich nicht einhängen:** Die Meldung in *Optionen › Freigaben* nennt den Grund (Server nicht
+  erreichbar, Zugangsdaten falsch, Freigabe unbekannt). Auf der Synology muss SMB2/3 aktiv sein.
+* **Radio bricht ab oder Freigabe ist weg:** Klangstation verbindet von selbst neu bzw. spielt weiter, sobald der
+  Server wieder da ist; bis dahin steht der Grund im Player.
+* **NTFS-Stick erscheint nicht:** Unter RHEL-Systemen muss `ntfs-3g` aus EPEL installiert sein (macht der Installer).
+* **CD wird nicht erkannt:** `ls -l /dev/sr0` zeigt, ob das Laufwerk da ist. Der Benutzer `klangstation` muss in der
+  Gruppe `cdrom` sein.
+* **CD lässt sich nicht auswerfen:** Hält ein anderes Programm das Laufwerk (z. B. der Desktop), meldet
+  Klangstation das. Manche USB-Laufwerke brauchen einen eigenen Netzteil- bzw. Y-Kabel-Anschluss.
+* **„Läuft gerade“ ohne Desktop bleibt schwarz:** `journalctl -u klangstation-tv -b` prüfen; Monitor vor dem Start
+  anschließen; unter *Optionen › Fernseher* muss der Bildschirm eingeschaltet sein.
+* **CEC reagiert nicht:** Am Fernseher die CEC-Funktion einschalten (Samsung „Anynet+“, LG „SimpLink“, Sony
+  „Bravia Sync“, Philips „EasyLink“). PC-Monitore unterstützen CEC meist gar nicht.
+  Test: `cec-ctl -d /dev/cec0 --to 0 --give-device-power-status`.
+* **Radio-Suche schlägt fehl:** Die Radio-Browser-Server setzen zeitweise Verbindungen zurück; Klangstation versucht
+  es automatisch mehrfach über alle Server.
+* **AirPlay 2:** Installiert wird klassisches AirPlay (geht mit allen iPhones/Macs). Für AirPlay 2 (Multiroom in der
+  Home-App) shairport-sync mit `--with-airplay-2` und `nqptp` bauen.
+
+## Technik
 
 ```
 Browser ──HTTP/WebSocket──► Klangstation (Python, Starlette, Benutzer "klangstation")
@@ -211,17 +262,22 @@ Browser ──HTTP/WebSocket──► Klangstation (Python, Starlette, Benutzer 
                               ├─ Socket (root)       ─► ks-netmount     (Freigaben einhängen, auf USB speichern)
                               ├─ D-Bus: BlueZ + bluealsa (Kopplung, AVRCP, Zustand)
                               ├─ /dev/sr0 ioctl        (CD-Erkennung, Disc-ID, Auswerfen)
-                              ├─ /proc/asound + amixer (Ausgabegeräte, HDMI-Erkennung, stumme Regler)
+                              ├─ /proc/asound, amixer, DRM (Ausgabegeräte, HDMI-Erkennung, stumme Regler)
                               └─ MusicBrainz / Cover Art Archive / Radio Browser
 ```
 
 * ALSA-`hw`-Geräte sind exklusiv. Startet eine Quelle (z. B. AirPlay vom iPhone), gibt Klangstation das Gerät frei:
   MPD wird gestoppt bzw. die andere Sitzung beendet. AirPlay wartet über `wait_for_completion`, bis das erledigt ist.
 * Beim Wechsel des Ausgabegeräts werden die Konfigurationen neu geschrieben und die Dienste neu gestartet. Lief
-  gerade Musik, spielt sie danach weiter.
+  gerade Musik, spielt sie danach weiter (ein Radiosender wird dafür neu verbunden).
+* Zwei Wächter halten die Wiedergabe bei Netzproblemen am Laufen: Steht ein Radiosender 20 s still, verbindet
+  Klangstation neu (bis zu 30 Minuten lang). Steht ein Titel von einer Netzwerkfreigabe 15 s still und antwortet
+  der Server nicht, wird pausiert und nach seiner Rückkehr an derselben Stelle weitergespielt. Ohne das bliebe
+  MPD stumm bzw. spränge nach einigen Minuten durch die ganze Warteschlange.
 * Auf frisch installierten Systemen ohne Desktop stehen ALSA-Regler oft stumm oder auf 0 %. Klangstation schaltet
   sie beim Wählen eines Ausgangs ein (auf 80 %); bewusst eingestellte Lautstärken bleiben unverändert.
-* Bei PC-Grafik (Intel/AMD/NVIDIA) zeigt die Ausgabeliste, an welchem HDMI-/DP-Ausgang ein Monitor hängt.
+* Ob an einem HDMI-/DP-Ausgang ein Monitor hängt, liest Klangstation bei PC-Grafik (Intel/AMD/NVIDIA) aus den
+  ALSA-Jacks, am Raspberry Pi aus DRM (`/sys/class/drm`).
 * Ohne „Bit-perfekt“ läuft alles über `plughw` (automatische Format- und Ratenwandlung, Software-Lautstärke).
   Mit „Bit-perfekt“ geht MPD direkt auf `hw`.
 * Python-Abhängigkeiten sind ausschließlich reine Python-Pakete. Auf ARM muss also nichts kompiliert werden.
@@ -261,36 +317,6 @@ Shoutcast-Sender) oder laut.fm (nur eigene Sender).
 Ist **nicht** enthalten. Einen Cast-*Empfänger* gibt es für Linux nicht als freie Software: Google lässt
 nur zertifizierte Geräte mit signierten Gerätezertifikaten zu. Als Ersatz bringt Klangstation einen
 UPnP/DLNA-Renderer und einen Bluetooth-Empfänger mit, damit erreicht man praktisch jede App auf Android und Windows.
-
-## Fehlersuche
-
-```bash
-journalctl -u klangstation -f       # Hauptdienst
-journalctl -u klangstation-tv -b    # "Läuft gerade" ohne Desktop
-systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
-```
-
-* **Kein Ton:** Unter *Optionen › Ausgabe* den richtigen Ausgang wählen. Bei PCs steht hinter HDMI-/DP-Ausgängen,
-  ob ein Monitor angeschlossen ist. Ob ALSA selbst Ton ausgibt: `speaker-test -D plughw:CARD=<Karte>,DEV=<n> -c 2 -l 1`.
-* **Kein Ton über HDMI am Pi:** Monitor muss beim Booten angeschlossen sein. Klangstation verwendet für `vc4hdmi`
-  automatisch `default:CARD=…`.
-* **Klinke am Pi fehlt:** In `/boot/firmware/config.txt` muss `dtparam=audio=on` stehen.
-* **I²S-HAT (HiFiBerry & Co.):** Das passende `dtoverlay=` eintragen. Danach erscheint der HAT unter *Optionen › Ausgabe*.
-* **Freigabe lässt sich nicht einhängen:** Die Meldung in *Optionen › Freigaben* nennt den Grund (Server nicht
-  erreichbar, Zugangsdaten falsch, Freigabe unbekannt). Auf der Synology muss SMB2/3 aktiv sein.
-* **CD wird nicht erkannt:** `ls -l /dev/sr0` zeigt, ob das Laufwerk da ist. Der Benutzer `klangstation` muss in der
-  Gruppe `cdrom` sein.
-* **CD lässt sich nicht auswerfen:** Hält ein anderes Programm das Laufwerk (z. B. der Desktop), meldet
-  Klangstation das. Manche USB-Laufwerke brauchen einen eigenen Netzteil- bzw. Y-Kabel-Anschluss.
-* **„Läuft gerade“ ohne Desktop bleibt schwarz:** `journalctl -u klangstation-tv -b` prüfen; Monitor vor dem Start
-  anschließen; unter *Optionen › Fernseher* muss der Bildschirm eingeschaltet sein.
-* **CEC reagiert nicht:** Am Fernseher die CEC-Funktion einschalten (Samsung „Anynet+“, LG „SimpLink“, Sony
-  „Bravia Sync“, Philips „EasyLink“). PC-Monitore unterstützen CEC meist gar nicht.
-  Test: `cec-ctl -d /dev/cec0 --to 0 --give-device-power-status`.
-* **Radio-Suche schlägt fehl:** Die Radio-Browser-Server setzen zeitweise Verbindungen zurück; Klangstation versucht
-  es automatisch mehrfach über alle Server.
-* **AirPlay 2:** Installiert wird klassisches AirPlay (geht mit allen iPhones/Macs). Für AirPlay 2 (Multiroom in der
-  Home-App) shairport-sync mit `--with-airplay-2` und `nqptp` bauen.
 
 ## API (Auszug)
 

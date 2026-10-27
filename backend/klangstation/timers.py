@@ -96,11 +96,11 @@ class Timers:
 
     # ------------------------------------------------------------ Zustand
     def public(self) -> Dict[str, Any]:
-        out: Dict[str, Any] = {"sleep": None, "next_alarm": None, "ringing": self.ringing, "ts": time.time()}
+        now = time.time()
+        out: Dict[str, Any] = {"sleep": None, "next_alarm": None, "ringing": self.ringing, "ts": now}
         if self.sleep:
             out["sleep"] = {"mode": self.sleep["mode"], "until": self.sleep.get("until"),
                             "minutes": self.sleep.get("minutes", 0)}
-        now = time.time()
         best = None
         for alarm in self.alarms():
             ts = next_ring(alarm, now)
@@ -168,7 +168,10 @@ class Timers:
                 await self.core.mpd.run("single", "oneshot")  # MPD haelt nach dem Titel selbst an
             log.info("Schlummer-Timer: nach diesem Titel")
         else:
-            minutes = int(minutes)
+            try:
+                minutes = int(minutes)
+            except (TypeError, ValueError):
+                minutes = 0
             if not 1 <= minutes <= 240:
                 raise ValueError("Ungültige Zeit")
             self.sleep = {"mode": "time", "minutes": minutes, "until": time.time() + minutes * 60}

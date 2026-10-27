@@ -240,7 +240,14 @@ install_rhel() {
                 dnf config-manager --set-enabled crb 2>/dev/null || dnf config-manager --set-enabled powertools 2>/dev/null || true
             fi
         fi
-        dnf install -y "https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${el}.noarch.rpm" || true
+        # RPM Fusion baut fuer EL10 nur x86-64-v3 (AVX2). Auf aelteren CPUs (AlmaLinux x86_64_v2) stuerzen
+        # mpd und shairport-sync sonst beim Laden von libx265 ab -> dort ffmpeg-free aus EPEL
+        if [ "$el" -ge 10 ] && [ "$(uname -m)" = x86_64 ] && \
+           ! /lib64/ld-linux-x86-64.so.2 --help 2>/dev/null | grep -q 'x86-64-v3 (supported'; then
+            warn "CPU ohne x86-64-v3 - RPM Fusion wird nicht eingebunden (ffmpeg-free aus EPEL)"
+        else
+            dnf install -y "https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${el}.noarch.rpm" || true
+        fi
         # EL9 liefert Python 3.9 - das reicht, 3.11 wird aber bevorzugt
         if dnf install -y python3.11 >/dev/null 2>&1; then PY=python3.11; fi
     fi

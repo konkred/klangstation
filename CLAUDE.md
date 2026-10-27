@@ -47,6 +47,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | PC (Hostname `KlangStationAlma`), AlmaLinux 10.2, x86_64, ohne Desktop, SELinux enforcing | `ssh root@10.0.0.162` (SSH-Key, zu Hause) | Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
+| Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Monitor an HDMI 0; USB-CD-Laufwerk SE-218GN (`sr0`) |
 | NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben „Testkünstler“ (u. a. 10 min Rauschen) und „Ölfass & Söhne“ von Claude erzeugt |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
 
@@ -96,6 +97,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   nimmt er keine Verbindung an (am Pi bis über 25 s) → vor dem MPD-Neustart Radio stoppen, danach `play <Nr>`.
 * **Freigabe-Server weg:** MPD bleibt ~3 min stumm und springt dann durch die Warteschlange. `pause` kehrt im
   Hänger sofort zurück, `stop` blockiert → Freigabe-Wächter pausiert und setzt per `seekid` fort.
+* **RPM Fusion baut für EL10 nur x86-64-v3** (AVX2) → auf CPUs ohne AVX (AlmaLinux x86_64_v2) stürzen mpd und
+  shairport-sync beim Laden von `libx265` mit SIGILL ab (Code -4) → Installer bindet RPM Fusion dort nicht ein,
+  ffmpeg-free aus EPEL (MP3/AAC/WMA/APE/WV/DSF gehen).
 * **Headless-Mixer:** Regler stehen auf frischen Systemen stumm/0 % → `audio.prepare_mixer`.
 * **vc4hdmi (Pi)** hat keinen Jack-Regler → Anschlussstatus aus `/sys/class/drm/card*-HDMI-A-<n+1>/status`.
 
@@ -150,6 +154,7 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 
 ### Noch offen
 
+* **OptiPlex (Alma v2, GNOME):** Neustart, Bildschirm per Autostart, AirPlay ↔ Spotify, NFS, CD-Tests (USB-Laufwerk).
 * **Alma:** Neuinstallation von null, UPnP mit echter App, NFS (Laptop-Freigabe siehe Testgeräte), CEC (braucht Fernseher).
 * **Alma mit Audio-CD:** Rückfall beim Rippen (USB scheitert → interner Speicher), MusicBrainz-Neuversuch über
   16 Versuche, echtes Rippen auf einen Stick (Zustimmung des Nutzers).
@@ -236,6 +241,8 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 
 **27.10.2026**
 
+* Alma auf CPU ohne AVX (OptiPlex 3060, x86_64_v2): mpd und shairport-sync stürzten sofort ab (RPM-Fusion-ffmpeg
+  ist v3) → Installer prüft per `ld-linux --help` auf x86-64-v3, sonst ohne RPM Fusion. Erster Lauf 16 min 21 s.
 * Am Pi erkannte Klangstation nicht, ob an HDMI etwas hängt → DRM-Status. Automatische Ausgabe jetzt:
   USB-DAC/I²S-HAT, dann HDMI mit erkanntem Gerät (Wunsch des Nutzers), dann Klinke, dann HDMI unbekannt.
 * Übersetzen-Popup von Chromium im Kiosk abgeschaltet.

@@ -212,6 +212,19 @@ async def art_airplay(request):
     return Response(data, media_type=_sniff(data), headers=ART_CACHE)
 
 
+async def lyrics(request):
+    q = request.query_params
+    try:
+        duration = float(q.get("duration") or 0)
+    except ValueError:
+        duration = 0.0
+    result = await core.lyrics.find(artist=q.get("artist", ""), title=q.get("title", ""), album=q.get("album", ""),
+                                    duration=duration, uri=q.get("uri", ""))
+    if not result:
+        return Response(status_code=404)
+    return JSONResponse(result)
+
+
 # ---------------------------------------------------------------- Radio
 async def radio_search(request):
     q = request.query_params
@@ -490,6 +503,7 @@ routes = [
     Route("/api/art", art),
     Route("/api/art/cd", art_cd),
     Route("/api/art/airplay", art_airplay),
+    Route("/api/lyrics", lyrics),
     Route("/api/radio/search", radio_search),
     Route("/api/radio/countries", radio_countries),
     Route("/api/radio/tags", radio_tags),

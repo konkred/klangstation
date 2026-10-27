@@ -63,6 +63,7 @@ DEFAULTS: Dict[str, Any] = {
     "cec_standby_minutes": 0,    # Fernseher nach so vielen Minuten Stille ausschalten (0 = nie)
     "cec_pause_on_tv_off": True,
     "tv_enabled": True,          # "Laeuft gerade"-Bildschirm am HDMI-Ausgang
+    "tv_lyrics": True,           # Liedtexte auf dem "Laeuft gerade"-Bildschirm
     "rip_target": "local",       # Ziel beim CD-Rippen: "local" oder Ordnername eines USB-Datentraegers
     "rip_eject": True,           # CD nach dem Rippen auswerfen
 }
@@ -93,6 +94,7 @@ _VALIDATORS = {
     "cec_standby_minutes": lambda v: v in (0, 5, 10, 30, 60),
     "cec_pause_on_tv_off": lambda v: isinstance(v, bool),
     "tv_enabled": lambda v: isinstance(v, bool),
+    "tv_lyrics": lambda v: isinstance(v, bool),
     "rip_target": lambda v: isinstance(v, str) and 0 < len(v) <= 64,
     "rip_eject": lambda v: isinstance(v, bool),
 }

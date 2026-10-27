@@ -25,6 +25,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Wiedergabelisten | speichern, laden, ab Eintrag abspielen, umbenennen, Einträge entfernen; auch Radiosender |
 | HDMI-CEC | TV beim Abspielen einschalten und Eingang wählen, TV-Fernbedienung, Pause bei TV aus, optional Standby |
 | „Läuft gerade“ | Vollbild unter `/tv` (Cover, Titel, Fortschritt, Bildschirmschoner) am HDMI-Ausgang oder in jedem Browser |
+| Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend: aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key), gecacht; nicht bei Webradio |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
 ## Unterstützte Systeme
@@ -330,6 +331,7 @@ UPnP/DLNA-Renderer und einen Bluetooth-Empfänger mit, damit erreicht man prakti
 | GET | `/api/playlists` | gespeicherte Wiedergabelisten |
 | GET | `/api/library/albums` · `/api/library/browse?path=` · `/api/library/search?q=` | Bibliothek |
 | GET | `/api/art?uri=` · `/api/art?album=&artist=` | Cover |
+| GET | `/api/lyrics?artist=&title=&album=&duration=&uri=` | Liedtext (`synced` mit Zeitstempeln, `plain` oder `instrumental`), sonst 404 |
 | GET | `/api/radio/search?q=&country=&tag=` · `/api/radio/tags` · `/api/radio/countries` | Radio |
 | POST | `/api/radio/play` · `/api/radio/favorites` | Radio abspielen, Favoriten |
 | GET/POST | `/api/cd` · `/api/cd/play` `{track}` · `/api/cd/eject` | CD |

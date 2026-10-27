@@ -22,6 +22,7 @@ from .config import (BIN_BLUEALSA_APLAY, BIN_GMEDIARENDER, BIN_LIBRESPOT, BIN_MP
                      COVER_DIR, DATA_DIR, HOOK_PATH, MEDIA_ROOT, MPD_HOST, MPD_PORT, PORT, RUN_DIR, SPOTIFY_SINK,
                      SPOTIFY_ZEROCONF_PORT, Settings)
 from .daemons import Daemon
+from .lyrics import Lyrics
 from .mpd import MPD, MPDError, build, to_objects
 from .musicbrainz import MusicBrainz, Unavailable
 from .radio import RadioBrowser
@@ -57,6 +58,7 @@ class Core:
         self.tv_launch = 1   # erhoeht sich, wenn der Fernseh-Bildschirm (neu) angezeigt werden soll
         self.cache = Cache(DATA_DIR / "cache.sqlite")
         self.mb = MusicBrainz(self.settings, self.cache, COVER_DIR)
+        self.lyrics = Lyrics(self.settings, self.cache, MEDIA_ROOT)
         self.radio = RadioBrowser()
         self.mpd = MPD(MPD_HOST, MPD_PORT)
         self.shares = shares_mod.Shares(self.mpd)
@@ -135,6 +137,7 @@ class Core:
         for d in self.daemons.values():
             await d.stop()
         await self.mb.close()
+        await self.lyrics.close()
         await self.radio.close()
         await self.upnp.close()
 
@@ -451,6 +454,7 @@ class Core:
             "mpd_online": False,
             "services": {n: {"available": d.available, "running": d.running} for n, d in self.daemons.items()},
             "bluetooth": self.bt.public(),
+            "tv_lyrics": self.settings.get("tv_lyrics"),
             "ts": time.time(),
         }
         status: Dict[str, str] = {}

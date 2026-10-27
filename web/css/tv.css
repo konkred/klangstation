@@ -74,6 +74,29 @@ h1 {
 .format { font-size: 1.9vh; color: #6c86ad; margin-top: 2vh; }
 .paused h1, .paused .artist, .paused .cover { opacity: .55; }
 
+/* Liedtexte: Cover kleiner, Titel kompakter, darunter mitlaufende Zeilen */
+.with-lyrics .cover { width: 46vh; height: 46vh; }
+.with-lyrics h1 { font-size: 5vh; -webkit-line-clamp: 1; }
+.with-lyrics .artist { font-size: 3.2vh; margin-top: 1vh; }
+.with-lyrics .album { font-size: 2.4vh; }
+.with-lyrics .progress { margin-top: 3vh; }
+.lyrics {
+  position: relative; height: 38vh; margin-top: 3vh; overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 75%, transparent);
+  mask-image: linear-gradient(transparent, #000 18%, #000 75%, transparent);
+}
+/* Polster oben: auch die erste Zeile steht auf Hoehe der aktuellen Zeile (35 % der Box) */
+.lyrics-inner { position: absolute; left: 0; right: 0; top: 0; padding: 13vh 0 20vh; transition: transform .6s ease; will-change: transform; }
+.lyrics-inner.plain-mode { padding-top: 0; }
+.lyrics .line {
+  font-size: 3.4vh; line-height: 1.35; padding: .5vh 0; color: rgba(159,182,218,.55);
+  transition: color .4s, transform .4s; transform-origin: left center;
+}
+.lyrics .line.now { color: var(--ink); transform: scale(1.08); text-shadow: 0 0 2vh rgba(47,180,255,.55); }
+.lyrics .line.gap { min-height: 2vh; }
+.lyrics .plain { font-size: 3vh; line-height: 1.5; color: rgba(238,245,255,.85); white-space: pre-line; }
+.lyrics .source { font-size: 1.6vh; color: #4f6890; padding-top: 3vh; }
+
 /* ---------------------------------------------------------- Ruhezustand */
 .idle { position: relative; z-index: 1; height: 100%; }
 .idle-box { position: absolute; text-align: center; transition: left 3s ease, top 3s ease; }
@@ -86,4 +109,6 @@ h1 {
   .cover { width: 70vw; height: 70vw; -webkit-box-reflect: unset; }
   h1 { font-size: 4.5vh; }
   .progress { margin-left: auto; margin-right: auto; width: 80vw; }
+  .lyrics .line { transform-origin: center; }
+  .with-lyrics .cover { width: 40vw; height: 40vw; }
 }

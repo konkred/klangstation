@@ -262,6 +262,8 @@ class Core:
                 if self.source == "airplay":
                     self.source = "idle"
         elif src == "spotify":
+            if event.startswith("session_"):
+                log.info("Spotify: %s %s", event, {k: v for k, v in env.items() if k.startswith("CLIENT_")})
             sp = self.spotify
             if event in SPOTIFY_EVENTS_START:
                 sp["active"] = True

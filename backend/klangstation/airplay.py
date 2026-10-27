@@ -8,6 +8,7 @@ import collections
 import logging
 import os
 import re
+import socket
 import stat
 import time
 from pathlib import Path
@@ -21,7 +22,8 @@ _ITEM = re.compile(
 
 _FIELDS = {("core", "minm"): "title", ("core", "asar"): "artist", ("core", "asal"): "album"}
 # Fuer die Diagnose mitprotokollierte shairport-Codes (Titelwechsel, Bilder, Sitzungsende)
-_TRACE_CODES = {"mdst", "mden", "pcst", "pcen", "PICT", "pbeg", "pend", "pfls", "prsm", "prgr", "phb0"}
+_TRACE_CODES = {"mdst", "mden", "pcst", "pcen", "PICT", "pbeg", "pend", "pfls", "prsm", "prgr", "phb0",
+                "snam", "snua", "clip", "conn", "disc"}
 _SUFFIX = re.compile(r"\s+[•·]\s+[^•·]*video[^•·]*$", re.I)
 
 
@@ -36,6 +38,28 @@ def _image_complete(data: bytes) -> bool:
 
 def _code(hexstr: bytes) -> str:
     return bytes.fromhex(hexstr.decode()).decode("latin-1")
+
+
+async def _host_name(ip: str) -> str:
+    """Rechnername zur Adresse: erst mDNS (iPhones melden sich oft nur ueber link-lokales IPv6), dann DNS."""
+    try:
+        proc = await asyncio.create_subprocess_exec("avahi-resolve", "-a", ip, stdout=asyncio.subprocess.PIPE,
+                                                    stderr=asyncio.subprocess.DEVNULL)
+        out, _ = await asyncio.wait_for(proc.communicate(), 5)
+        parts = out.decode("utf-8", "replace").split()
+        if len(parts) >= 2:
+            return parts[1]
+    except (OSError, asyncio.TimeoutError):
+        pass
+    try:
+        return (await asyncio.wait_for(asyncio.to_thread(socket.gethostbyaddr, ip), 5))[0]
+    except (OSError, asyncio.TimeoutError):
+        return ""
+
+
+def _friendly(host: str) -> str:
+    """"iPhone-JJT60D06J3.local" -> "iPhone-JJT60D06J3": der Rechnername, wie das Geraet ihn meldet."""
+    return host.split(".")[0].strip()
 
 
 class MetadataReader:
@@ -53,6 +77,7 @@ class MetadataReader:
         # Zwischen mdst und mden kommen Titel, Interpret und Album einzeln - erst danach anzeigen,
         # sonst steht kurz das neue Album neben dem alten Titel
         self._in_block = False
+        self._tasks: "set[asyncio.Task]" = set()
 
     def ensure_pipe(self) -> None:
         self.pipe.parent.mkdir(parents=True, exist_ok=True)
@@ -61,10 +86,20 @@ class MetadataReader:
         if not self.pipe.exists():
             os.mkfifo(str(self.pipe), 0o660)
 
-    def reset(self) -> None:
-        self.meta = {}
+    def reset(self, keep_client: bool = False) -> None:
+        # Name und Adresse des Handys kommen nur beim Verbinden - bei "pend" (Pause, Titelwechsel) behalten
+        kept = {k: self.meta[k] for k in ("client", "client_ip") if keep_client and k in self.meta}
+        self.meta = kept
         self.cover = b""
         self.meta_rtp = self.pic_rtp = self.cover_rtp = None
+
+    async def _lookup_name(self, ip: str) -> None:
+        host = await _host_name(ip)
+        log.info("AirPlay von %s (%s)", ip, host or "kein Name")
+        name = _friendly(host) if host else ""
+        if name and self.meta.get("client_ip") == ip and not self.meta.get("client"):
+            self.meta["client"] = name
+            await self.on_update(self.meta)
 
     @property
     def cover_current(self) -> bool:
@@ -176,11 +211,21 @@ class MetadataReader:
                 self.meta["at"] = time.time()
                 self.meta["paused"] = False
                 changed = True
-            elif (kind, code) == ("ssnc", "snam"):
+            elif (kind, code) == ("ssnc", "snam") and data:
                 self.meta["client"] = data.decode("utf-8", "replace")
+                log.info("AirPlay von %s", self.meta["client"])
                 changed = True
+            elif (kind, code) == ("ssnc", "clip") and data:
+                ip = data.decode("utf-8", "replace").strip()
+                if ip != self.meta.get("client_ip"):
+                    self.meta["client_ip"] = ip
+                    if not self.meta.get("client"):
+                        # AirPlay 2 schickt oft keinen Namen: den Rechnernamen beim Router erfragen
+                        task = asyncio.get_running_loop().create_task(self._lookup_name(ip))
+                        self._tasks.add(task)  # asyncio haelt Aufgaben nur schwach
+                        task.add_done_callback(self._tasks.discard)
             elif (kind, code) == ("ssnc", "pend"):
-                self.reset()
+                self.reset(keep_client=True)
                 self._in_block = False
                 changed = True
         if changed and not self._in_block:

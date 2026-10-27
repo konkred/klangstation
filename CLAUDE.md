@@ -132,6 +132,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   nie bei AVRCP „paused“, sofort bei „playing“, sonst erst nach 3 s laufender PCM (iPhone meldet nach frischem
   Verbinden „stopped“).
 * **shairport-sync 5.6** verlangt `session_timeout` ≥ 60; schickt `prgr` (Position) normal.
+* **Gerätename bei AirPlay 2:** das iPhone schickt kein `snam`, nur `clip` (oft link-lokales IPv6, Router-DNS kennt
+  es nicht) → Name per `avahi-resolve -a` (mDNS). `pend` darf Name/Adresse nicht löschen (kommen nur beim
+  Verbinden). Spotify (librespot 0.8): `session_client_changed` kommt, `CLIENT_NAME` ist beim iPhone aber leer.
 * **librespot beendet sich ganz**, wenn sein ALSA-Gerät beim Abspielen belegt ist (z. B. noch von AirPlay); die
   App findet das Gerät erst nach 30–60 s wieder. Die Hook-Ereignisse kommen zu spät (am Pi ~0,4 s je Aufruf,
   „loading“ erst nach ~4 s) → Backend `subprocess` mit `system/ks-spotify-sink`: wartet bis 10 s auf das Gerät,

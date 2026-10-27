@@ -220,11 +220,14 @@ function clock() {
   $("#idle-time").textContent = time;
   $("#idle-date").textContent = d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
   sleepTick();
-  // Ragt die Uhr (z. B. nach dem Einblenden von Band, Wetter oder Wecker) ins Coverband, woanders hin damit.
-  // Ziel statt aktueller Position pruefen - waehrend des Gleitens laege sie sonst kurz "falsch"
+  // Ragt die Uhr (z. B. nach dem Einblenden von Band, Wetter oder Wecker) ueber den Rand oder ins Coverband,
+  // woanders hin damit. Ziel statt aktueller Position pruefen - waehrend des Gleitens laege sie sonst kurz "falsch"
   const box = $("#idle-box"), recent = $("#recent");
-  if (!$("#idle").hidden && !recent.hidden &&
-      parseFloat(box.style.top || 0) + box.offsetHeight > recent.getBoundingClientRect().top) moveIdle();
+  if (!$("#idle").hidden) {
+    const bottom = recent.hidden ? window.innerHeight : recent.getBoundingClientRect().top;
+    if (parseFloat(box.style.left || 0) + box.offsetWidth > window.innerWidth ||
+        parseFloat(box.style.top || 0) + box.offsetHeight > bottom) moveIdle();
+  }
 }
 
 // Bildschirmschoner: Uhr jede Minute an eine andere Stelle, damit nichts einbrennt

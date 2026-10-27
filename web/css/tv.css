@@ -106,7 +106,8 @@ h1 {
 
 /* ---------------------------------------------------------- Ruhezustand */
 .idle { position: relative; z-index: 1; height: 100%; }
-.idle-box { position: absolute; text-align: center; transition: left 3s ease, top 3s ease; }
+/* nowrap: sonst schrumpft der Kasten am rechten Rand, statt dass die Pruefung ihn als zu breit erkennt */
+.idle-box { position: absolute; text-align: center; white-space: nowrap; transition: left 3s ease, top 3s ease; }
 .idle-time { font-size: 18vh; font-weight: bold; font-variant-numeric: tabular-nums; color: rgba(238,245,255,.75); text-shadow: 0 0 4vh rgba(47,180,255,.35); }
 .idle-date { font-size: 3.5vh; color: var(--ink-dim); }
 .idle-hint { font-size: 2.4vh; color: #4f6890; margin-top: 2vh; }

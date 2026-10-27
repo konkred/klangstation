@@ -424,6 +424,21 @@ async def tv_show(request):
     return ok(core.tv_show())
 
 
+# ---------------------------------------------------------------- Schlummer-Timer und Wecker
+async def alarms_get(request):
+    return ok({"alarms": core.timers.alarms(), **core.timers.public()})
+
+
+async def alarms_action(request):
+    core.timers.alarm_action(request.path_params["action"], await body(request))
+    return ok({"alarms": core.timers.alarms(), **core.timers.public()})
+
+
+async def sleep_timer(request):
+    await core.timers.set_sleep((await body(request)).get("minutes"))
+    return ok(core.timers.public())
+
+
 async def services(request):
     return ok(core.services())
 
@@ -463,6 +478,16 @@ async def mpd_error(request, exc: MPDError):
 
 async def offline_error(request, exc: Exception):
     return JSONResponse({"ok": False, "error": str(exc) or "Dienst nicht erreichbar"}, status_code=503)
+
+
+class RevalidatedStatic(StaticFiles):
+    """Oberflaechen-Dateien jedes Mal nachfragen lassen (bei Gleichstand nur 304). Ohne Vorgabe nimmt der
+    Browser sie nach einem Update ungefragt aus dem Cache - auch der Kiosk nach dem Neuladen."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
 
 async def index(request):
@@ -530,8 +555,11 @@ routes = [
     Route("/tv", tv_page),
     Route("/api/tv", tv_status),
     Route("/api/tv/show", tv_show, methods=["POST"]),
+    Route("/api/alarms", alarms_get),
+    Route("/api/alarms/{action}", alarms_action, methods=["POST"]),
+    Route("/api/sleep", sleep_timer, methods=["POST"]),
     Route("/api/internal/hook", internal_hook, methods=["POST"]),
-    Mount("/", StaticFiles(directory=str(WEB_DIR)), name="web"),
+    Mount("/", RevalidatedStatic(directory=str(WEB_DIR)), name="web"),
 ]
 
 app = Starlette(

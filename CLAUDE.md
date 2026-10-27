@@ -24,7 +24,8 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
 
 * `backend/klangstation/` – App. `core.py` ist die Zentrale (Quellen, Ausgabe, CD, Rippen, Freigaben, Wächter),
   `main.py` die HTTP-/WebSocket-Routen, `audio.py` ALSA-Erkennung und Konfigurationen für mpd/shairport/
-  librespot/gmediarender/bluealsa-aplay, `lyrics.py` Liedtexte (`.lrc`, LRCLIB).
+  librespot/gmediarender/bluealsa-aplay, `lyrics.py` Liedtexte (`.lrc`, LRCLIB), `timers.py` Schlummer-Timer und
+  Wecker, `weather.py` Wetter für den Ruhebildschirm (Open-Meteo).
 * `web/` – Oberfläche (`index.html`, `js/app.js`, `css/style.css`), `/tv` = „Läuft gerade“-Bildschirm.
 * `system/` – systemd-Units, udev-Regel, Hilfsskripte, SELinux-Modul. `ks-netmount` ist ein root-Hilfsdienst
   (Socket nur für Gruppe klangstation): SMB/NFS lesend einhängen, gerippte CDs auf USB speichern.
@@ -77,6 +78,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   per `sudo setsid nohup …` losgelöst starten und das Protokoll danach lesen.
 * **Netzausfall:** `ip route add blackhole <IP>` (Radio: alle IPs des Stream-Hosts plus die verbundene aus `ss`;
   Synology: `<IP>/32`), im `finally` wieder entfernen.
+* **Mit Lautstärke, aber ohne Ton** (z. B. Ausblenden prüfen): MPD hat einen Software-Mixer, also die
+  HDMI-Schalter per `amixer -c 0 sset IEC958,<n> off` stumm schalten und danach wieder `on`.
+  `disableoutput` taugt nicht – dann spielt MPD gar nicht („All audio outputs are disabled“).
 * **USB abziehen:** `echo 0 > /sys/bus/usb/devices/<port>/authorized` (wieder 1 = anstecken).
 * Beobachtungsskripte mit `setsid nohup` starten und per PID beenden. `pgrep -f`/`pkill -f` treffen sonst die
   eigene SSH-Shell – stattdessen `ps -eo pid,comm,args | awk '$2=="python3"'`.
@@ -145,6 +149,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   Änderungszeit der Dateien in `web/`, beim Start berechnet): ändert sie sich, lädt `/tv` neu. Greift also erst nach
   einem Neustart von Klangstation. Einzeln eingespielte Web-Dateien ohne Neustart: Browser beenden und
   `POST /api/tv/show` (erhöht `launch`, `ks-tv-kiosk` startet ihn neu).
+* **Browser nahm `js`/`css` nach dem Neuladen ungefragt aus dem Cache** (keine Cache-Vorgabe → heuristische
+  Frische) → statische Dateien mit `Cache-Control: no-cache` (`RevalidatedStatic` in `main.py`, sonst 304).
+* **MPD `single oneshot`** bleibt nach dem Anhalten stehen → Schlummer-Timer „Titelende“ setzt es danach auf 0.
+* **Nicht erreichbarer Sender:** `addid`/`play` gelingen, MPD meldet den Fehler erst danach (`state: stop` + `error`)
+  → der Wecker prüft das in der Lautstärke-Rampe und weicht auf die Bibliothek aus.
 * **Liedtexte:** eingebettete Texte (Tag `LYRICS`) nicht über MPD `readcomments` lesen – mehrzeilige Werte
   passen nicht ins Zeilenprotokoll. Darum nur `.lrc` neben der Datei und LRCLIB.
 * **WebSocket-Ablehnung** erst nach `websocket.accept` schließen, sonst sieht der Browser 1006 statt 4401.
@@ -223,6 +232,12 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
   gekoppelt, übernimmt von Spotify, Pause/Weiter; keine AVCs, GNOME stört nicht.
 * UPnP mit echter App (mconnect, iPhone): Titel, Interpret, Cover, Länge, Pause/Weiter, Spulen.
 * Aufgeräumt: Test-Rips, NFS-Freigabe, Testskripte, `/etc/hosts`; Testalben auf dem Laptop gelöscht.
+* Schlummer-Timer und Wecker (stumm per `IEC958 off`, Lautstärke 60): Timer 1 min blendet ab 30 s vorher von 60 auf
+  9 aus, pausiert, stellt 60 wieder her; „Titelende“ hält nach dem Titel an, `single` danach wieder 0; Abbrechen
+  setzt `single` zurück. Wecker-Test wird über 2 min von 6 auf 40 lauter; echter einmaliger Wecker mit kaputtem
+  Sender → nach 2 s Bibliothek im Zufall, 15-min-Timer gesetzt, Wecker danach aus; bei laufender Musik bleibt er
+  still. Wetter (Open-Meteo) und unbekannter Ort, Verlauf, Ruhebildschirm mit Coverband, Ersatzbild, Uhr weicht
+  dem Band aus.
 
 **Alma, 26.10.2026**
 

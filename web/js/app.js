@@ -219,7 +219,10 @@ function render() {
   const line = n.title ? (playing ? "Wird wiedergegeben: " : n.state === "pause" ? "Angehalten: " : "Bereit: ") +
     n.title + (n.artist ? " – " + n.artist : "") : S.mpd_online ? "Bereit" : "Player startet…";
   $("#mini-text").textContent = line;
-  $("#status-right").textContent = [src, n.kind === "radio" ? "Live" : ""].filter(Boolean).join(" · ");
+  statusRight();
+  const tm = S.timers || {};
+  $("#b-timer").classList.toggle("on", !!tm.sleep);
+  if (!$("#timer-modal").hidden) renderTimers();
   document.title = n.title && playing ? n.title + " – Klangstation" : "Klangstation";
 
   // Warteschlange: aktuellen Titel markieren
@@ -1080,6 +1083,176 @@ $("#settings-form").addEventListener("submit", async (ev) => {
   } catch (e) {
     $("#save-msg").textContent = "";
   }
+});
+
+/* =========================================================== Schlummer-Timer & Wecker */
+const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+let alarmList = [], alarmEdit = null;
+
+function sleepLeft() {
+  const tm = (S && S.timers) || {};
+  if (!tm.sleep || !tm.sleep.until) return null;
+  // Restzeit gegen die Serveruhr gerechnet: die Uhr des Browsers darf abweichen
+  return Math.max(0, tm.sleep.until - tm.ts - (performance.now() - receivedAt) / 1000);
+}
+function timerText() {
+  const tm = (S && S.timers) || {};
+  if (tm.sleep) return tm.sleep.mode === "track" ? "Schlummern nach diesem Titel" : "Schlummern " + fmt(sleepLeft());
+  if (tm.next_alarm) return "Wecker " + tm.next_alarm.day + " " + tm.next_alarm.time;
+  return "";
+}
+function statusRight() {
+  const n = S.now || {};
+  $("#status-right").textContent = [KIND_LABEL[n.kind] || "", n.kind === "radio" ? "Live" : "", timerText()]
+    .filter(Boolean).join(" · ");
+}
+setInterval(() => {
+  if (!(S && S.timers && S.timers.sleep)) return;
+  statusRight();
+  if (!$("#timer-modal").hidden) $("#sleep-state").textContent = sleepText();
+}, 1000);
+function sleepText() {
+  const sl = S.timers.sleep;
+  return !sl ? "Aus." : sl.mode === "track" ? "Hält nach dem laufenden Titel an."
+    : `Noch ${fmt(sleepLeft())} – die letzten 30 Sekunden wird leiser geblendet.`;
+}
+
+function alarmDays(a) {
+  if (!a.days.length) return "einmalig";
+  if (a.days.length === 7) return "täglich";
+  if (a.days.join() === "0,1,2,3,4") return "Mo–Fr";
+  if (a.days.join() === "5,6") return "Sa, So";
+  return a.days.map((d) => DAY_NAMES[d]).join(", ");
+}
+function alarmLabel(t) {
+  return t.kind === "station" ? t.name || "Webradio" : t.kind === "playlist" ? "Liste „" + t.name + "“" : "Bibliothek (Zufall)";
+}
+
+function renderTimers() {
+  const tm = (S && S.timers) || {};
+  const sl = tm.sleep;
+  $$("#sleep-seg button").forEach((b) => {
+    const m = b.dataset.min;
+    b.classList.toggle("on", sl ? (sl.mode === "track" ? m === "track" : +m === sl.minutes) : m === "0");
+  });
+  $("#sleep-state").textContent = sleepText();
+  const next = tm.next_alarm;
+  $("#alarm-list").innerHTML = alarmList.map((a) => `
+    <div class="alarm${a.enabled ? "" : " off"}${next && next.id === a.id ? " next" : ""}" data-id="${esc(a.id)}">
+      <label class="switch" title="Ein/aus"><input type="checkbox" data-al="toggle"${a.enabled ? " checked" : ""}></label>
+      <b class="al-time">${esc(a.time)}</b>
+      <span class="al-info">${esc(alarmDays(a))} · ${esc(alarmLabel(a.target))}<small>Lautstärke ${a.volume} %${a.stop_after ? " · aus nach " + (a.stop_after >= 60 ? a.stop_after / 60 + " h" : a.stop_after + " min") : ""}</small></span>
+      <button type="button" class="mini" data-al="test" title="Jetzt auslösen">Test</button>
+      <button type="button" class="mini" data-al="edit">Ändern</button>
+      <button type="button" class="mini" data-al="remove" title="Löschen">${ICON("x")}</button>
+    </div>`).join("") || '<p class="hint">Noch kein Wecker.</p>';
+}
+
+async function fillAlarmTargets(selected) {
+  const sel = $("#al-target");
+  let lists = [];
+  try { lists = await api("/api/playlists", { quiet: true }); } catch (e) { /* MPD startet noch */ }
+  const st = favs();
+  sel.innerHTML =
+    (st.length ? `<optgroup label="Radio-Favoriten">${st.map((f, i) => `<option value="s${i}">${esc(f.name)}</option>`).join("")}</optgroup>` : "") +
+    (lists.length ? `<optgroup label="Wiedergabelisten">${lists.map((p) => `<option value="p:${esc(p.name)}">${esc(p.name)}</option>`).join("")}</optgroup>` : "") +
+    '<option value="lib">Bibliothek (Zufall)</option>';
+  if (selected) {
+    let v = "lib";
+    if (selected.kind === "station") {
+      let i = st.findIndex((f) => f.url === selected.url);
+      if (i < 0) {  // Sender ist kein Favorit mehr: trotzdem auswählbar lassen
+        sel.insertAdjacentHTML("afterbegin", `<option value="cur">${esc(selected.name || "Webradio")}</option>`);
+        v = "cur";
+      } else v = "s" + i;
+    } else if (selected.kind === "playlist") v = "p:" + selected.name;
+    sel.value = v;
+  }
+}
+function alarmTarget() {
+  const v = $("#al-target").value;
+  if (v === "cur") return alarmEdit.target;
+  if (v.startsWith("s")) {
+    const f = favs()[+v.slice(1)];
+    return { kind: "station", url: f.url, name: f.name, uuid: f.uuid, favicon: f.favicon };
+  }
+  if (v.startsWith("p:")) return { kind: "playlist", name: v.slice(2) };
+  return { kind: "library" };
+}
+
+function editAlarm(a) {
+  alarmEdit = a;
+  $("#al-time").value = a ? a.time : "07:00";
+  const days = a ? a.days : [0, 1, 2, 3, 4];
+  $$("#al-days button").forEach((b) => b.classList.toggle("on", days.includes(+b.dataset.d)));
+  $("#al-vol").value = a ? a.volume : 30;
+  $("#al-stop").value = String(a ? a.stop_after : 60);
+  $("#al-save").textContent = a ? "Änderung speichern" : "Wecker anlegen";
+  $("#al-cancel").hidden = !a;
+  showVol();
+  return fillAlarmTargets(a && a.target);
+}
+function showVol() { const r = $("#al-vol"); $("#al-vol-v").textContent = r.value + " %"; paintRange(r); }
+
+$("#al-days").innerHTML = DAY_NAMES.map((d, i) => `<button type="button" data-d="${i}">${d}</button>`).join("");
+$("#al-days").onclick = (ev) => { const b = ev.target.closest("button"); if (b) b.classList.toggle("on"); };
+$("#al-vol").oninput = showVol;
+$("#al-cancel").onclick = () => editAlarm(null);
+
+$("#b-timer").onclick = async () => {
+  $("#timer-modal").hidden = false;
+  if (!settings) await loadSettings(true);
+  try { alarmList = (await api("/api/alarms")).alarms; } catch (e) { /* Meldung kam schon */ }
+  await editAlarm(null);
+  renderTimers();
+};
+$("#timer-close").onclick = () => { $("#timer-modal").hidden = true; };
+$("#timer-modal").addEventListener("click", (ev) => { if (ev.target.id === "timer-modal") $("#timer-modal").hidden = true; });
+
+$("#sleep-seg").onclick = async (ev) => {
+  const b = ev.target.closest("button");
+  if (!b) return;
+  const m = b.dataset.min;
+  try {
+    S.timers = Object.assign({}, S.timers, await post("/api/sleep", { minutes: m === "track" ? "track" : +m }));
+    receivedAt = performance.now();
+    render();
+  } catch (e) { /* Meldung kam schon */ }
+};
+
+$("#alarm-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const data = {
+    time: $("#al-time").value, target: alarmTarget(), volume: +$("#al-vol").value, stop_after: +$("#al-stop").value,
+    days: $$("#al-days button.on").map((b) => +b.dataset.d), enabled: true,
+  };
+  if (alarmEdit) data.id = alarmEdit.id;
+  try {
+    const res = await post("/api/alarms/save", data);
+    alarmList = res.alarms;
+    S.timers = Object.assign({}, S.timers, { next_alarm: res.next_alarm });
+    toast(res.next_alarm ? `Nächster Wecker: ${res.next_alarm.day} ${res.next_alarm.time}` : "Wecker gespeichert");
+    await editAlarm(null);
+    render();
+  } catch (e) { /* Meldung kam schon */ }
+});
+
+$("#alarm-list").addEventListener("click", async (ev) => {
+  const el = ev.target.closest("[data-al]");
+  if (!el) return;
+  const id = el.closest("[data-id]").dataset.id;
+  const a = alarmList.find((x) => x.id === id);
+  const act = el.dataset.al;
+  if (act === "edit") { await editAlarm(a); $("#al-time").focus(); return; }
+  if (act === "remove" && !confirm(`Wecker ${a.time} löschen?`)) return;
+  if (act === "test" && !confirm("Wecker jetzt auslösen? Er spielt sofort, beginnend leise.")) return;
+  try {
+    const res = await post("/api/alarms/" + act, { id, enabled: el.checked });
+    alarmList = res.alarms;
+    S.timers = Object.assign({}, S.timers, { next_alarm: res.next_alarm });
+    if (alarmEdit && alarmEdit.id === id && act === "remove") await editAlarm(null);
+    render();
+  } catch (e) { /* Meldung kam schon */ }
 });
 
 /* =========================================================== Visualisierung */

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import re
@@ -26,8 +27,10 @@ from .lyrics import Lyrics
 from .mpd import MPD, MPDError, build, to_objects
 from .musicbrainz import MusicBrainz, Unavailable
 from .radio import RadioBrowser
+from .timers import Timers
 from .upnp import PORT as UPNP_PORT
 from .upnp import UpnpRenderer
+from .weather import Weather
 
 log = logging.getLogger("klangstation.core")
 
@@ -59,6 +62,10 @@ class Core:
         self.cache = Cache(DATA_DIR / "cache.sqlite")
         self.mb = MusicBrainz(self.settings, self.cache, COVER_DIR)
         self.lyrics = Lyrics(self.settings, self.cache, MEDIA_ROOT)
+        self.weather = Weather(self.settings, self.cache)
+        self.timers = Timers(self)
+        # Zuletzt gehoert (fuer den Ruhebildschirm): je Album bzw. Sender ein Eintrag, neueste zuerst
+        self.history: List[Dict[str, Any]] = self._load_history()
         self.radio = RadioBrowser()
         self.mpd = MPD(MPD_HOST, MPD_PORT)
         self.shares = shares_mod.Shares(self.mpd)
@@ -113,6 +120,8 @@ class Core:
             asyncio.create_task(self._guarded("CEC-Steuerung", self._cec_loop)),
             asyncio.create_task(self._guarded("Webradio-Waechter", self._stream_loop)),
             asyncio.create_task(self._guarded("Freigabe-Waechter", self._share_loop)),
+            asyncio.create_task(self._guarded("Schlummer-Timer und Wecker", self.timers.loop)),
+            asyncio.create_task(self._guarded("Wetter", self._weather_loop)),
         ]
         if self.daemons["airplay"].available:
             self._tasks.append(asyncio.create_task(self._guarded("AirPlay-Metadaten", self.airplay.run)))
@@ -138,6 +147,7 @@ class Core:
             await d.stop()
         await self.mb.close()
         await self.lyrics.close()
+        await self.weather.close()
         await self.radio.close()
         await self.upnp.close()
 
@@ -455,6 +465,9 @@ class Core:
             "services": {n: {"available": d.available, "running": d.running} for n, d in self.daemons.items()},
             "bluetooth": self.bt.public(),
             "tv_lyrics": self.settings.get("tv_lyrics"),
+            "timers": self.timers.public(),
+            "history": self.history if self.settings.get("tv_history") else [],
+            "weather": self.weather.public(),
             "web_build": WEB_BUILD,
             "ts": time.time(),
         }
@@ -525,7 +538,51 @@ class Core:
             out["volume"] = p.get("volume", -1)
         else:
             out["now"] = self._mpd_now(status, song)
+        self._remember(out["now"])
         return out
+
+    # ------------------------------------------------------------ Zuletzt gehoert
+    HISTORY_MAX = 16
+
+    def _load_history(self) -> List[Dict[str, Any]]:
+        try:
+            data = json.loads((DATA_DIR / "history.json").read_text(encoding="utf-8"))
+            return [h for h in data if isinstance(h, dict) and h.get("art")][: self.HISTORY_MAX]
+        except (OSError, ValueError):
+            return []
+
+    def _remember(self, now: Dict[str, Any]) -> None:
+        if now.get("state") != "play" or not now.get("kind"):
+            return
+        art = now.get("art") or ""
+        if now["kind"] == "airplay" and art.startswith("/api/art/airplay"):
+            art = self._mb_art(now.get("album"), now.get("artist")) or ""  # Bild vom Handy ist nur voruebergehend
+        if now["kind"] == "radio":
+            entry = {"art": art, "title": now.get("extra", "").split(" · ")[0], "sub": "Webradio"}
+        else:
+            entry = {"art": art, "title": now.get("album") or now.get("title", ""), "sub": now.get("artist", "")}
+        if not entry["art"] or not entry["title"]:
+            return
+        if self.history and self.history[0]["title"] == entry["title"] and self.history[0]["sub"] == entry["sub"]:
+            if self.history[0]["art"] == entry["art"]:
+                return
+            self.history[0] = entry  # gleiches Album, Cover kam spaeter
+        else:
+            self.history = [entry] + [h for h in self.history
+                                      if (h["title"], h["sub"]) != (entry["title"], entry["sub"])][: self.HISTORY_MAX - 1]
+        try:
+            path = DATA_DIR / "history.json"
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(self.history, ensure_ascii=False), encoding="utf-8")
+            os.replace(tmp, path)
+        except OSError as exc:
+            log.info("Verlauf nicht gespeichert: %s", exc)
+
+    async def _weather_loop(self) -> None:
+        while True:
+            if await self.weather.refresh():
+                self.push()
+            await asyncio.sleep(30)
 
     @staticmethod
     def _mb_art(album: Optional[str], artist: Optional[str]) -> Optional[str]:
@@ -1377,7 +1434,7 @@ class Core:
     # ------------------------------------------------------------ Einstellungen
     async def update_settings(self, changes: Dict[str, Any]) -> Dict[str, Any]:
         # Passwort und Freigaben haben eigene Wege (Pruefung, Passwort-Behandlung)
-        forbidden = set(changes) & {"auth_hash", "auth_scope", "shares", "upnp_uuid"}
+        forbidden = set(changes) & {"auth_hash", "auth_scope", "shares", "upnp_uuid", "alarms"}
         if forbidden:
             raise ValueError("Diese Einstellung lässt sich hier nicht ändern: " + ", ".join(sorted(forbidden)))
         changed = set(self.settings.update(changes))
@@ -1405,12 +1462,18 @@ class Core:
                 await self.apply_audio(("bluetooth",))
             if changed & {"device_name", "cec_enabled"}:
                 await self.apply_audio(("cec",))
+        if changed & {"weather_place", "metadata_online"}:
+            self._spawn(self._weather_now())
         if "tv_enabled" in changed and self.settings.get("tv_enabled"):
             self.tv_launch += 1
         if changed:
             self.broadcast({"type": "settings"})
         self.push()
         return self.settings.public()
+
+    async def _weather_now(self) -> None:
+        if await self.weather.refresh():
+            self.push()
 
     def tv_status(self) -> Dict[str, Any]:
         return {"enabled": self.settings.get("tv_enabled"), "launch": self.tv_launch}

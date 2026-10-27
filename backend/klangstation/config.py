@@ -77,6 +77,9 @@ DEFAULTS: Dict[str, Any] = {
     "cec_pause_on_tv_off": True,
     "tv_enabled": True,          # "Laeuft gerade"-Bildschirm am HDMI-Ausgang
     "tv_lyrics": True,           # Liedtexte auf dem "Laeuft gerade"-Bildschirm
+    "tv_history": True,          # Ruhebildschirm: zuletzt gehoerte Cover
+    "weather_place": "",         # Ruhebildschirm: Wetter fuer diesen Ort (leer = aus)
+    "alarms": [],                # Wecker (siehe timers.py)
     "rip_target": "local",       # Ziel beim CD-Rippen: "local" oder Ordnername eines USB-Datentraegers
     "rip_eject": True,           # CD nach dem Rippen auswerfen
 }
@@ -108,6 +111,9 @@ _VALIDATORS = {
     "cec_pause_on_tv_off": lambda v: isinstance(v, bool),
     "tv_enabled": lambda v: isinstance(v, bool),
     "tv_lyrics": lambda v: isinstance(v, bool),
+    "tv_history": lambda v: isinstance(v, bool),
+    "weather_place": lambda v: isinstance(v, str) and len(v) <= 80,
+    "alarms": lambda v: isinstance(v, list) and len(v) <= 10 and all(isinstance(a, dict) for a in v),
     "rip_target": lambda v: isinstance(v, str) and 0 < len(v) <= 64,
     "rip_eject": lambda v: isinstance(v, bool),
 }

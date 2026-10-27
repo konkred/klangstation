@@ -52,9 +52,10 @@ function render() {
   const active = n.kind && (n.state === "play" || n.state === "pause") && (n.title || n.artist);
   $("#playing").hidden = !active;
   $("#idle").hidden = !!active;
-  if (!active) return;
+  sleepTick();
+  if (!active) { renderIdle(); return; }
   $("#playing").classList.toggle("paused", n.state === "pause");
-  $("#badge").textContent = (KIND[n.kind] || "") + (n.extra ? " · " + n.extra : "") + (n.state === "pause" ? " · Pause" : "");
+  $("#badge").textContent = (S.timers && S.timers.ringing ? "Wecker · " : "") + (KIND[n.kind] || "") + (n.extra ? " · " + n.extra : "") + (n.state === "pause" ? " · Pause" : "");
   $("#title").textContent = n.title || "";
   $("#artist").textContent = n.artist || "";
   $("#album").textContent = n.album || "";
@@ -168,12 +169,62 @@ function lyricsTick() {
   }
 }
 
+/* ---------------------------------------------------------- Ruhezustand */
+let recentKey = null;
+function renderIdle() {
+  const w = S.weather, we = $("#idle-weather");
+  we.hidden = !w;
+  if (w) we.innerHTML = w.error ? esc(w.error)
+    : `<span class="sym">${esc(w.symbol)}</span>${w.temp}° ${esc(w.text)}<small>↑ ${w.max}° ↓ ${w.min}° · ${esc(w.place)}</small>`;
+  const na = S.timers && S.timers.next_alarm, al = $("#idle-alarm");
+  al.hidden = !na;
+  if (na) al.textContent = `Wecker ${alarmDay(na)} ${na.time} · ${na.label}`;
+  const hist = S.history || [];
+  const key = hist.map((h) => h.art + h.title).join("|") + "@" + window.innerWidth;
+  if (key === recentKey) return;
+  recentKey = key;
+  $("#recent").hidden = !hist.length;
+  if (!hist.length) return;
+  // Genug Kopien, dass eine Haelfte breiter ist als der Bildschirm: dann laeuft das Band nahtlos durch
+  const itemPx = window.innerHeight * 0.20;
+  const reps = Math.max(1, Math.ceil(window.innerWidth / (hist.length * itemPx)));
+  // Ohne Cover (Datei ohne Bild) das Notensymbol wie auf dem Wiedergabe-Bildschirm
+  const one = hist.map((h) => `<div class="recent-item"><img src="${esc(h.art)}" alt="" referrerpolicy="no-referrer"
+    onerror="this.replaceWith(Object.assign(document.createElement('b'), {className: 'recent-fb', textContent: '♪'}))">
+    <div>${esc(h.title)}</div></div>`).join("");
+  const track = $("#recent-track");
+  track.innerHTML = one.repeat(reps * 2);
+  track.style.setProperty("--dur", hist.length * reps * 10 + "s");
+}
+
+function alarmDay(na) {
+  const d = new Date(na.at * 1000), today = new Date();
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+  if (d.toDateString() === today.toDateString()) return "heute";
+  if (d.toDateString() === tomorrow.toDateString()) return "morgen";
+  return na.day;
+}
+
+function sleepTick() {
+  const sl = S && S.timers && S.timers.sleep, el = $("#sleep");
+  el.hidden = !sl;
+  if (!sl) return;
+  const left = sl.until - S.timers.ts - (performance.now() - receivedAt) / 1000;
+  el.textContent = "☾ " + (sl.mode === "track" ? "nach diesem Titel" : fmt(Math.max(0, left)));
+}
+
 function clock() {
   const d = new Date();
   const time = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
   $("#clock").textContent = time;
   $("#idle-time").textContent = time;
   $("#idle-date").textContent = d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  sleepTick();
+  // Ragt die Uhr (z. B. nach dem Einblenden von Band, Wetter oder Wecker) ins Coverband, woanders hin damit.
+  // Ziel statt aktueller Position pruefen - waehrend des Gleitens laege sie sonst kurz "falsch"
+  const box = $("#idle-box"), recent = $("#recent");
+  if (!$("#idle").hidden && !recent.hidden &&
+      parseFloat(box.style.top || 0) + box.offsetHeight > recent.getBoundingClientRect().top) moveIdle();
 }
 
 // Bildschirmschoner: Uhr jede Minute an eine andere Stelle, damit nichts einbrennt
@@ -181,8 +232,11 @@ function moveIdle() {
   const box = $("#idle-box");
   const w = window.innerWidth, h = window.innerHeight;
   const bw = box.offsetWidth || 400, bh = box.offsetHeight || 200;
+  const recent = $("#recent");
+  // Unten Platz fuer das Coverband lassen
+  const bottom = recent.hidden || $("#idle").hidden ? h * 0.88 : recent.getBoundingClientRect().top - h * 0.03;
   box.style.left = Math.round(Math.random() * Math.max(0, w - bw)) + "px";
-  box.style.top = Math.round(h * 0.12 + Math.random() * Math.max(0, h * 0.76 - bh)) + "px";
+  box.style.top = Math.round(h * 0.10 + Math.random() * Math.max(0, bottom - h * 0.10 - bh)) + "px";
 }
 
 function connect() {
@@ -203,7 +257,7 @@ function connect() {
     $("#playing").hidden = true; $("#idle").hidden = false;
     setTimeout(connect, ev.code === 4401 ? 15000 : 2000);
   };
-  ws.onopen = () => { $("#idle-hint").textContent = "Bereit"; };
+  ws.onopen = () => { $("#idle-hint").textContent = ""; };
 }
 
 /* Dezenter Hintergrund: langsam treibende Leuchtbänder, nur bei Wiedergabe lebhafter */

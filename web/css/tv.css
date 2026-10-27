@@ -33,7 +33,9 @@ body {
   background: radial-gradient(circle at 35% 30%, #fff 0, #bdf0ff 12%, #2fb4ff 45%, #0b4fa8 80%, #062a5c 100%);
   box-shadow: 0 0 1.5vh rgba(111,211,255,.8);
 }
+.top-right { display: flex; align-items: center; gap: 2vw; }
 .clock { font-variant-numeric: tabular-nums; color: var(--ink); }
+.sleep { font-variant-numeric: tabular-nums; color: var(--glow); }
 
 /* ---------------------------------------------------------- Wiedergabe */
 .playing {
@@ -108,6 +110,26 @@ h1 {
 .idle-time { font-size: 18vh; font-weight: bold; font-variant-numeric: tabular-nums; color: rgba(238,245,255,.75); text-shadow: 0 0 4vh rgba(47,180,255,.35); }
 .idle-date { font-size: 3.5vh; color: var(--ink-dim); }
 .idle-hint { font-size: 2.4vh; color: #4f6890; margin-top: 2vh; }
+.idle-weather { font-size: 3.4vh; color: var(--ink); margin-top: 2.4vh; }
+.idle-weather .sym { font-size: 4.4vh; color: var(--glow); margin-right: 1vh; vertical-align: -.3vh; }
+.idle-weather small { font-size: 2.4vh; color: var(--ink-dim); margin-left: 1.5vh; }
+.idle-alarm { font-size: 2.6vh; color: var(--glow); margin-top: 1.4vh; }
+.idle-hint:empty { display: none; }
+
+/* Zuletzt gehoert: Cover ziehen langsam durch, damit nichts einbrennt */
+.recent { position: absolute; left: 0; right: 0; bottom: 4vh; overflow: hidden; opacity: .55;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.recent-head { font-size: 1.8vh; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-dim); text-align: center; margin-bottom: 1.4vh; }
+.recent-track { display: flex; gap: 3vh; width: max-content; animation: recent-drift var(--dur, 120s) linear infinite; }
+.recent-item { width: 17vh; flex: none; }
+.recent-item img { width: 17vh; height: 17vh; object-fit: cover; border-radius: .6vh; display: block;
+  border: .15vh solid rgba(143,179,234,.35); box-shadow: 0 1vh 3vh rgba(0,0,0,.6); background: #0b1a33; }
+.recent-fb { display: grid; place-items: center; width: 17vh; height: 17vh; border-radius: .6vh; font-size: 8vh;
+  color: rgba(111,211,255,.45); background: linear-gradient(135deg, #16305f, #050a16); border: .15vh solid rgba(143,179,234,.35); }
+.recent-item div { font-size: 1.6vh; margin-top: .8vh; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes recent-drift { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .recent-track { animation: none; } }
 
 @media (orientation: portrait) {
   .playing { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 4vh; padding-top: 12vh; }

@@ -13,7 +13,7 @@
 
 <header class="top">
   <div class="brand"><span class="orb"></span><b>Klangstation</b><span id="device"></span></div>
-  <div class="clock" id="clock"></div>
+  <div class="top-right"><span class="sleep" id="sleep" hidden></span><span class="clock" id="clock"></span></div>
 </header>
 
 <main class="playing" id="playing" hidden>
@@ -39,7 +39,13 @@
   <div class="idle-box" id="idle-box">
     <div class="idle-time" id="idle-time"></div>
     <div class="idle-date" id="idle-date"></div>
+    <div class="idle-weather" id="idle-weather" hidden></div>
+    <div class="idle-alarm" id="idle-alarm" hidden></div>
     <div class="idle-hint" id="idle-hint">Bereit</div>
+  </div>
+  <div class="recent" id="recent" hidden>
+    <div class="recent-head">Zuletzt gehört</div>
+    <div class="recent-track" id="recent-track"></div>
   </div>
 </main>
 

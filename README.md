@@ -24,7 +24,8 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), automatische Wahl, wahlweise bit-perfekt |
 | Wiedergabelisten | speichern, laden, ab Eintrag abspielen, umbenennen, Einträge entfernen; auch Radiosender |
 | HDMI-CEC | TV beim Abspielen einschalten und Eingang wählen, TV-Fernbedienung, Pause bei TV aus, optional Standby |
-| „Läuft gerade“ | Vollbild unter `/tv` (Cover, Titel, Fortschritt, Bildschirmschoner) am HDMI-Ausgang oder in jedem Browser |
+| „Läuft gerade“ | Vollbild unter `/tv` (Cover, Titel, Fortschritt) am HDMI-Ausgang oder in jedem Browser; im Ruhezustand wandernde Uhr mit Datum, nächstem Wecker, Wetter ([Open-Meteo](https://open-meteo.com), optional) und einem Band der zuletzt gehörten Cover |
+| Schlummer-Timer & Wecker | Timer (15–90 min oder Titelende) blendet die letzten 30 s aus und hält an; Wecker zu Uhrzeit und Wochentagen mit Radio-Favorit, Wiedergabeliste oder Bibliothek im Zufall, wird über 2 min lauter, schaltet optional nach einer Weile wieder aus, Rückfall auf die Bibliothek, wenn der Sender nicht spielt |
 | Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend, Instrumental-Pausen als Noten: aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key), gecacht; nicht bei Webradio |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
@@ -177,6 +178,24 @@ am neuen Ausgang weiter.
 * **Ohne Desktop** (`--tv-headless`): Der Dienst `klangstation-tv` startet nach jedem Boot von selbst.
 * *Optionen › Fernseher* schaltet den Bildschirm in beiden Fällen ganz ab und wieder an.
 * Jeder andere Browser (Tablet an der Wand, Fernseher-Browser): `http://<hostname>.local:8080/tv`.
+* Ohne Wiedergabe zeigt er Uhr, Datum, den nächsten Wecker und unten ein langsam durchlaufendes Band der zuletzt
+  gehörten Alben und Sender. Für das Wetter trägt man unter *Optionen › Fernseher* einen Ort ein (braucht
+  Online-Metadaten). Uhr und Band bewegen sich ständig, damit nichts einbrennt.
+* Nach einem Update lädt der Bildschirm die neue Oberfläche von selbst.
+
+### Schlummer-Timer und Wecker
+
+Das Mond-Symbol neben der Lautstärke öffnet beides.
+
+* **Schlummer-Timer:** 15 bis 90 Minuten oder „Titelende“. In den letzten 30 Sekunden wird leiser geblendet (bei
+  Bibliothek, Radio, CD, UPnP und Bluetooth), danach angehalten und die Lautstärke zurückgestellt. AirPlay- und
+  Spotify-Sitzungen werden beendet. Die Restzeit steht unten rechts und oben auf dem Fernseher.
+* **Wecker:** Uhrzeit, Wochentage (keiner = einmalig), was gespielt wird (Radio-Favorit, Wiedergabeliste oder die
+  Bibliothek im Zufall), Ziellautstärke und ob er nach 15 Minuten bis 2 Stunden wieder ausschaltet. Er beginnt
+  leise und wird über zwei Minuten lauter; wer die Lautstärke verstellt, übernimmt. Läuft zur Weckzeit schon
+  Musik, bleibt sie ungestört. Spielt der Sender nach 20 Sekunden nicht, kommt Musik aus der Bibliothek. Ist
+  HDMI-CEC an, schaltet sich der Fernseher mit ein.
+* Wecker werden in den Einstellungen gespeichert und überstehen Neustarts; ein laufender Schlummer-Timer nicht.
 
 ### Netzwerkfreigaben
 
@@ -264,7 +283,7 @@ Browser ──HTTP/WebSocket──► Klangstation (Python, Starlette, Benutzer 
                               ├─ D-Bus: BlueZ + bluealsa (Kopplung, AVRCP, Zustand)
                               ├─ /dev/sr0 ioctl        (CD-Erkennung, Disc-ID, Auswerfen)
                               ├─ /proc/asound, amixer, DRM (Ausgabegeräte, HDMI-Erkennung, stumme Regler)
-                              └─ MusicBrainz / Cover Art Archive / Radio Browser
+                              └─ MusicBrainz / Cover Art Archive / Radio Browser / LRCLIB / Open-Meteo
 ```
 
 * ALSA-`hw`-Geräte sind exklusiv. Startet eine Quelle (z. B. AirPlay vom iPhone), gibt Klangstation das Gerät frei:
@@ -338,5 +357,7 @@ UPnP/DLNA-Renderer und einen Bluetooth-Empfänger mit, damit erreicht man prakti
 | GET/POST | `/api/cd/rip` `{target, eject}` · `/api/cd/rip/cancel` | CD rippen |
 | GET/POST | `/api/shares` · `/api/shares/{action}` | Netzwerkfreigaben |
 | GET/POST | `/api/tv` · `/api/tv/show` | „Läuft gerade“-Bildschirm |
+| POST | `/api/sleep` `{minutes}` | Schlummer-Timer (`0` = aus, `"track"` = Titelende) |
+| GET/POST | `/api/alarms` · `/api/alarms/{save,toggle,remove,test}` | Wecker |
 | GET/POST | `/api/settings` | Einstellungen, Ausgabegeräte, Dienststatus |
 | GET/POST | `/api/bluetooth` · `/api/bluetooth/{pairing_on,pairing_off,disconnect,remove}` `{path}` | Bluetooth |

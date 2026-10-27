@@ -35,6 +35,8 @@
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 5h12v2H3zm0 4h12v2H3zm0 4h8v2H3zm13 0v-2h2v2h3v2h-3v3h-2v-3h-3v-2z" fill="currentColor"/></symbol>
     <symbol id="i-net" viewBox="0 0 24 24"><path d="M4 4h16v8H4zm2 2v4h12V6zm5 8h2v3h4v2H7v-2h4z" fill="currentColor"/></symbol>
     <symbol id="i-rip" viewBox="0 0 24 24"><path d="M11 2h2v9.2l3.3-3.3 1.4 1.4L12 15 6.3 9.3l1.4-1.4 3.3 3.3zM4 17h16v5H4zm2 2v1h12v-1z" fill="currentColor"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M14.5 2.5A9.5 9.5 0 1 0 21.5 17 7.6 7.6 0 0 1 14.5 2.5z" fill="currentColor"/></symbol>
+    <symbol id="i-alarm" viewBox="0 0 24 24"><path d="M12 4a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zm0 15a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13zm1-11h-2v5.4l3.8 2.3 1-1.6-2.8-1.7zM7.1 2.3 2.3 6.1 1 4.6 5.8.8zM22.9 4.6l-1.3 1.5-4.7-3.8L18.2.8z" fill="currentColor"/></symbol>
     <symbol id="i-note" viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3z" fill="currentColor"/></symbol>
   </defs>
 </svg>
@@ -197,6 +199,11 @@
               <legend>„Läuft gerade“-Bildschirm</legend>
               <label class="check"><input type="checkbox" name="tv_enabled"> Am HDMI-Ausgang Cover, Titel und Fortschritt im Vollbild zeigen</label>
               <label class="check"><input type="checkbox" name="tv_lyrics"> Liedtexte mitlaufen lassen (aus einer .lrc-Datei neben dem Titel oder von LRCLIB, wenn Online-Metadaten an sind)</label>
+              <label class="check"><input type="checkbox" name="tv_history"> Im Ruhezustand die zuletzt gehörten Cover zeigen</label>
+              <label class="field">Wetter im Ruhezustand für (Ort, leer = aus)
+                <input name="weather_place" maxlength="80" placeholder="z. B. Leipzig">
+              </label>
+              <p class="hint">Ohne Wiedergabe zeigt der Bildschirm Uhr, Datum, den nächsten Wecker und – wenn ein Ort eingetragen und Online-Metadaten an sind – das Wetter von <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>.</p>
               <p class="hint">Auch in jedem Browser erreichbar unter <a href="/tv" target="_blank" rel="noopener">/tv</a>, z. B. für ein Tablet an der Wand. Am Pi schließt Alt+F4 den Bildschirm.</p>
               <button type="button" class="btn" id="tv-show">Jetzt am HDMI-Ausgang anzeigen</button>
               <h4 class="subhead">HDMI-CEC</h4>
@@ -274,6 +281,7 @@
         <button class="tbtn" id="b-prev" title="Zurück"><svg><use href="#i-prev"/></svg></button>
         <button class="playorb" id="b-play" title="Wiedergabe"><svg><use href="#i-play" id="play-icon"/></svg></button>
         <button class="tbtn" id="b-next" title="Weiter"><svg><use href="#i-next"/></svg></button>
+        <button class="tbtn small" id="b-timer" title="Schlummer-Timer &amp; Wecker"><svg><use href="#i-moon"/></svg></button>
         <div class="volume">
           <button class="tbtn small" id="b-mute" title="Stumm"><svg><use href="#i-vol" id="vol-icon"/></svg></button>
           <input type="range" id="vol" min="0" max="100" value="50" aria-label="Lautstärke">
@@ -311,6 +319,43 @@
       <button type="button" class="btn" id="pl-pick-cancel">Abbrechen</button>
       <button type="button" class="btn primary" id="pl-pick-create">Neue Liste anlegen</button>
     </div>
+  </div>
+</div>
+<div class="modal" id="timer-modal" hidden>
+  <div class="modal-box wide">
+    <div class="modal-title"><span class="orb"></span>Schlummer-Timer &amp; Wecker</div>
+    <div class="modal-body">
+      <h4 class="subhead first">Schlummer-Timer</h4>
+      <div class="seg sleep-seg" id="sleep-seg">
+        <button type="button" data-min="0">Aus</button>
+        <button type="button" data-min="15">15</button>
+        <button type="button" data-min="30">30</button>
+        <button type="button" data-min="45">45</button>
+        <button type="button" data-min="60">60</button>
+        <button type="button" data-min="90">90 min</button>
+        <button type="button" data-min="track">Titelende</button>
+      </div>
+      <p class="hint" id="sleep-state"></p>
+      <h4 class="subhead">Wecker</h4>
+      <div class="alarm-list" id="alarm-list"></div>
+      <form class="alarm-form" id="alarm-form" autocomplete="off">
+        <label class="field">Uhrzeit<input type="time" id="al-time" value="07:00" required></label>
+        <label class="field">Spielen<select id="al-target"></select></label>
+        <div class="field">Tage <small class="hint">(keiner = einmalig)</small>
+          <div class="days" id="al-days"></div>
+        </div>
+        <label class="field">Ausschalten nach
+          <select id="al-stop"><option value="0">Nie</option><option value="15">15 Minuten</option><option value="30">30 Minuten</option><option value="60" selected>1 Stunde</option><option value="120">2 Stunden</option></select>
+        </label>
+        <label class="field vol-field">Lautstärke <b id="al-vol-v">30 %</b><input type="range" id="al-vol" min="5" max="100" value="30"></label>
+        <div class="alarm-buttons">
+          <button type="submit" class="btn primary" id="al-save">Wecker anlegen</button>
+          <button type="button" class="btn" id="al-cancel" hidden>Abbrechen</button>
+        </div>
+      </form>
+      <p class="hint">Der Wecker wird langsam lauter. Läuft zur Weckzeit schon Musik, bleibt sie ungestört. Spielt der Sender nicht, kommt Musik aus der Bibliothek.</p>
+    </div>
+    <div class="dlg-buttons"><button type="button" class="btn" id="timer-close">Schließen</button></div>
   </div>
 </div>
 <script src="js/app.js"></script>

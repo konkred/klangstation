@@ -426,6 +426,35 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
 .modal-body { padding: 12px 14px 4px; }
 .modal-body input { width: 100%; padding: 6px 8px; border: 1px solid #7f9db9; border-radius: 3px; }
 .modal .dlg-buttons { padding: 8px 14px 12px; margin: 0; }
+/* Schlummer-Timer & Wecker */
+.modal-box.wide { width: min(560px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.modal-box.wide .modal-body { overflow-y: auto; }
+.subhead.first { margin-top: 0; }
+.sleep-seg { flex-wrap: wrap; }
+.alarm-list { display: grid; gap: 4px; margin-bottom: 8px; }
+.alarm {
+  display: grid; grid-template-columns: auto auto 1fr auto auto auto; gap: 8px; align-items: center;
+  padding: 6px 8px; background: #fff; border: 1px solid #d3deee; border-radius: 4px;
+}
+.alarm.next { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(42,95,181,.25); }
+.alarm.off .al-time, .alarm.off .al-info { opacity: .45; }
+.al-time { font-size: 20px; font-variant-numeric: tabular-nums; }
+.al-info { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.al-info small { display: block; color: var(--list-dim); }
+.alarm .mini svg { width: 11px; height: 11px; vertical-align: -1px; }
+.modal-body .alarm input[type=checkbox] { width: auto; }
+.alarm-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; padding: 4px 10px 8px; border: 1px dashed #b9c9df; border-radius: 4px; }
+.alarm-form .field { margin: 6px 0; }
+.alarm-form .field input, .alarm-form .field select { max-width: none; }
+.alarm-form .field .hint { margin: 0; }
+.modal-body .alarm-form input[type=range] { padding: 0; border: 0; }
+.days { display: flex; gap: 3px; flex-wrap: wrap; }
+.days button {
+  width: 30px; padding: 4px 0; cursor: pointer; border: 1px solid #9fb4d3; border-radius: 3px;
+  background: linear-gradient(180deg, #fff, #e3ecf8); color: var(--list-ink);
+}
+.days button.on { color: #fff; border-color: #123f8a; background: linear-gradient(180deg, #6aa1ec, #2a5fb5); }
+.alarm-buttons { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; }
 .login-err { color: #b23b3b; min-height: 1.4em; margin: 6px 0 0; }
 .pl-pick-list { display: grid; gap: 3px; max-height: 260px; overflow: auto; margin-bottom: 8px; }
 .pl-pick-list button {
@@ -479,6 +508,10 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
   .cd-head, .album-head { flex-direction: column; align-items: flex-start; }
   .lamps .lamp span { display: none; }
   .share-form { grid-template-columns: 1fr; }
+  .alarm-form { grid-template-columns: 1fr; }
+  .alarm { grid-template-columns: auto auto 1fr; }
+  .alarm .al-info { white-space: normal; }
+  .alarm .mini { grid-row: 2; justify-self: start; }
 }
 @media (max-width: 340px) {
   #b-shuffle, #b-repeat { display: none; }

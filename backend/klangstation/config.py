@@ -18,6 +18,7 @@ COVER_DIR = DATA_DIR / "covers"
 MEDIA_ROOT = Path(os.environ.get("KS_MEDIA_ROOT", "/media/klangstation"))
 WEB_DIR = Path(os.environ.get("KS_WEB_DIR", str(_ROOT / "web")))
 HOOK_PATH = Path(os.environ.get("KS_HOOK", str(_ROOT / "system" / "hooks" / "ks-hook")))
+SPOTIFY_SINK = _ROOT / "system" / "ks-spotify-sink"
 
 HOST = os.environ.get("KS_HOST", "0.0.0.0")
 PORT = int(os.environ.get("KS_PORT", "8080"))

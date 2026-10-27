@@ -19,7 +19,7 @@ from .bluetooth import Bluetooth
 from .cache import Cache
 from .cec import Cec
 from .config import (BIN_BLUEALSA_APLAY, BIN_GMEDIARENDER, BIN_LIBRESPOT, BIN_MPD, BIN_SHAIRPORT, CD_DEVICE,
-                     COVER_DIR, DATA_DIR, HOOK_PATH, MEDIA_ROOT, MPD_HOST, MPD_PORT, PORT, RUN_DIR,
+                     COVER_DIR, DATA_DIR, HOOK_PATH, MEDIA_ROOT, MPD_HOST, MPD_PORT, PORT, RUN_DIR, SPOTIFY_SINK,
                      SPOTIFY_ZEROCONF_PORT, Settings)
 from .daemons import Daemon
 from .mpd import MPD, MPDError, build, to_objects
@@ -173,7 +173,7 @@ class Core:
         if "spotify" in which:
             if s.get("spotify_enabled"):
                 args = audio.librespot_args(name=name, device=dev, bitrate=s.get("spotify_bitrate"),
-                                            hook=HOOK_PATH, cache=DATA_DIR / "librespot",
+                                            hook=HOOK_PATH, sink=SPOTIFY_SINK, cache=DATA_DIR / "librespot",
                                             port=SPOTIFY_ZEROCONF_PORT)
                 await self.daemons["spotify"].start(args, self._hook_env())
             else:

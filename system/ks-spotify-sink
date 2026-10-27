@@ -1,0 +1,21 @@
+#!/bin/bash
+# Tonausgabe fuer librespot (Backend "subprocess"): liest PCM (S16LE, 44,1 kHz, Stereo) von stdin.
+# librespot beendet sich ganz, wenn sein ALSA-Geraet beim Abspielen belegt ist (z. B. noch von AirPlay) -
+# die Spotify-App verliert dann die Verbindung und findet das Geraet erst nach 30-60 s wieder. Dieses Skript
+# wartet stattdessen, bis das Geraet frei ist. Die Meldung "sink busy" laesst Klangstation das Geraet freigeben.
+DEV="$1"
+FMT=(-q -t raw -f S16_LE -r 44100 -c 2 -D "$DEV")
+for i in $(seq 1 50); do
+    # Probe ohne Daten: oeffnet und schliesst das Geraet, ohne etwas von stdin zu verbrauchen
+    if err="$(aplay "${FMT[@]}" </dev/null 2>&1)"; then
+        exec aplay "${FMT[@]}"
+    fi
+    case "$err" in
+        *[Bb]usy*) ;;
+        *) echo "ks-spotify-sink: $err" >&2; exit 1 ;;
+    esac
+    [ "$i" = 1 ] && echo "ks-spotify-sink: sink busy, warte auf $DEV" >&2
+    sleep 0.2
+done
+echo "ks-spotify-sink: sink busy, gebe nach 10 s auf" >&2
+exit 1

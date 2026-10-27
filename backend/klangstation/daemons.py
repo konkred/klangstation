@@ -86,6 +86,8 @@ class Daemon:
             if time.monotonic() - started > 60:
                 backoff = 1.0  # lief lange: frischer Fehler, kein Dauerabsturz
             log.warning("%s beendet (Code %s), Neustart in %.0fs", self.name, rc, backoff)
+            for line in list(self.tail)[-6:]:
+                log.warning("[%s] %s", self.name, line)  # Grund des Abbruchs steht meist in den letzten Zeilen
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, 30)
 

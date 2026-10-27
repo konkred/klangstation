@@ -267,7 +267,8 @@ Browser ──HTTP/WebSocket──► Klangstation (Python, Starlette, Benutzer 
 ```
 
 * ALSA-`hw`-Geräte sind exklusiv. Startet eine Quelle (z. B. AirPlay vom iPhone), gibt Klangstation das Gerät frei:
-  MPD wird gestoppt bzw. die andere Sitzung beendet. AirPlay wartet über `wait_for_completion`, bis das erledigt ist.
+  MPD wird gestoppt bzw. die andere Sitzung beendet. AirPlay wartet über `wait_for_completion`, bis das erledigt ist,
+  Spotify über das Ausgabeskript `ks-spotify-sink` (librespot selbst würde sich bei belegtem Gerät beenden).
 * Beim Wechsel des Ausgabegeräts werden die Konfigurationen neu geschrieben und die Dienste neu gestartet. Lief
   gerade Musik, spielt sie danach weiter (ein Radiosender wird dafür neu verbunden).
 * Zwei Wächter halten die Wiedergabe bei Netzproblemen am Laufen: Steht ein Radiosender 20 s still, verbindet

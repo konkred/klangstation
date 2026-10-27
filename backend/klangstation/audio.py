@@ -295,12 +295,15 @@ def bluealsa_aplay_args(*, device: str) -> List[str]:
     return ["--pcm=" + alsa_device(device, False), "--volume=software", "--single-audio"]
 
 
-def librespot_args(*, name: str, device: str, bitrate: int, hook: Path, cache: Path, port: int) -> List[str]:
+def librespot_args(*, name: str, device: str, bitrate: int, hook: Path, sink: Path, cache: Path,
+                   port: int) -> List[str]:
     return [
         "--name", name,
         "--device-type", "speaker",
-        "--backend", "alsa",
-        "--device", alsa_device(device, False),
+        # nicht "alsa": librespot beendet sich bei belegtem Geraet, ks-spotify-sink wartet stattdessen
+        "--backend", "subprocess",
+        "--format", "S16",
+        "--device", f"{sink} {alsa_device(device, False)}",
         "--bitrate", str(bitrate),
         "--initial-volume", "70",
         "--volume-ctrl", "log",

@@ -119,8 +119,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   nie bei AVRCP „paused“, sofort bei „playing“, sonst erst nach 3 s laufender PCM (iPhone meldet nach frischem
   Verbinden „stopped“).
 * **shairport-sync 5.6** verlangt `session_timeout` ≥ 60; schickt `prgr` (Position) normal.
-* **librespot** meldet „Busy“ beim Öffnen der Sink, wenn eine andere Quelle das Gerät hält → Klangstation gibt
-  es frei (wie bei Bluetooth/UPnP).
+* **librespot beendet sich ganz**, wenn sein ALSA-Gerät beim Abspielen belegt ist (z. B. noch von AirPlay); die
+  App findet das Gerät erst nach 30–60 s wieder. Die Hook-Ereignisse kommen zu spät (am Pi ~0,4 s je Aufruf,
+  „loading“ erst nach ~4 s) → Backend `subprocess` mit `system/ks-spotify-sink`: wartet bis 10 s auf das Gerät,
+  meldet „sink busy“, Klangstation gibt es frei.
+* Beendet sich ein Dienst unerwartet, schreibt `daemons.py` seine letzten Zeilen ins Journal.
 
 ### Kiosk und Oberfläche
 
@@ -145,7 +148,8 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 * **Alma:** Neuinstallation von null, UPnP mit echter App, NFS, CEC (braucht Fernseher).
 * **Alma mit Audio-CD:** Rückfall beim Rippen (USB scheitert → interner Speicher), MusicBrainz-Neuversuch über
   16 Versuche, echtes Rippen auf einen Stick (Zustimmung des Nutzers).
-* **Pi:** NFS; Spotify-Übernahme von AirPlay (bisher nur am Alma geprüft).
+* **Pi:** NFS.
+* **Alma:** `ks-spotify-sink` einspielen (Update per `install.sh`) und AirPlay ↔ Spotify mit iPhone prüfen.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -180,6 +184,8 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 * `install.sh --tv-headless` von null: 8 min über mobiles Netz (pip-Aussetzer abgefangen), alle Dienste und
   Kiosk (cage + Chromium) laufen, `raspotify` vom Paket bleibt aus.
 * Neustart: Boot 24 s, Web nach 26 s, alles wieder da, kein ungefragtes Weiterspielen; Spotify vom Handy spielt.
+* AirPlay ↔ Spotify mit iPhone: vorher 30–60 s bis Spotify spielte, beim zweiten Mal gar nicht; mit
+  `ks-spotify-sink` je ~3 s in beide Richtungen, auch beim zweiten Wechsel, Pause/Weiter sofort.
 
 **Alma, 26.10.2026**
 
@@ -226,3 +232,4 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 * Am Pi erkannte Klangstation nicht, ob an HDMI etwas hängt → DRM-Status. Automatische Ausgabe jetzt:
   USB-DAC/I²S-HAT, dann HDMI mit erkanntem Gerät (Wunsch des Nutzers), dann Klinke, dann HDMI unbekannt.
 * Übersetzen-Popup von Chromium im Kiosk abgeschaltet.
+* Spotify-Übernahme von AirPlay dauerte 30–60 s oder scheiterte → `ks-spotify-sink` (siehe Lehren).

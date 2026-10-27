@@ -303,7 +303,7 @@ cp -r "$SRC/backend" "$SRC/web" "$SRC/system" "$SRC/requirements.txt" "$PREFIX/"
 find "$PREFIX/backend" -name '__pycache__' -prune -exec rm -rf {} +
 # Rechte unabhaengig von der Quelle setzen (ZIP/scp von Windows liefert oft 700/600)
 chmod -R u=rwX,go=rX "$PREFIX/backend" "$PREFIX/web" "$PREFIX/system" "$PREFIX/requirements.txt"
-for script in hooks/ks-hook ks-automount ks-netmount ks-tv-kiosk ks-reset-password; do
+for script in hooks/ks-hook ks-automount ks-netmount ks-tv-kiosk ks-reset-password ks-spotify-sink; do
     sed -i 's/\r$//' "$PREFIX/system/$script"
     chmod 0755 "$PREFIX/system/$script"
 done

@@ -47,8 +47,8 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | PC (Hostname `KlangStationAlma`), AlmaLinux 10.2, x86_64, ohne Desktop, SELinux enforcing | `ssh root@10.0.0.162` (SSH-Key, zu Hause) | Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
-| Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Monitor an HDMI 0; USB-CD-Laufwerk SE-218GN (`sr0`) |
-| NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben „Testkünstler“ (u. a. 10 min Rauschen) und „Ölfass & Söhne“ von Claude erzeugt |
+| Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
+| NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben von Claude nach den Tests gelöscht, Freigabe ist leer |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
 
 Gearbeitet wird auf einem Laptop mit AlmaLinux 10.2 (`konnis-Latitude`, Bash). Dessen SSH-Key ist auf den
@@ -154,11 +154,8 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 
 ### Noch offen
 
-* **OptiPlex (Alma v2, GNOME):** Neustart, Bildschirm per Autostart, AirPlay ↔ Spotify, NFS, CD-Tests (USB-Laufwerk).
-* **Alma:** Neuinstallation von null, UPnP mit echter App, NFS (Laptop-Freigabe siehe Testgeräte), CEC (braucht Fernseher).
-* **Alma mit Audio-CD:** Rückfall beim Rippen (USB scheitert → interner Speicher), MusicBrainz-Neuversuch über
-  16 Versuche, echtes Rippen auf einen Stick (Zustimmung des Nutzers).
-* **Alma:** `ks-spotify-sink` einspielen (Update per `install.sh`) und AirPlay ↔ Spotify mit iPhone prüfen.
+* **CEC unter RHEL:** braucht einen USB-CEC-Adapter (z. B. Pulse-Eight), die Intel-Grafik kann kein CEC.
+* Der Alma-PC zu Hause wird vom Nutzer neu installiert (kein Update mehr nötig).
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -198,6 +195,28 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 * NFS (Laptop, NFS 4.2, `soft,timeo=50,retrans=2`): einhängen, 7 Titel in 6 s eingelesen, Umlaute und „&“ in
   Pfaden und Tags; Ausfall 90 s (stumm): Puffer reicht ~27 s, nach 15 s Stillstand pausiert, 4 s nach Rückkehr
   an derselben Stelle weiter.
+
+**OptiPlex 3060, AlmaLinux 10.2 x86_64_v2 mit GNOME (unterwegs), 27.10.2026**
+
+* Installation auf frischem System (ohne `--tv-headless`): erster Lauf 16 min 21 s, mpd/shairport-sync stürzten ab
+  (RPM Fusion, siehe Behobene Fehler); nach dem Fix Neubau in 8 min 33 s, alle Dienste laufen.
+* Neustart: Web nach 48 s, alle Dienste, kein ungefragtes Weiterspielen, keine AVCs. GNOME meldet root automatisch
+  an, `ks-tv-kiosk` startet Firefox im Kiosk (kein Chromium installiert), PipeWire läuft nicht mit.
+* AirPlay ↔ Spotify mit iPhone: je 1–2 s bis zum Titel (laut Nutzer höchstens 3 s), zweimal hin und her,
+  Pause/Weiter/Spulen bei Spotify gehen.
+* NFS (Laptop, NFS 4.2, `soft,timeo=50,retrans=2`, per API eingetragen): 8 Titel in 7 s, Umlaute und „&“, MP3 über
+  ffmpeg-free mit richtiger Länge; Ausfall 90 s (stumm): Puffer ~23 s, nach 15 s Stillstand pausiert, 9 s nach
+  Rückkehr an derselben Stelle weiter, keine AVCs. Cover-Suche bei MusicBrainz im mobilen Netz gedrosselt (503) →
+  nach vier Versuchen 5 min Pause, wie vorgesehen.
+* CD (USB-Laufwerk, kein over-current): 4 Titel erkannt; MusicBrainz per `/etc/hosts` gesperrt → Abfrage beim
+  Einlegen, 16 Wiederholungen im Minutentakt, danach alle 5 min; nach Freigabe beim nächsten Versuch gefunden.
+* Rippen auf USB-Stick (FAT32) mit Rückfall: Stick bei „Wird gespeichert …“ per `authorized` getrennt → „Input/output
+  error“, Album im internen Speicher mit Hinweis, in der Bibliothek; Stick nach Wiederanstecken nach 3 s wieder da,
+  ohne halben Ordner, fsck sauber. Normales Rippen auf den Stick: 224 s, danach wieder `ro`.
+* Bluetooth (Stick im Betrieb eingesteckt): nach 5 s erkannt, Name DellOptiPlex3060, Klasse Lautsprecher; iPhone
+  gekoppelt, übernimmt von Spotify, Pause/Weiter; keine AVCs, GNOME stört nicht.
+* UPnP mit echter App (mconnect, iPhone): Titel, Interpret, Cover, Länge, Pause/Weiter, Spulen.
+* Aufgeräumt: Test-Rips, NFS-Freigabe, Testskripte, `/etc/hosts`; Testalben auf dem Laptop gelöscht.
 
 **Alma, 26.10.2026**
 

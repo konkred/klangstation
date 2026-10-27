@@ -39,9 +39,9 @@ armv7. Mit Desktop oder ohne (dann zeigt `--tv-headless` den „Läuft gerade“
 | Raspberry Pi 4, Raspberry Pi OS (Debian 13 „trixie“), aarch64, mit Desktop | alle Quellen, CD-Wiedergabe und Rippen (USB-Laufwerk), Synology per SMB (auch Serverausfall), Webradio bei Netzausfall, CEC, HDMI-Ton und Klinke, Bluetooth mit iPhone, Update und Neustart |
 | Raspberry Pi 4, Raspberry Pi OS Lite (Debian 13), aarch64, ohne Desktop | Installation von null mit `--tv-headless`, alle Dienste, „Läuft gerade“ am Fernseher, AirPlay ↔ Spotify, NFS-Freigabe (auch Serverausfall), Update und Neustart |
 | PC, AlmaLinux 10.2, x86_64, ohne Desktop (SELinux aktiv) | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (USB-Stick RTL8761BU, iPhone, Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks mit FAT32 und NTFS (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe (internes SATA-Laufwerk) und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Update und Neustart |
+| PC (Celeron ohne AVX), AlmaLinux 10.2 x86_64_v2, mit GNOME (SELinux aktiv) | Installation auf frischem System (ffmpeg aus EPEL statt RPM Fusion), „Läuft gerade“ per Firefox nach dem Anmelden, AirPlay ↔ Spotify, UPnP (mconnect), Bluetooth mit iPhone, NFS-Freigabe (auch Serverausfall), CD über USB-Laufwerk (MusicBrainz-Neuversuch, Rippen auf USB-Stick, Rückfall in den internen Speicher), Neustart |
 
-Noch nicht geprüft: NFS unter RHEL-Systemen, CEC unter RHEL-Systemen, UPnP mit einer echten App unter RHEL, eine
-Installation auf einem frischen RHEL-System von null.
+Noch nicht geprüft: CEC unter RHEL-Systemen (braucht einen USB-CEC-Adapter).
 
 ## Installation
 

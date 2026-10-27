@@ -12,7 +12,9 @@ start_browser() {
     if [[ "$BROWSER" == *firefox* ]]; then
         "$BROWSER" --kiosk --new-instance --profile "$PROFILE" "$URL/tv" &
     else
+        # Translate aus: auf Systemen mit englischer Sprache bietet Chromium sonst an, die Seite zu uebersetzen
         "$BROWSER" --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-session-crashed-bubble \
+            --disable-features=Translate --lang=de \
             --password-store=basic --check-for-update-interval=31536000 --user-data-dir="$PROFILE" \
             --app="$URL/tv" >/dev/null 2>&1 &
     fi

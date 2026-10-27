@@ -30,6 +30,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 |---|---|---|
 | Raspberry Pi (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie), aarch64, mit Desktop | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort |
 | PC (Hostname `KlangStationAlma`), AlmaLinux 10.2, x86_64, ohne Desktop, SELinux enforcing | `ssh root@10.0.0.162` (SSH-Key) | Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
+| Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64, Fernseher an HDMI 0 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Synology dort nicht erreichbar |
 | Synology | `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
 
 Gearbeitet wird auf einem Laptop mit AlmaLinux 10.2 (`konnis-Latitude`, Bash). Dessen SSH-Key ist auf beiden
@@ -90,12 +91,23 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **MPD/curl** verbindet bei stillem Netzausfall nie neu (bleibt auf „play“) → Webradio-Wächter in `core`.
 * **asyncio hält Aufgaben nur schwach** → ohne Referenz räumt der Garbage Collector sie mitten im Lauf weg
   („Task was destroyed but it is pending“). Hintergrundaufgaben immer über `Core._spawn` starten.
+* **Chromium auf englischem System** bietet im Kiosk an, die deutsche Seite zu übersetzen → `--disable-features=Translate --lang=de`
+  in `ks-tv-kiosk`, `tv.html` mit `translate="no"`.
 * **MPD stellt einen gemerkten Sender pausiert wieder her** und versucht beim Start, darin zu springen – so lange
   nimmt er keine Verbindung an (am Pi bis über 25 s) → vor dem MPD-Neustart Radio stoppen, danach `play <Nr>`.
 
 ## Stand und offene Punkte
 
 Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
+
+### Testergebnisse (27.10.2026, unterwegs)
+
+* **Pi OS Lite frisch, `install.sh --tv-headless`:** 8 min über mobiles Netz (pip-Aussetzer abgefangen), Exit 0;
+  alle Dienste und Kiosk (cage + Chromium) laufen, `raspotify` vom Paket bleibt aus. Neustart: Boot 24 s,
+  Web nach 26 s, alles wieder da, kein ungefragtes Weiterspielen; Spotify vom Handy spielt.
+* Dabei behoben: Am Pi erkannte Klangstation nicht, ob an HDMI etwas hängt (vc4hdmi hat keinen Jack-Regler) →
+  Status aus `/sys/class/drm/card*-HDMI-A-n`. Automatische Ausgabe jetzt: USB-DAC/I²S-HAT, dann HDMI mit
+  erkanntem Gerät (Nutzerwunsch), dann Klinke. Übersetzen-Popup von Chromium im Kiosk abgeschaltet.
 
 ### Testergebnisse (26.10.2026)
 
@@ -169,7 +181,7 @@ Zuletzt getestet: siehe Tabelle „Getestet auf“ in der README.
   danach frisch verbunden.
 * Pi-Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Alma.
-* Tests Pi: `--tv-headless` auf Pi OS Lite, NFS; ganz zum Schluss der Dauerlauf. (Größere Bibliothek scannen
+* Tests Pi: NFS; ganz zum Schluss der Dauerlauf. (Größere Bibliothek scannen
   entfällt.)
 * Tests Alma: UPnP mit echter App, Neuinstallation von null, NFS, CEC (braucht Fernseher); mit Audio-CD:
   Rückfall beim Rippen auf USB, MusicBrainz-Neuversuch über 16 Versuche, echtes Rippen auf einen Stick.

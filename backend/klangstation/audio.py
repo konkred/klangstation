@@ -55,6 +55,16 @@ def _hdmi_jacks(card_idx: str) -> Dict[str, bool]:
     return out
 
 
+def _vc4_connected(port: str) -> Optional[bool]:
+    """Raspberry Pi: vc4hdmi hat keinen Jack-Regler - den Anschluss meldet DRM (vc4hdmi0 = HDMI-A-1)."""
+    for status in Path("/sys/class/drm").glob(f"card*-HDMI-A-{int(port) + 1}/status"):
+        try:
+            return status.read_text().strip() == "connected"
+        except OSError:
+            pass
+    return None
+
+
 # Regler, die auf frisch installierten Systemen ohne Desktop oft stumm oder auf 0 stehen
 _MIXER_CONTROLS = ("Master", "PCM", "Speaker", "Headphone", "Line Out", "Front", "IEC958")
 
@@ -121,7 +131,13 @@ def list_outputs() -> List[Dict[str, Any]]:
                     # auch fuer PC-Onboard-Sound mit mehreren HDMI-PCMs auf einer Karte ("HDMI 0", "HDMI 1" ...)
                     label = f"{card_name} – {pcm_name}"
                 connected = None
-                if kind == "hdmi" and not card_id.startswith("vc4hdmi"):
+                if card_id.startswith("vc4hdmi"):
+                    connected = _vc4_connected(card_id[7:] or "0")
+                    if connected is False:
+                        label += " (nichts angeschlossen)"
+                    elif connected:
+                        label += " (Monitor angeschlossen)"
+                elif kind == "hdmi":
                     if jacks is None:
                         jacks = _hdmi_jacks(idx)
                     connected = jacks.get(dev)
@@ -148,6 +164,14 @@ def resolve(selected: Optional[str]) -> Dict[str, str]:
             return out
     # automatisch nie einen HDMI-/DP-Ausgang ohne angeschlossenes Geraet waehlen
     real = [o for o in outputs if o["id"] != "default" and o.get("connected") is not False]
+    # Zusatz-DAC/HAT hat jemand bewusst eingebaut; danach ein erkannter Fernseher/Monitor vor der Klinke
+    # (an der Klinke laesst sich nicht feststellen, ob etwas steckt)
+    for out in real:
+        if out["kind"] in ("usb", "i2s"):
+            return out
+    for out in real:
+        if out["kind"] == "hdmi" and out.get("connected"):
+            return out
     for kind in _PRIORITY:
         for out in real:
             if out["kind"] == kind:

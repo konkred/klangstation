@@ -13,6 +13,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/theme-aero.css">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem("ks-theme") || "classic"; } catch (e) { /* privat */ }</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -185,6 +187,9 @@
               </label>
               <p class="hint">Bei „Bit-perfekt“ ist beides aus.</p>
               <h4 class="subhead">Auf diesem Gerät</h4>
+              <label class="field">Erscheinungsbild
+                <select id="theme-select"><option value="classic">Klassisch (Media Player der 2000er)</option><option value="aero">Frutiger Aero</option></select>
+              </label>
               <label class="check"><input type="checkbox" id="lock-controls"> Titel und Tasten im Sperrbildschirm und Kontrollzentrum zeigen</label>
               <p class="hint">Gilt nur für diesen Browser. Das Handy zeigt die Steuerung nur, solange die Seite etwas abspielt – darum läuft eine stille Tonspur mit, solange Bibliothek, Radio oder CD spielen. Bei AirPlay und Bluetooth bleibt sie aus.</p>
             </fieldset>

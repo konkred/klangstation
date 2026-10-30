@@ -1352,6 +1352,26 @@ $("#alarm-list").addEventListener("click", async (ev) => {
   } catch (e) { /* Meldung kam schon */ }
 });
 
+/* =========================================================== Erscheinungsbild (pro Geraet) */
+const THEME_COLOR = { classic: "#0e1e3d", aero: "#3fa9e6" };
+const VIS_PAL = {
+  classic: { bars: ["#c6f1ff", "#2fb4ff", "#0b3c8c"], mirror: "rgba(47,180,255,0.18)", peak: "#e8f8ff",
+    rings: ["rgba(111,211,255,.55)", "rgba(80,120,255,.45)", "rgba(180,90,255,.35)"] },
+  aero: { bars: ["#ffffff", "#6fe0ff", "#3fae2a"], mirror: "rgba(255,255,255,0.25)", peak: "#ffffff",
+    rings: ["rgba(255,255,255,.7)", "rgba(120,230,255,.6)", "rgba(150,230,90,.55)"] },
+};
+function applyTheme(name) {
+  if (!(name in THEME_COLOR)) name = "classic";
+  document.documentElement.dataset.theme = name;
+  $('meta[name="theme-color"]').setAttribute("content", THEME_COLOR[name]);
+  $("#theme-select").value = name;
+}
+applyTheme(document.documentElement.dataset.theme);
+$("#theme-select").addEventListener("change", (ev) => {
+  applyTheme(ev.target.value);
+  try { localStorage.setItem("ks-theme", ev.target.value); } catch (e) { /* privat */ }
+});
+
 /* =========================================================== Visualisierung */
 const vis = {
   canvas: $("#vis"),
@@ -1385,9 +1405,13 @@ function drawVis(t) {
   const L = vis.level;
   const s = t / 1000;
 
+  // Zu durchsichtig ausblenden: der Hintergrund kommt vom Theme (klassisch schwarz, Aero Himmel)
+  g.globalCompositeOperation = "destination-out";
   g.fillStyle = "rgba(0,0,0,0.35)";
   g.fillRect(0, 0, w, h);
-  if (vis.mode === 2) { g.fillStyle = "#000"; g.fillRect(0, 0, w, h); return; }
+  g.globalCompositeOperation = "source-over";
+  if (vis.mode === 2) { g.clearRect(0, 0, w, h); return; }
+  const P = VIS_PAL[document.documentElement.dataset.theme] || VIS_PAL.classic;
 
   if (vis.mode === 0) {
     const n = Math.max(16, Math.floor(w / 18));
@@ -1400,15 +1424,13 @@ function drawVis(t) {
         0.25 * Math.abs(Math.sin(s * 0.8 + i * 0.12))) * (1.1 - x * 0.55) * beat;
       const bh = Math.max(2, v * base * 0.75 * L + 2);
       const grad = g.createLinearGradient(0, base - bh, 0, base);
-      grad.addColorStop(0, "#c6f1ff");
-      grad.addColorStop(0.35, "#2fb4ff");
-      grad.addColorStop(1, "#0b3c8c");
+      P.bars.forEach((c, k) => grad.addColorStop([0, 0.35, 1][k], c));
       g.fillStyle = grad;
       g.fillRect(i * bw + 2, base - bh, bw - 4, bh);
-      g.fillStyle = "rgba(47,180,255,0.18)";
+      g.fillStyle = P.mirror;
       g.fillRect(i * bw + 2, base + 3, bw - 4, bh * 0.35);
       vis.peaks[i] = Math.max((vis.peaks[i] || 0) - 1.2, bh);
-      g.fillStyle = "#e8f8ff";
+      g.fillStyle = P.peak;
       g.fillRect(i * bw + 2, base - vis.peaks[i] - 4, bw - 4, 2);
     }
   } else {
@@ -1423,7 +1445,7 @@ function drawVis(t) {
         const y = cy + Math.sin(a + s * 0.2 * (k + 1)) * r * wob * (0.6 + k * 0.25) * 0.75;
         a === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
       }
-      g.strokeStyle = ["rgba(111,211,255,.55)", "rgba(80,120,255,.45)", "rgba(180,90,255,.35)"][k];
+      g.strokeStyle = P.rings[k];
       g.lineWidth = 2 + L * 2;
       g.stroke();
     }

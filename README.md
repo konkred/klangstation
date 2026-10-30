@@ -29,6 +29,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend, Instrumental-Pausen als Noten: aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key), gecacht; nicht bei Webradio |
 | Lautstärke & Übergänge | Angleichen nach ReplayGain (Album/Titel automatisch) oder dynamisch, Überblenden 2–10 s; nicht bei bit-perfekt |
 | Handy | als App auf den Homescreen legen; auf Wunsch Titel, Cover und Tasten im Sperrbildschirm (Bibliothek, Radio, CD) |
+| Erscheinungsbild | pro Gerät wählbar: klassisch (Media Player der 2000er) oder Frutiger Aero (Glas, Himmel, Blasen) |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
 ## Unterstützte Systeme
@@ -184,6 +185,8 @@ Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
 
 ### Handy
 
+* **Erscheinungsbild:** *Optionen › Ausgabe › Auf diesem Gerät* wechselt zwischen „Klassisch“ und „Frutiger Aero“.
+  Die Wahl gilt nur für diesen Browser; der „Läuft gerade“-Bildschirm bleibt klassisch.
 * **Als App:** In Safari *Teilen › Zum Home-Bildschirm*, in Chrome *Zum Startbildschirm hinzufügen*. Klangstation
   öffnet sich dann ohne Browserleisten.
 * **Sperrbildschirm:** *Optionen › Ausgabe › Auf diesem Gerät* zeigt Titel, Cover und Tasten im Sperrbildschirm und

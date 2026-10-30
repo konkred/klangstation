@@ -1,0 +1,81 @@
+/* Gemeinsame Grundlage der dunklen Themes (Nacht, Winamp, Hi-Fi): macht die sonst hellen Listen, Optionen und
+   Dialoge dunkel. Farben kommen aus Variablen, die das jeweilige Theme setzt:
+   --card/--card-line (Kästen, Felder), --field-line (Feldrahmen), --btn-* (Knöpfe), --pri-* (Hauptknopf),
+   --panel (Dialoge), --page (Optionen-Hintergrund), --soft (Kopfbereiche), --good/--bad, --art-a/--art-b. */
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .view.light,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .modal-box { color-scheme: dark; }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .toolbar { border-bottom-color: var(--card-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .toolbar input[type=search],
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .toolbar select,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .field input,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .field select,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .modal-body input,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .alarm-form input[type=time] { background: var(--card); color: var(--list-ink); border-color: var(--field-line); box-shadow: none; }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .seg { border-color: var(--btn-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .mini,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .btn,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .days button,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .tag,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .seg button,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .dlg-tabs button,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .pl-pick-list button.btn { color: var(--btn-ink); border-color: var(--btn-line); text-shadow: none; background: linear-gradient(180deg, var(--btn-top), var(--btn-low)); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .seg button { border-right-color: var(--btn-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .mini:hover,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .btn:not(.primary):hover,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .tag:hover { border-color: var(--accent); filter: brightness(1.12); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .seg button.on,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .days button.on,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .btn.primary { color: var(--pri-ink); border-color: var(--pri-line); text-shadow: none; background: linear-gradient(180deg, var(--pri-top), var(--pri-low)); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .btn.primary:hover { filter: brightness(1.12); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .pane-head .mini { color: var(--ink); background: rgba(255,255,255,.06); border-color: var(--btn-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .tag small { color: var(--list-dim); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .crumbs { background: var(--soft); border-bottom-color: var(--list-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) table.grid th { color: var(--btn-ink); background: linear-gradient(180deg, var(--btn-top), var(--btn-low)); border-bottom-color: var(--card-line); border-right-color: var(--list-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) table.grid td { border-bottom-color: var(--list-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) table.grid .ico img,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) table.grid .ico svg,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .rowbtn { color: var(--list-dim); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .rowbtn:hover { color: var(--accent); background: var(--list-sel); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .album:hover { border-color: var(--card-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .album .art,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .album-head .art,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .cd-art { background: linear-gradient(135deg, var(--art-a), var(--art-b)); box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .album-head,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .cd-head,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .pl-head { background: linear-gradient(180deg, var(--soft), var(--list-bg)); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .cd-rip { border-top-color: var(--card-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .rip-note.ok,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .bt-done,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .svc .st.ok,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .share .ok,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .auth-state.on { color: var(--good); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .rip-note.err,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .svc .st.no,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .share .err,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .login-err { color: var(--bad); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) #view-settings { background: var(--page); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .dlg-tabs button.on { background: var(--panel); color: var(--list-ink); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .dlg-body { background: var(--panel); border-color: var(--card-line); box-shadow: 0 2px 10px rgba(0,0,0,.45); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .modal-box { background: var(--panel); color: var(--list-ink); box-shadow: 0 0 0 1px var(--card-line), 0 18px 50px rgba(0,0,0,.8); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .modal { background: rgba(0,0,0,.7); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) fieldset { border-color: var(--card-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .out,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .svc,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .share,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .bt-dev,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .alarm,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .pl-pick-list button { background: var(--card); border-color: var(--card-line); color: var(--list-ink); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .out:hover { border-color: var(--field-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .out:has(input:checked),
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .pl-pick-list button:hover { background: var(--list-sel); border-color: var(--accent); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .alarm.next { border-color: var(--accent); box-shadow: none; }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .cec-status,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .auth-state,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) code { background: var(--soft); color: var(--list-ink); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .cec-status.warn { background: #3a2f10; color: #f0d58a; }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .auth-state.on { background: #15301f; }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .scanbar { border-color: var(--field-line); background: var(--card); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .share-form,
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .alarm-form { border-color: var(--card-line); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .toast { background: #2a2614; color: #e8dca0; border-color: #6b5a1a; }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .toast.err { background: #331717; color: #f0b0b0; border-color: #7a2a2a; }

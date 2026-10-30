@@ -1,0 +1,145 @@
+/* Theme „Hi-Fi-Anlage“ – Receiver der 70er/80er: Nussbaum an den Seiten, schwarz gebürstete Front,
+   Silberleiste mit Druckknöpfen, bernsteinfarbenes Display und VU-Meter (Visualisierung „Balken“, app.js).
+   Listen und Dialoge macht theme-dunkel.css dunkel. Greift nur bei <html data-theme="hifi">. */
+html[data-theme="hifi"] {
+  --chrome-hi: #3a342c;
+  --chrome-top: #2a2621;
+  --chrome-mid: #1e1b17;
+  --chrome-low: #151310;
+  --edge: #8c7a5c;
+  --glow: #ffb547;
+  --glow-strong: #f09a28;
+  --ink: #e9dcc4;
+  --ink-dim: #a8977a;
+  --list-bg: #1a1714;
+  --list-alt: #1e1a16;
+  --list-ink: #e3d6bd;
+  --list-dim: #a08f73;
+  --list-sel: #3a2e1c;
+  --list-line: #2c261f;
+  --head-top: #2e2923;
+  --head-low: #24201b;
+  --accent: #f0a43a;
+  --ok: #9ccc50;
+  --off: #3c352c;
+  --card: #221e1a;
+  --card-line: #3a3229;
+  --field-line: #54493b;
+  --btn-top: #e2dfd9;
+  --btn-low: #aeaaa2;
+  --btn-line: #2a2621;
+  --btn-ink: #1e1b17;
+  --pri-top: #ffcb6e;
+  --pri-low: #e0901f;
+  --pri-line: #6b4210;
+  --pri-ink: #2a1700;
+  --panel: #1f1c18;
+  --page: #14120f;
+  --soft: #26211c;
+  --good: #a8d468;
+  --bad: #f08060;
+  --art-a: #4a3b28;
+  --art-b: #1e1912;
+  --font: Futura, "Century Gothic", "URW Gothic", "TeX Gyre Adventor", "DejaVu Sans", sans-serif;
+  --wood: repeating-linear-gradient(90deg, #3b2414 0 3px, #44291a 3px 7px, #351f11 7px 9px, #4a2c1a 9px 14px, #3e2616 14px 17px);
+  --silver: repeating-linear-gradient(180deg, rgba(255,255,255,.07) 0 1px, rgba(0,0,0,.03) 1px 2px),
+    linear-gradient(180deg, #d4d1ca, #a39f97);
+}
+html[data-theme="hifi"] body { background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.45)), var(--wood); }
+html[data-theme="hifi"] .wmp {
+  border-radius: 6px;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--chrome-top), var(--chrome-low));
+  box-shadow: 0 0 0 1px #000, inset 0 1px 0 rgba(255,255,255,.12), 0 18px 50px rgba(0,0,0,.7);
+}
+/* Silberleisten: Titel, Kopf der Playlist, Dialogtitel */
+html[data-theme="hifi"] .titlebar, html[data-theme="hifi"] .pane-head, html[data-theme="hifi"] .modal-title {
+  color: #1e1b17; background: var(--silver); border-bottom: 1px solid #4a453e; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+html[data-theme="hifi"] .titletext strong { letter-spacing: 2px; text-transform: uppercase; }
+html[data-theme="hifi"] .titletext span, html[data-theme="hifi"] .lamp { color: #3a342c; }
+html[data-theme="hifi"] .lamp.active { color: #1e1b17; }
+html[data-theme="hifi"] .lamp::before { background: #6a6258; box-shadow: inset 0 1px 1px rgba(0,0,0,.4); }
+html[data-theme="hifi"] .lamp.on::before { background: #7fb83a; box-shadow: 0 0 5px #9ccc50; }
+html[data-theme="hifi"] .lamp.active::before { background: #ffb547; box-shadow: 0 0 6px #ffb547; }
+html[data-theme="hifi"] .orb, html[data-theme="hifi"] .modal-title .orb {
+  background: radial-gradient(circle at 40% 35%, #f4f1ea, #b9b4aa 40%, #6f6a62 75%, #3a3631);
+  box-shadow: 0 1px 2px rgba(0,0,0,.6), inset 0 0 0 1px rgba(0,0,0,.25);
+}
+html[data-theme="hifi"] .pane-head .mini { color: #1e1b17; background: rgba(255,255,255,.35); border-color: rgba(0,0,0,.35); }
+
+/* Holzwange links (am Handy oben) */
+html[data-theme="hifi"] .taskbar { background: linear-gradient(90deg, rgba(0,0,0,.15), rgba(0,0,0,.35)), var(--wood); border-right-color: #120b06; box-shadow: none; }
+html[data-theme="hifi"] .taskbar a { color: #f1e4cc; text-shadow: 0 1px 1px #000; }
+html[data-theme="hifi"] .taskbar a svg { color: #ffc46b; }
+html[data-theme="hifi"] .taskbar a:hover { background: rgba(0,0,0,.2); border-color: rgba(255,200,130,.2); }
+html[data-theme="hifi"] .taskbar a.on {
+  background: rgba(0,0,0,.45); border-color: rgba(255,190,100,.35);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.6), 0 0 8px rgba(255,170,60,.2);
+}
+html[data-theme="hifi"] .taskbar a.on svg { color: #ffd38a; }
+html[data-theme="hifi"] .taskbar-foot { color: #d8c3a0; border-top-color: rgba(0,0,0,.3); }
+
+/* ---------------------------------------------------------- Wiedergabe: Bernstein-Display */
+html[data-theme="hifi"] #view-now { background: #120f0c; }
+html[data-theme="hifi"] .stage { background: radial-gradient(ellipse at 50% 35%, #2a1d0e, #0d0a07 70%); }
+html[data-theme="hifi"] .stage-info { background: linear-gradient(180deg, transparent, rgba(10,8,6,.85) 55%); }
+html[data-theme="hifi"] .np-text { text-shadow: 0 0 10px rgba(255,170,60,.35); }
+html[data-theme="hifi"] .np-title { color: #ffd08a; }
+html[data-theme="hifi"] .np-artist { color: #ffb547; }
+html[data-theme="hifi"] .np-album { color: #c9a46e; }
+html[data-theme="hifi"] .np-format { color: #8c7350; }
+html[data-theme="hifi"] .np-source { color: #2a1700; background: linear-gradient(180deg, #ffd38a, #e8962a); text-shadow: none; }
+html[data-theme="hifi"] .cover-wrap img, html[data-theme="hifi"] .cover-fallback { border: 2px solid #2a2621; border-radius: 2px; box-shadow: 0 6px 20px rgba(0,0,0,.7); }
+html[data-theme="hifi"] .cover-fallback { background: linear-gradient(135deg, #3a2e1e, #120f0c); }
+html[data-theme="hifi"] .cover-fallback svg { color: rgba(255,181,71,.45); }
+html[data-theme="hifi"] .vis-switch { background: rgba(30,27,23,.85); color: #e9dcc4; border-color: #54493b; }
+html[data-theme="hifi"] .vis-switch:hover { color: #ffd08a; border-color: #f0a43a; }
+
+html[data-theme="hifi"] .playlist-pane { background: #171411; border-left-color: #0b0907; }
+html[data-theme="hifi"] .queue li { color: #c9b896; border-bottom-color: rgba(255,255,255,.03); }
+html[data-theme="hifi"] .queue li::before, html[data-theme="hifi"] .queue .q-x, html[data-theme="hifi"] .queue-empty { color: #7a6a50; }
+html[data-theme="hifi"] .queue li:hover { background: rgba(255,181,71,.06); color: #f1e4cc; }
+html[data-theme="hifi"] .queue li.cur { color: #ffd08a; background: linear-gradient(90deg, rgba(255,170,60,.22), rgba(255,170,60,.03)); }
+html[data-theme="hifi"] .queue .q-t small, html[data-theme="hifi"] .queue .q-d { color: #8c7a5c; }
+
+/* ---------------------------------------------------------- Listen: Silberknöpfe */
+html[data-theme="hifi"] .mini, html[data-theme="hifi"] .btn, html[data-theme="hifi"] .days button,
+html[data-theme="hifi"] .seg button, html[data-theme="hifi"] .dlg-tabs button { box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(0,0,0,.5); }
+html[data-theme="hifi"] .dlg-tabs button.on { box-shadow: none; }
+html[data-theme="hifi"] .toolbar { background: linear-gradient(180deg, #2e2923, #1e1b17); }
+html[data-theme="hifi"] .scanbar i { background: linear-gradient(#ffd38a, #e0901f); }
+
+/* ---------------------------------------------------------- Transportleiste: Silberfront */
+html[data-theme="hifi"] .transport { background: var(--silver); border-top-color: #4a453e; box-shadow: inset 0 1px 0 rgba(255,255,255,.6); }
+html[data-theme="hifi"] .time, html[data-theme="hifi"] .status-right { color: #3a342c; }
+html[data-theme="hifi"] .ticker {
+  color: #ffb547; text-shadow: 0 0 6px rgba(255,170,60,.6);
+  background: #120c05; padding: 2px 8px; border-radius: 3px; box-shadow: inset 0 1px 3px #000, 0 1px 0 rgba(255,255,255,.5);
+}
+html[data-theme="hifi"] .tbtn {
+  border-radius: 4px; color: #2a2621; border: 1px solid #5a554d;
+  background: linear-gradient(180deg, #f6f4f0, #bdb9b1); box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.4);
+}
+html[data-theme="hifi"] .tbtn:hover { color: #000; box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px #f0a43a; }
+html[data-theme="hifi"] .tbtn.on { color: #2a1700; background: linear-gradient(180deg, #ffd38a, #e8962a); }
+html[data-theme="hifi"] .playorb {
+  color: #2a2621; border: 2px solid #4a463f;
+  background: radial-gradient(circle at 50% 35%, #fbfaf7, #d1cdc5 35%, #8f8a82 75%, #5a564f);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.12), 0 3px 6px rgba(0,0,0,.5);
+}
+html[data-theme="hifi"] .playorb svg { filter: none; }
+html[data-theme="hifi"] .playorb:hover { box-shadow: 0 0 0 3px rgba(240,164,58,.5), 0 3px 6px rgba(0,0,0,.5); }
+html[data-theme="hifi"] input[type=range]::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, #f0a43a var(--p, 0%), #2a2621 var(--p, 0%)); box-shadow: inset 0 1px 2px #000, 0 1px 0 rgba(255,255,255,.5);
+}
+html[data-theme="hifi"] input[type=range]::-moz-range-track { background: #2a2621; }
+html[data-theme="hifi"] input[type=range]::-moz-range-progress { background: #f0a43a; }
+html[data-theme="hifi"] input[type=range]::-webkit-slider-thumb { background: radial-gradient(circle at 35% 30%, #fff, #c9c5bd 50%, #7d786f); box-shadow: 0 1px 2px rgba(0,0,0,.6); }
+html[data-theme="hifi"] input[type=range]::-moz-range-thumb { background: radial-gradient(circle at 35% 30%, #fff, #c9c5bd 50%, #7d786f); box-shadow: 0 1px 2px rgba(0,0,0,.6); }
+/* Regler in den Optionen liegen auf dunklem Grund */
+html[data-theme="hifi"] .modal-body input[type=range]::-webkit-slider-runnable-track { box-shadow: inset 0 1px 2px #000; }
+
+@media (max-width: 700px) {
+  html[data-theme="hifi"] .wmp { border-radius: 0; }
+}

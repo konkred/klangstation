@@ -1,0 +1,54 @@
+/* „Läuft gerade“ im Theme Luna: gedämpfte „Grüne Wiese“ mit ziehenden Wolken (tv.js), Titel in einem
+   XP-Fenster, oben die Taskleiste. Greift nur bei <html data-theme="luna">. */
+html[data-theme="luna"] {
+  --glow: #ffe27a;
+  --glow-strong: #2fa62f;
+  --ink: #ffffff;
+  --ink-dim: #e3ebff;
+}
+html[data-theme="luna"] body {
+  background:
+    radial-gradient(ellipse 130% 55% at 35% 118%, #3f8a1f 0%, #5ea52f 40%, rgba(94,165,47,0) 72%),
+    linear-gradient(180deg, #1f5aa8 0%, #3d7fcf 55%, #7fb0e0 100%);
+}
+html[data-theme="luna"] #bg { opacity: .9; }
+html[data-theme="luna"] .top {
+  padding: 0 0 0 3vw; color: #fff; text-shadow: .1vh .1vh 0 #0b2f86;
+  background: linear-gradient(180deg, #3168d5 0%, #4993e6 4%, #2157d7 12%, #2663e0 88%, #1941a5 100%);
+}
+html[data-theme="luna"] .brand { padding: 1.2vh 0; }
+html[data-theme="luna"] .orb { border-radius: .4vh; background: linear-gradient(135deg, #ffd27a, #f08a00 60%, #b85a00); box-shadow: none; }
+html[data-theme="luna"] .top-right { align-self: stretch; padding: 0 3vw; background: linear-gradient(180deg, #0f8af0, #0c6ad6); border-left: .2vh solid #0c2f8a; }
+html[data-theme="luna"] .sleep { color: #ffe27a; }
+html[data-theme="luna"] .cover img, html[data-theme="luna"] .cover-fallback { border: .4vh solid #fff; border-radius: .3vh; box-shadow: 0 2vh 4vh rgba(0,20,60,.45); }
+html[data-theme="luna"] .cover-fallback { color: rgba(255,255,255,.7); background: linear-gradient(135deg, #3d7fe0, #0b2a6b); }
+/* XP-Fenster mit Titelleiste */
+html[data-theme="luna"] .info {
+  position: relative; padding: 8vh 4vh 3vh; color: #1a1a1a; text-shadow: none;
+  background: #dcd8c8; border-radius: 1vh 1vh .3vh .3vh;
+  box-shadow: 0 0 0 .4vh #0a4fd6, 0 2vh 5vh rgba(0,20,60,.45);
+}
+html[data-theme="luna"] .info::before {
+  content: "Läuft gerade"; position: absolute; top: 0; left: 0; right: 0;
+  padding: 1.1vh 2vh; font-size: 2.4vh; font-weight: bold; color: #fff; text-shadow: .1vh .1vh 0 #0b2f86;
+  background: linear-gradient(180deg, #3d95ff 0%, #0a5fe6 8%, #0058e6 40%, #0a5fe6 88%, #0941b8 100%);
+  border-radius: .8vh .8vh 0 0;
+}
+html[data-theme="luna"] h1 { color: #000; }
+html[data-theme="luna"] .artist { color: #0b3fa8; }
+html[data-theme="luna"] .album { color: #4a4a4a; }
+html[data-theme="luna"] .badge { color: #fff; background: linear-gradient(180deg, #7fd17f, #2fa62f); border-radius: .4vh; text-shadow: 0 .1vh 0 rgba(0,0,0,.3); }
+html[data-theme="luna"] .bar { height: 2vh; border-radius: .4vh; background: #fff; box-shadow: inset 0 0 0 .15vh #7f9db9; padding: .3vh; }
+html[data-theme="luna"] .fill { background: repeating-linear-gradient(90deg, #3cbf3c 0 1.4vh, transparent 1.4vh 1.8vh); box-shadow: none; }
+html[data-theme="luna"] .times { color: #4a4a4a; }
+html[data-theme="luna"] .format { color: #6a6a6a; }
+html[data-theme="luna"] .lyrics .line { color: rgba(26,26,26,.4); }
+html[data-theme="luna"] .lyrics .line.now { color: #000; text-shadow: none; }
+html[data-theme="luna"] .lyrics .line.note.now span.on { color: #2fa62f; }
+html[data-theme="luna"] .lyrics .plain { color: #1a1a1a; }
+html[data-theme="luna"] .lyrics .source { color: #6a6a6a; }
+html[data-theme="luna"] .idle-time { color: rgba(255,255,255,.8); text-shadow: 0 .3vh 1vh rgba(0,40,100,.6); }
+html[data-theme="luna"] .idle-hint { color: #c9dcff; }
+html[data-theme="luna"] .recent-item img, html[data-theme="luna"] .recent-fb { border: .3vh solid #fff; border-radius: .3vh; }
+html[data-theme="luna"] .recent-fb { color: rgba(255,255,255,.7); background: linear-gradient(135deg, #3d7fe0, #0b2a6b); }
+html[data-theme="luna"] .recent-item div { color: #fff; text-shadow: 0 .1vh .3vh rgba(0,30,80,.8); }

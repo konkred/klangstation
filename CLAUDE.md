@@ -28,9 +28,11 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
   librespot/gmediarender/bluealsa-aplay, `lyrics.py` Liedtexte (`.lrc`, LRCLIB), `timers.py` Schlummer-Timer und
   Wecker, `weather.py` Wetter für den Ruhebildschirm (Open-Meteo).
 * `web/` – Oberfläche (`index.html`, `js/app.js`, `css/style.css`) und „Läuft gerade“ unter `/tv` (`tv.html`,
-  `js/tv.js`, `css/tv.css`). Themes liegen je in einer eigenen Datei (`css/theme-aero.css`, `css/tv-aero.css`) und
-  greifen nur unter `html[data-theme=…]`: die Oberfläche merkt sich das Theme pro Browser (localStorage), `/tv`
-  folgt der Einstellung `tv_theme`.
+  `js/tv.js`, `css/tv.css`). Themes liegen je in einer eigenen Datei (`css/theme-<name>.css`, `css/tv-<name>.css`) und
+  greifen nur unter `html[data-theme=…]`: die Oberfläche merkt sich das Theme pro Browser (localStorage, „auto“ =
+  Nacht bei dunklem System), `/tv` folgt der Einstellung `tv_theme` (Liste in `config.TV_THEMES`).
+  `theme-dunkel.css` macht für Nacht, Winamp und Hi-Fi die hellen Listen und Dialoge dunkel (über Variablen wie
+  `--card`, `--btn-top`). Eigene Bilder je Theme: `VIS_PAL`/VU-Meter in `app.js`, `draw()` in `tv.js`.
 * `system/` – systemd-Units, udev-Regel, Hilfsskripte, SELinux-Modul. `ks-netmount` ist ein root-Hilfsdienst
   (Socket nur für Gruppe klangstation): SMB/NFS lesend einhängen, gerippte CDs auf USB speichern.
   `ks-automount` hängt USB/SD ein und aus, `ks-tv-kiosk` startet den Kiosk-Browser.
@@ -297,6 +299,8 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
   Pause/Weiter und Spulen mit richtiger Zeit, Play weckt die pausierte Seite. Homescreen-App ohne Browserleiste.
 * Themes: Frutiger Aero (gedämpft) für Oberfläche und `/tv` im Browser (Desktop, 320–390 px) und am Monitor
   (Kiosk); laut Nutzer angenehm. Knopfreihe passt ab 320 px.
+* Themes Nacht, Winamp, Aqua, Hi-Fi und Luna (Oberfläche: Wiedergabe, Bibliothek, Optionen, Wecker-Dialog bei 1280 und
+  390 px ohne Überlauf; `/tv` mit Wiedergabe und Ruhebildschirm im Browser). Noch nicht am Monitor und am iPhone.
 
 ### Behobene Fehler
 

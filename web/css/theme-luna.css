@@ -1,0 +1,148 @@
+/* Theme „Luna“ – Windows XP: blaue Titelleiste, Aufgabenbereich links, beige Dialoge, Taskleiste mit grünem
+   Start-Knopf als Play. Etwas gedämpfter als das Original. Greift nur bei <html data-theme="luna">. */
+html[data-theme="luna"] {
+  --chrome-hi: #3d95ff;
+  --chrome-top: #0a5fe6;
+  --chrome-mid: #0850c8;
+  --chrome-low: #0641a8;
+  --edge: #ffffff;
+  --glow: #9fd0ff;
+  --glow-strong: #2fa62f;
+  --ink: #ffffff;
+  --ink-dim: #c9dcff;
+  --list-bg: #fbfbf8;
+  --list-alt: #f4f3ec;
+  --list-ink: #1a1a1a;
+  --list-dim: #676767;
+  --list-sel: #c1d2ee;
+  --list-line: #e2dfd0;
+  --head-top: #fbfbf8;
+  --head-low: #e6e2d3;
+  --accent: #0b5dd7;
+  --ok: #3cbf3c;
+  --off: #6f8fc8;
+  --xp-title: linear-gradient(180deg, #3d95ff 0%, #0a5fe6 8%, #0058e6 40%, #0a5fe6 88%, #0941b8 100%);
+  --xp-btn: linear-gradient(180deg, #fff, #f4f3ee 85%, #d6d0c5);
+  color-scheme: light;
+}
+/* Gedämpfte „Grüne Wiese“ */
+html[data-theme="luna"] body {
+  background:
+    radial-gradient(ellipse 120% 55% at 30% 118%, #3e8a1e 0%, #5aa52e 45%, rgba(90,165,46,0) 72%),
+    radial-gradient(ellipse 28% 10% at 72% 20%, rgba(255,255,255,.35), rgba(255,255,255,0) 70%),
+    radial-gradient(ellipse 22% 8% at 25% 30%, rgba(255,255,255,.25), rgba(255,255,255,0) 70%),
+    linear-gradient(180deg, #2a64b8, #5590d4 60%, #8bb6e2);
+  background-attachment: fixed;
+}
+html[data-theme="luna"] .wmp {
+  border-radius: 8px 8px 4px 4px; background: #0a4fd6;
+  box-shadow: 0 0 0 1px #0831a0, 0 18px 50px rgba(0,30,80,.5);
+}
+html[data-theme="luna"] .titlebar, html[data-theme="luna"] .modal-title {
+  color: #fff; background: var(--xp-title); border-bottom: 0; text-shadow: 1px 1px 0 #0b2f86;
+}
+html[data-theme="luna"] .orb, html[data-theme="luna"] .modal-title .orb {
+  border-radius: 3px; background: linear-gradient(135deg, #ffd27a, #f08a00 60%, #b85a00);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.4), 0 1px 1px rgba(0,0,0,.3);
+}
+html[data-theme="luna"] .lamp { color: #dce8ff; }
+html[data-theme="luna"] .lamp::before { box-shadow: inset 0 1px 1px rgba(255,255,255,.4); }
+html[data-theme="luna"] .lamp.on::before { box-shadow: 0 0 4px #9eff9e; }
+html[data-theme="luna"] .lamp.active::before { background: #fff; box-shadow: 0 0 6px #fff; }
+
+/* Aufgabenbereich wie im Explorer */
+html[data-theme="luna"] .frame { background: var(--list-bg); }
+html[data-theme="luna"] .taskbar { background: linear-gradient(180deg, #7ba2e7, #6375d6); border-right: 1px solid #4a5fbf; box-shadow: none; }
+html[data-theme="luna"] .taskbar a { color: #fff; text-shadow: none; }
+html[data-theme="luna"] .taskbar a svg { color: #fff; }
+html[data-theme="luna"] .taskbar a:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.35); }
+html[data-theme="luna"] .taskbar a.on { color: #0b3fa8; background: #fff; border-color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+html[data-theme="luna"] .taskbar a.on svg { color: #0b5dd7; }
+html[data-theme="luna"] .taskbar-foot { color: #e3ebff; border-top-color: rgba(255,255,255,.3); }
+
+/* ---------------------------------------------------------- Wiedergabe */
+html[data-theme="luna"] .stage { background: linear-gradient(180deg, #0b2a6b, #04122f); }
+html[data-theme="luna"] .stage-info { background: linear-gradient(180deg, transparent, rgba(4,18,47,.85) 60%); }
+html[data-theme="luna"] .np-source { color: #fff; background: linear-gradient(180deg, #7fd17f, #2fa62f); text-shadow: 0 1px 0 rgba(0,0,0,.3); }
+html[data-theme="luna"] .np-format { color: #8faad8; }
+html[data-theme="luna"] .cover-wrap img, html[data-theme="luna"] .cover-fallback { border: 1px solid #fff; border-radius: 2px; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+html[data-theme="luna"] .cover-fallback { background: linear-gradient(135deg, #3d7fe0, #0b2a6b); }
+html[data-theme="luna"] .vis-switch { color: #000; background: var(--xp-btn); border-color: #003c74; border-radius: 3px; }
+html[data-theme="luna"] .vis-switch:hover { color: #000; border-color: #003c74; box-shadow: inset 0 -1px 0 #f0a020, inset 0 1px 0 #ffe7a2; }
+
+html[data-theme="luna"] .playlist-pane { background: var(--list-bg); border-left: 1px solid #7f9db9; }
+html[data-theme="luna"] .pane-head { color: #215dc6; text-shadow: none; background: linear-gradient(90deg, #fff, #c6d3f7); border-bottom: 1px solid #b8c6ea; }
+html[data-theme="luna"] .pane-head .mini { color: #000; background: var(--xp-btn); border-color: #003c74; }
+html[data-theme="luna"] .queue li { color: #1a1a1a; border-bottom-color: #f0eee4; }
+html[data-theme="luna"] .queue li::before, html[data-theme="luna"] .queue .q-x { color: #8f8f8f; }
+html[data-theme="luna"] .queue li:hover { background: #e8eef9; color: #000; }
+html[data-theme="luna"] .queue .q-t small, html[data-theme="luna"] .queue .q-d, html[data-theme="luna"] .queue-empty { color: #767676; }
+html[data-theme="luna"] .queue li.cur { color: #fff; background: #316ac5; }
+html[data-theme="luna"] .queue li.cur::before, html[data-theme="luna"] .queue li.cur small, html[data-theme="luna"] .queue li.cur .q-d { color: #dbe6f7; }
+
+/* ---------------------------------------------------------- Listen und Optionen */
+html[data-theme="luna"] .toolbar { background: linear-gradient(180deg, #fbfbf8, #e6e2d3); border-bottom-color: #d0ccbb; }
+html[data-theme="luna"] .mini, html[data-theme="luna"] .btn, html[data-theme="luna"] .days button, html[data-theme="luna"] .tag,
+html[data-theme="luna"] .seg button {
+  color: #000; border-color: #003c74; background: var(--xp-btn); text-shadow: none;
+}
+html[data-theme="luna"] .seg { border-color: #003c74; border-radius: 3px; }
+html[data-theme="luna"] .seg button { border-right-color: #8c9fbf; }
+html[data-theme="luna"] .mini:hover, html[data-theme="luna"] .btn:not(.primary):hover, html[data-theme="luna"] .days button:hover {
+  border-color: #003c74; background: var(--xp-btn); box-shadow: inset 0 -2px 0 #f0a020, inset 0 2px 0 #ffe7a2;
+}
+html[data-theme="luna"] .seg button.on, html[data-theme="luna"] .days button.on { color: #fff; background: #316ac5; }
+html[data-theme="luna"] .btn.primary { color: #fff; border-color: #1f5f1f; background: linear-gradient(180deg, #6fcf5a, #3c9e3c 55%, #2f8a2f); text-shadow: 0 1px 0 rgba(0,0,0,.3); }
+html[data-theme="luna"] .btn.primary:hover { background: linear-gradient(180deg, #82dc6c, #46ad46 55%, #349634); }
+html[data-theme="luna"] table.grid th { background: linear-gradient(180deg, #fbfbf8, #e6e2d3); border-bottom-color: #d0ccbb; border-right-color: #e2dfd0; }
+html[data-theme="luna"] .album .art, html[data-theme="luna"] .album-head .art, html[data-theme="luna"] .cd-art { background: linear-gradient(135deg, #c6d3f7, #7ba2e7); }
+html[data-theme="luna"] .album-head, html[data-theme="luna"] .cd-head, html[data-theme="luna"] .pl-head { background: linear-gradient(180deg, #efede3, #fbfbf8); }
+html[data-theme="luna"] .crumbs { background: #f4f3ec; }
+html[data-theme="luna"] .scanbar i { background: repeating-linear-gradient(90deg, #3cbf3c 0 8px, transparent 8px 10px); }
+html[data-theme="luna"] #view-settings { background: #e6e2d3; }
+html[data-theme="luna"] .dlg-tabs button { border-color: #919b9c; background: linear-gradient(180deg, #fff, #ece9d8); }
+html[data-theme="luna"] .dlg-tabs button.on { background: #fbfbf8; box-shadow: inset 0 2px 0 #f9b33a; }
+html[data-theme="luna"] .dlg-body { background: #fbfbf8; border-color: #919b9c; }
+html[data-theme="luna"] fieldset { border-color: #d0d0bf; border-radius: 3px; }
+html[data-theme="luna"] legend, html[data-theme="luna"] .subhead { color: #0046d5; }
+html[data-theme="luna"] .out, html[data-theme="luna"] .svc, html[data-theme="luna"] .share, html[data-theme="luna"] .bt-dev,
+html[data-theme="luna"] .alarm, html[data-theme="luna"] .pl-pick-list button { border-color: #d6d2c2; }
+html[data-theme="luna"] .out:has(input:checked) { background: #e3ebfa; }
+
+/* ---------------------------------------------------------- Transportleiste wie die Taskleiste */
+html[data-theme="luna"] .transport {
+  background: linear-gradient(180deg, #3168d5 0%, #4993e6 4%, #2157d7 12%, #2663e0 90%, #1941a5 100%);
+  border-top: 1px solid #0c2f8a; box-shadow: none;
+}
+html[data-theme="luna"] .time, html[data-theme="luna"] .status-right { color: #dce8ff; }
+html[data-theme="luna"] .ticker { color: #fff; text-shadow: 0 1px 0 #0b2f86; }
+html[data-theme="luna"] .tbtn {
+  color: #fff; border: 1px solid #0c2f8a;
+  background: radial-gradient(circle at 50% 25%, rgba(255,255,255,.55), rgba(255,255,255,0) 55%), linear-gradient(180deg, #5d9cf5, #1d4fc4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1px 2px rgba(0,0,0,.4);
+}
+html[data-theme="luna"] .tbtn:hover { color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 6px rgba(160,210,255,.8); }
+html[data-theme="luna"] .tbtn.on { color: #fff; background: radial-gradient(circle at 50% 25%, rgba(255,255,255,.55), rgba(255,255,255,0) 55%), linear-gradient(180deg, #6fcf5a, #2f8a2f); }
+html[data-theme="luna"] .playorb {
+  color: #fff; border: 2px solid #1f5f1f;
+  background: radial-gradient(circle at 50% 22%, rgba(255,255,255,.6), rgba(255,255,255,0) 50%), linear-gradient(180deg, #5fbf4c, #3c9e3c 50%, #2f8a2f);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 3px 6px rgba(0,0,0,.45);
+}
+html[data-theme="luna"] .playorb:hover { box-shadow: 0 0 0 2px rgba(255,255,255,.5), 0 0 12px rgba(120,230,100,.6), 0 3px 6px rgba(0,0,0,.45); }
+html[data-theme="luna"] input[type=range]::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, #3cbf3c var(--p, 0%), #fff var(--p, 0%)); box-shadow: inset 0 1px 2px rgba(0,0,0,.4);
+}
+html[data-theme="luna"] input[type=range]::-moz-range-track { background: #fff; box-shadow: inset 0 1px 2px rgba(0,0,0,.4); }
+html[data-theme="luna"] input[type=range]::-moz-range-progress { background: #3cbf3c; }
+html[data-theme="luna"] input[type=range]::-webkit-slider-thumb { background: radial-gradient(circle at 35% 30%, #fff, #dfe8f7 50%, #8fb0e0); box-shadow: 0 0 0 1px #3a5ba8, 0 1px 2px rgba(0,0,0,.4); }
+html[data-theme="luna"] input[type=range]::-moz-range-thumb { background: radial-gradient(circle at 35% 30%, #fff, #dfe8f7 50%, #8fb0e0); box-shadow: 0 0 0 1px #3a5ba8; }
+/* In den Dialogen liegen Regler auf hellem Grund */
+html[data-theme="luna"] .modal-body input[type=range]::-webkit-slider-runnable-track { box-shadow: inset 0 0 0 1px #7f9db9; }
+
+html[data-theme="luna"] .modal { background: rgba(0,20,60,.35); }
+html[data-theme="luna"] .modal-box { background: #ece9d8; border-radius: 8px 8px 3px 3px; box-shadow: 0 0 0 3px #0a4fd6, 0 18px 50px rgba(0,30,80,.5); }
+
+@media (max-width: 700px) {
+  html[data-theme="luna"] .wmp { border-radius: 0; }
+  html[data-theme="luna"] .taskbar { border-right: 0; border-bottom: 1px solid #4a5fbf; }
+}

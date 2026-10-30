@@ -1,0 +1,163 @@
+/* Theme „Winamp Classic“ – graues Rillengehäuse mit Kanten wie um 2000, grüne LCD-Schrift auf Schwarz,
+   blaue Auswahl in der Playlist, eckige Knöpfe. Listen und Dialoge macht theme-dunkel.css dunkel.
+   Greift nur bei <html data-theme="winamp">. */
+html[data-theme="winamp"] {
+  --chrome-hi: #4a4a5a;
+  --chrome-top: #39394a;
+  --chrome-mid: #2b2b38;
+  --chrome-low: #1f1f29;
+  --edge: #6b6b7d;
+  --glow: #00e000;
+  --glow-strong: #00c000;
+  --ink: #d8d8e0;
+  --ink-dim: #9a9aaa;
+  --list-bg: #000;
+  --list-alt: #060a06;
+  --list-ink: #00e000;
+  --list-dim: #5fae5f;
+  --list-sel: #0a1a8a;
+  --list-line: #0d1a0d;
+  --head-top: #4a4a5a;
+  --head-low: #2b2b38;
+  --accent: #00e000;
+  --ok: #00e000;
+  --off: #2a3a2a;
+  --card: #0a0a0e;
+  --card-line: #3a3a4a;
+  --field-line: #5a5a6d;
+  --btn-top: #55556a;
+  --btn-low: #363646;
+  --btn-line: #15151c;
+  --btn-ink: #e0e0e8;
+  --pri-top: #2e7a2e;
+  --pri-low: #1b4f1b;
+  --pri-line: #0b260b;
+  --pri-ink: #eaffea;
+  --panel: #24242f;
+  --page: #181820;
+  --soft: #121218;
+  --good: #3ee03e;
+  --bad: #ff5a4a;
+  --art-a: #2b2b38;
+  --art-b: #0a0a0e;
+  --lcd: "Lucida Console", "DejaVu Sans Mono", "Liberation Mono", monospace;
+  --font: Arial, "Liberation Sans", "DejaVu Sans", sans-serif;
+  --bevel: inset 1px 1px 0 rgba(255,255,255,.28), inset -1px -1px 0 rgba(0,0,0,.45);
+}
+/* Optionen und Dialoge wie Windows-Einstellungen: graue Schrift statt LCD-Grün */
+html[data-theme="winamp"] #view-settings, html[data-theme="winamp"] .modal-box { --list-ink: #d8d8e0; --list-dim: #9a9aaa; }
+
+html[data-theme="winamp"] body { background: #0b0b10; }
+html[data-theme="winamp"] .wmp {
+  border-radius: 2px;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--chrome-top), var(--chrome-low));
+  box-shadow: 0 0 0 1px #000, inset 1px 1px 0 #6b6b7d, inset -1px -1px 0 #101016, 0 18px 50px rgba(0,0,0,.7);
+}
+html[data-theme="winamp"] .titlebar, html[data-theme="winamp"] .modal-title, html[data-theme="winamp"] .pane-head {
+  background: repeating-linear-gradient(180deg, #4a4a5e 0 1px, #2e2e3c 1px 3px);
+  border-bottom: 1px solid #101016; text-shadow: none;
+}
+html[data-theme="winamp"] .titletext strong { color: #d6c87a; text-transform: uppercase; letter-spacing: 3px; font-size: 12px; }
+html[data-theme="winamp"] .orb, html[data-theme="winamp"] .modal-title .orb {
+  border-radius: 3px; background: linear-gradient(135deg, #ffd000, #f07000 60%, #b03000); box-shadow: var(--bevel);
+}
+html[data-theme="winamp"] .lamp.on::before, html[data-theme="winamp"] .lamp.active::before { box-shadow: 0 0 4px var(--glow); }
+
+html[data-theme="winamp"] .taskbar { background: #1c1c25; border-right-color: #101016; box-shadow: inset -1px 0 0 #3a3a4a; }
+html[data-theme="winamp"] .taskbar a { color: #c8c8d0; text-shadow: none; border-radius: 0; font-weight: normal; }
+html[data-theme="winamp"] .taskbar a:hover { background: #26263a; border-color: #3a3a4a; }
+html[data-theme="winamp"] .taskbar a.on { color: #fff; background: #0a1a8a; border-color: #3a4ab0; box-shadow: none; }
+html[data-theme="winamp"] .taskbar-foot { border-top-color: #3a3a4a; }
+
+/* ---------------------------------------------------------- Wiedergabe */
+html[data-theme="winamp"] #view-now { background: #000; }
+html[data-theme="winamp"] .stage-info { background: linear-gradient(180deg, transparent, rgba(0,0,0,.88) 55%); }
+html[data-theme="winamp"] .np-text { font-family: var(--lcd); text-shadow: 0 0 6px rgba(0,255,0,.3); }
+html[data-theme="winamp"] .np-title { color: #00ff00; }
+html[data-theme="winamp"] .np-artist { color: #00d000; }
+html[data-theme="winamp"] .np-album { color: #00a000; }
+html[data-theme="winamp"] .np-format { color: #008800; }
+html[data-theme="winamp"] .np-source { border-radius: 0; color: #000; background: #00e000; text-shadow: none; }
+html[data-theme="winamp"] .cover-wrap { -webkit-box-reflect: unset; }
+html[data-theme="winamp"] .cover-wrap img, html[data-theme="winamp"] .cover-fallback { border: 1px solid #3a3a4a; border-radius: 0; box-shadow: none; }
+html[data-theme="winamp"] .cover-fallback { background: #0a0a0e; }
+html[data-theme="winamp"] .cover-fallback svg { color: #00a000; }
+html[data-theme="winamp"] .vis-switch { border-radius: 0; color: #00e000; background: #2b2b38; border-color: #5a5a6d; font-family: var(--lcd); }
+
+html[data-theme="winamp"] .playlist-pane { background: #000; border-left-color: #3a3a4a; }
+html[data-theme="winamp"] .pane-head { color: #c8c8d0; font-weight: normal; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; }
+html[data-theme="winamp"] .pane-head .mini { border-radius: 0; color: #e0e0e8; box-shadow: var(--bevel); text-transform: none; letter-spacing: 0; }
+html[data-theme="winamp"] .queue { font-family: var(--lcd); font-size: 11px; }
+html[data-theme="winamp"] .queue li { color: #00e000; border-bottom: 0; }
+html[data-theme="winamp"] .queue li::before, html[data-theme="winamp"] .queue .q-x, html[data-theme="winamp"] .queue-empty,
+html[data-theme="winamp"] .queue .q-t small, html[data-theme="winamp"] .queue .q-d { color: #00a000; }
+html[data-theme="winamp"] .queue li:hover { background: #0d1a0d; color: #00ff00; }
+html[data-theme="winamp"] .queue li.cur { color: #fff; background: #0a1a8a; }
+html[data-theme="winamp"] .queue li.cur::before, html[data-theme="winamp"] .queue li.cur small, html[data-theme="winamp"] .queue li.cur .q-d { color: #fff; }
+
+/* ---------------------------------------------------------- Listen und Knöpfe: eckig mit Kante */
+html[data-theme="winamp"] .mini, html[data-theme="winamp"] .btn, html[data-theme="winamp"] .days button,
+html[data-theme="winamp"] .seg, html[data-theme="winamp"] .tag, html[data-theme="winamp"] .dlg-tabs button,
+html[data-theme="winamp"] .dlg-body, html[data-theme="winamp"] fieldset, html[data-theme="winamp"] .out,
+html[data-theme="winamp"] .svc, html[data-theme="winamp"] .share, html[data-theme="winamp"] .bt-dev,
+html[data-theme="winamp"] .alarm, html[data-theme="winamp"] .modal-box, html[data-theme="winamp"] .scanbar,
+html[data-theme="winamp"] .toolbar input[type=search], html[data-theme="winamp"] .toolbar select,
+html[data-theme="winamp"] .field input, html[data-theme="winamp"] .field select { border-radius: 0; }
+html[data-theme="winamp"] .mini, html[data-theme="winamp"] .btn, html[data-theme="winamp"] .days button,
+html[data-theme="winamp"] .seg button, html[data-theme="winamp"] .dlg-tabs button { box-shadow: var(--bevel); }
+html[data-theme="winamp"] .toolbar { background: linear-gradient(180deg, #39394a, #2b2b38); }
+html[data-theme="winamp"] table.grid td, html[data-theme="winamp"] .album b { font-family: var(--lcd); font-size: 11px; }
+html[data-theme="winamp"] table.grid tbody tr:hover td { color: #fff; }
+html[data-theme="winamp"] .scanbar i { background: #00c000; }
+
+/* ---------------------------------------------------------- Transportleiste */
+html[data-theme="winamp"] .transport {
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px), linear-gradient(180deg, #39394a, #24242f);
+  border-top-color: #101016; box-shadow: inset 0 1px 0 #6b6b7d;
+}
+html[data-theme="winamp"] .time { color: #00e000; font-family: var(--lcd); }
+html[data-theme="winamp"] .ticker {
+  font-family: var(--lcd); color: #00ff00; text-shadow: 0 0 4px rgba(0,255,0,.5);
+  background: #000; padding: 2px 6px; border: 1px solid #101016; box-shadow: inset 1px 1px 0 #000, 0 1px 0 rgba(255,255,255,.12);
+}
+html[data-theme="winamp"] .status-right { font-family: var(--lcd); color: #00a000; }
+html[data-theme="winamp"] .tbtn {
+  height: 24px; border-radius: 2px; color: #e0e0e8; border: 1px solid #101016;
+  background: linear-gradient(180deg, #5f5f74, #3a3a4a); box-shadow: var(--bevel);
+}
+html[data-theme="winamp"] .tbtn.small { height: 20px; }
+html[data-theme="winamp"] .tbtn:hover { color: #fff; box-shadow: var(--bevel), 0 0 0 1px #00a000; }
+html[data-theme="winamp"] .tbtn.on { color: #000; background: linear-gradient(180deg, #7ef07e, #00b000); }
+html[data-theme="winamp"] .playorb {
+  width: 44px; height: 30px; border-radius: 3px; color: #00ff00; border: 1px solid #101016;
+  background: linear-gradient(180deg, #5f5f74, #3a3a4a); box-shadow: var(--bevel);
+}
+html[data-theme="winamp"] .playorb svg { filter: drop-shadow(0 0 3px rgba(0,255,0,.6)); }
+html[data-theme="winamp"] .playorb:hover { box-shadow: var(--bevel), 0 0 0 1px #00c000; }
+html[data-theme="winamp"] input[type=range]::-webkit-slider-runnable-track {
+  border-radius: 0; background: linear-gradient(90deg, #00b000 var(--p, 0%), #0a0a0e var(--p, 0%));
+  box-shadow: inset 1px 1px 0 #000, 0 1px 0 rgba(255,255,255,.15);
+}
+html[data-theme="winamp"] input[type=range]::-moz-range-track { border-radius: 0; background: #0a0a0e; }
+html[data-theme="winamp"] input[type=range]::-moz-range-progress { border-radius: 0; background: #00b000; }
+html[data-theme="winamp"] input[type=range]::-webkit-slider-thumb {
+  width: 18px; height: 10px; margin-top: -3px; border-radius: 1px;
+  background: linear-gradient(180deg, #d8d8e0, #8a8a9a); box-shadow: 0 0 0 1px #000, var(--bevel);
+}
+html[data-theme="winamp"] input[type=range]::-moz-range-thumb {
+  width: 18px; height: 10px; border-radius: 1px; background: linear-gradient(180deg, #d8d8e0, #8a8a9a); box-shadow: 0 0 0 1px #000;
+}
+html[data-theme="winamp"] .modal-title { color: #d8d8e0; }
+
+/* Laufschrift fuer zu lange Titel (scrollText in app.js) */
+html[data-theme="winamp"] .np-title, html[data-theme="winamp"] .np-artist, html[data-theme="winamp"] .np-album, html[data-theme="winamp"] #mini-text { white-space: nowrap; overflow: hidden; text-overflow: clip; }
+html[data-theme="winamp"] .marquee { display: inline-block; animation: winamp-marquee 10s linear infinite; }
+html[data-theme="winamp"] .marquee > span::after { content: "  ***  "; white-space: pre; }
+@keyframes winamp-marquee { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { html[data-theme="winamp"] .marquee { animation: none; } }
+html[data-theme="winamp"] #mini-text { display: block; }
+
+@media (max-width: 700px) {
+  html[data-theme="winamp"] .wmp { border-radius: 0; }
+}

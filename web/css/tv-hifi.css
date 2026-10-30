@@ -1,0 +1,49 @@
+/* „Läuft gerade“ im Theme Hi-Fi-Anlage: dunkles Nussbaumholz, bernsteinfarbenes Display und zwei VU-Meter
+   unten (tv.js zeichnet sie, hier wird Platz geschaffen). Greift nur bei <html data-theme="hifi">. */
+html[data-theme="hifi"] {
+  --glow: #ffb547;
+  --glow-strong: #f09a28;
+  --ink: #f1e4cc;
+  --ink-dim: #b39f7e;
+  --font: Futura, "Century Gothic", "URW Gothic", "TeX Gyre Adventor", "DejaVu Sans", sans-serif;
+}
+html[data-theme="hifi"] body {
+  background: linear-gradient(180deg, rgba(10,7,4,.55), rgba(10,7,4,.8)),
+    repeating-linear-gradient(90deg, #3b2414 0 .4vh, #44291a .4vh 1vh, #351f11 1vh 1.3vh, #4a2c1a 1.3vh 2vh, #3e2616 2vh 2.4vh);
+}
+html[data-theme="hifi"] #bg { opacity: 1; }
+html[data-theme="hifi"] .top { color: #c9b896; background: linear-gradient(180deg, #2a2621, #1a1714); border-bottom: .2vh solid #4a4238; padding: 1.4vh 3vw; }
+html[data-theme="hifi"] .brand b { color: #e9dcc4; text-transform: uppercase; letter-spacing: .2em; }
+html[data-theme="hifi"] .orb { background: radial-gradient(circle at 40% 35%, #f4f1ea, #b9b4aa 40%, #6f6a62 75%, #3a3631); box-shadow: 0 .2vh .4vh rgba(0,0,0,.6); }
+html[data-theme="hifi"] .clock { color: #ffb547; text-shadow: 0 0 1vh rgba(255,170,60,.5); }
+/* Platz für die VU-Meter */
+html[data-theme="hifi"] .playing { padding-top: 9vh; padding-bottom: 25vh; }
+html[data-theme="hifi"] .cover { width: 46vh; height: 46vh; -webkit-box-reflect: unset; }
+html[data-theme="hifi"] .with-lyrics .cover { width: 40vh; height: 40vh; }
+html[data-theme="hifi"] .lyrics { height: 26vh; }
+html[data-theme="hifi"] .cover img, html[data-theme="hifi"] .cover-fallback { border: .5vh solid #1e1b17; border-radius: .4vh; box-shadow: 0 2vh 5vh rgba(0,0,0,.8); }
+html[data-theme="hifi"] .cover-fallback { color: rgba(255,181,71,.45); background: linear-gradient(135deg, #3a2e1e, #120f0c); }
+html[data-theme="hifi"] .info {
+  padding: 3vh 3.5vh; border-radius: 1vh; text-shadow: 0 0 1.5vh rgba(255,170,60,.45);
+  background: linear-gradient(180deg, #1a120a, #0d0905);
+  box-shadow: inset 0 .5vh 1.5vh rgba(0,0,0,.8), 0 0 0 .4vh #2a2621, 0 0 0 .7vh #8f8b84;
+}
+html[data-theme="hifi"] h1 { color: #ffd08a; font-size: 6vh; }
+html[data-theme="hifi"] .artist { color: #ffb547; }
+html[data-theme="hifi"] .album { color: #c9a46e; }
+html[data-theme="hifi"] .badge { color: #2a1700; background: linear-gradient(180deg, #ffd38a, #e8962a); }
+html[data-theme="hifi"] .bar { background: #2a1d0e; box-shadow: inset 0 .2vh .4vh #000; }
+html[data-theme="hifi"] .fill { background: linear-gradient(90deg, #8a4a10, #f0a43a, #ffd38a); box-shadow: 0 0 1.2vh rgba(255,170,60,.5); }
+html[data-theme="hifi"] .times { color: #c9a46e; }
+html[data-theme="hifi"] .format { color: #8c7350; }
+html[data-theme="hifi"] .lyrics .line { color: rgba(201,164,110,.45); }
+html[data-theme="hifi"] .lyrics .line.now { color: #ffd08a; text-shadow: 0 0 2vh rgba(255,170,60,.6); }
+html[data-theme="hifi"] .lyrics .plain { color: #e9cfa0; }
+html[data-theme="hifi"] .lyrics .source { color: #8c7350; }
+html[data-theme="hifi"] .idle-time { color: rgba(255,190,100,.7); text-shadow: 0 0 4vh rgba(255,150,40,.35); }
+html[data-theme="hifi"] .idle-hint { color: #8c7350; }
+html[data-theme="hifi"] .recent-item img, html[data-theme="hifi"] .recent-fb { border: .4vh solid #1e1b17; border-radius: .3vh; }
+html[data-theme="hifi"] .recent-fb { color: rgba(255,181,71,.45); background: linear-gradient(135deg, #3a2e1e, #120f0c); }
+@media (orientation: portrait) {
+  html[data-theme="hifi"] .cover { width: 50vw; height: 50vw; }
+}

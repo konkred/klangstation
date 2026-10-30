@@ -1,0 +1,163 @@
+/* Theme „Aqua“ – Mac OS X um 2004 (iTunes 4): gebürstetes Metall, Ampelknöpfe, gestreifte Listen,
+   blaue Gel-Knöpfe und LCD-Anzeige in der Transportleiste. Etwas dunkler als das Original, damit es nicht blendet.
+   Greift nur bei <html data-theme="aqua">. */
+html[data-theme="aqua"] {
+  --chrome-hi: #d4d6d9;
+  --chrome-top: #c3c6ca;
+  --chrome-mid: #aeb2b7;
+  --chrome-low: #9a9ea4;
+  --edge: #ffffff;
+  --glow: #3d7fd6;
+  --glow-strong: #2a6ad0;
+  --ink: #1d1f22;
+  --ink-dim: #4b5057;
+  --list-bg: #f6f7f9;
+  --list-alt: #ebf1fb;
+  --list-ink: #1d1f22;
+  --list-dim: #6b7078;
+  --list-sel: #cfdcf2;
+  --list-line: #d9dce1;
+  --head-top: #eceef1;
+  --head-low: #cdd0d5;
+  --accent: #2a6ad0;
+  --ok: #3bb33b;
+  --off: #8e939a;
+  --font: "Lucida Grande", "Helvetica Neue", Helvetica, "DejaVu Sans", sans-serif;
+  --metal: repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, rgba(0,0,0,.025) 1px 2px, transparent 2px 4px),
+    linear-gradient(180deg, #c9ccd0, #a9adb3 60%, #9a9ea4);
+  --pill: linear-gradient(180deg, #fdfdfd, #f0f1f3 50%, #dfe1e4 51%, #eceef0);
+  --gel: linear-gradient(180deg, #c6dcf7 0%, #7fb0ec 50%, #4a8ce0 51%, #7fc0fb 100%);
+  color-scheme: light;
+}
+html[data-theme="aqua"] body {
+  background: radial-gradient(ellipse at 30% 15%, #4f7fb8 0%, transparent 60%), linear-gradient(180deg, #2b5a96, #16325a);
+  background-attachment: fixed;
+}
+html[data-theme="aqua"] .wmp {
+  border-radius: 8px; background: var(--metal);
+  box-shadow: 0 0 0 1px #5a5e64, inset 0 1px 0 rgba(255,255,255,.7), 0 18px 50px rgba(0,0,0,.55);
+}
+html[data-theme="aqua"] .titlebar { background: transparent; border-bottom: 1px solid #8e939a; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
+/* Ampel statt Kugel */
+html[data-theme="aqua"] .orb, html[data-theme="aqua"] .modal-title .orb {
+  width: 12px; height: 12px; margin-right: 36px;
+  background: radial-gradient(circle at 50% 30%, #ffd0c8, #ec5d4f 50%, #b8362a);
+  box-shadow: 18px 0 0 #e2ae36, 36px 0 0 #5fb84c, inset 0 0 0 1px rgba(0,0,0,.2);
+}
+html[data-theme="aqua"] .lamp { color: #4b5057; }
+html[data-theme="aqua"] .lamp.active { color: #1d1f22; }
+html[data-theme="aqua"] .lamp::before { background: #b0b4ba; box-shadow: inset 0 1px 1px rgba(0,0,0,.25); }
+html[data-theme="aqua"] .lamp.on::before { background: #3bb33b; box-shadow: none; }
+html[data-theme="aqua"] .lamp.active::before { background: #3d7fd6; box-shadow: 0 0 4px rgba(61,127,214,.6); }
+
+/* Quellenliste wie in iTunes */
+html[data-theme="aqua"] .taskbar { background: #d9dfe7; border-right: 1px solid #8e939a; box-shadow: none; }
+html[data-theme="aqua"] .taskbar a { color: #1d1f22; text-shadow: none; font-weight: normal; }
+html[data-theme="aqua"] .taskbar a svg { color: #5b7ea8; }
+html[data-theme="aqua"] .taskbar a:hover { background: rgba(255,255,255,.5); border-color: transparent; }
+html[data-theme="aqua"] .taskbar a.on {
+  color: #fff; font-weight: bold; background: linear-gradient(180deg, #6fa0e6, #3a75d0);
+  border-color: #2f5fae; box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+}
+html[data-theme="aqua"] .taskbar a.on svg { color: #fff; }
+html[data-theme="aqua"] .taskbar-foot { color: #4b5057; border-top-color: #b9bec5; }
+
+/* ---------------------------------------------------------- Wiedergabe: dunkle Bühne wie der iTunes-Visualizer */
+html[data-theme="aqua"] #view-now { background: transparent; }
+html[data-theme="aqua"] .stage { background: linear-gradient(180deg, #2a2d31, #121315); }
+html[data-theme="aqua"] .np-artist { color: #a8c8f0; }
+html[data-theme="aqua"] .np-album { color: #c9ccd0; }
+html[data-theme="aqua"] .np-format { color: #8e939a; }
+html[data-theme="aqua"] .np-source { color: #1d2a3e; background: linear-gradient(180deg, #e8eef8, #b8c8e0); }
+html[data-theme="aqua"] .cover-wrap img, html[data-theme="aqua"] .cover-fallback { border: 1px solid rgba(255,255,255,.3); border-radius: 2px; box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+html[data-theme="aqua"] .cover-fallback { background: linear-gradient(135deg, #8e939a, #3a3d41); }
+html[data-theme="aqua"] .cover-fallback svg { color: rgba(255,255,255,.6); }
+html[data-theme="aqua"] .vis-switch { color: #1d1f22; background: var(--pill); border-color: #8e939a; }
+html[data-theme="aqua"] .vis-switch:hover { color: #000; border-color: #3d7fd6; }
+
+html[data-theme="aqua"] .playlist-pane { background: var(--list-bg); border-left: 1px solid #8e939a; }
+html[data-theme="aqua"] .pane-head, html[data-theme="aqua"] .modal-title {
+  color: #1d1f22; text-shadow: 0 1px 0 rgba(255,255,255,.8);
+  background: linear-gradient(180deg, #eceef1, #cdd0d5); border-bottom: 1px solid #8e939a;
+}
+html[data-theme="aqua"] .pane-head .mini { color: #1d1f22; background: var(--pill); border-color: #8e939a; border-radius: 10px; }
+html[data-theme="aqua"] .queue li { color: #1d1f22; border-bottom-color: transparent; }
+html[data-theme="aqua"] .queue li:nth-child(even) { background: var(--list-alt); }
+html[data-theme="aqua"] .queue li::before, html[data-theme="aqua"] .queue .q-x, html[data-theme="aqua"] .queue-empty { color: #8e939a; }
+html[data-theme="aqua"] .queue li:hover { background: #dbe6f8; color: #000; }
+html[data-theme="aqua"] .queue .q-t small, html[data-theme="aqua"] .queue .q-d { color: #6b7078; }
+html[data-theme="aqua"] .queue li.cur { color: #fff; background: #3875d7; }
+html[data-theme="aqua"] .queue li.cur::before, html[data-theme="aqua"] .queue li.cur small, html[data-theme="aqua"] .queue li.cur .q-d { color: #dbe7fb; }
+
+/* ---------------------------------------------------------- Listen und Optionen */
+html[data-theme="aqua"] .toolbar { background: linear-gradient(180deg, #e6e8eb, #c9ccd0); border-bottom-color: #8e939a; }
+html[data-theme="aqua"] .toolbar input[type=search] { border-radius: 12px; padding-left: 10px; }
+html[data-theme="aqua"] .toolbar input[type=search], html[data-theme="aqua"] .toolbar select,
+html[data-theme="aqua"] .field input, html[data-theme="aqua"] .field select, html[data-theme="aqua"] .modal-body input { border-color: #8e939a; }
+html[data-theme="aqua"] input:focus-visible, html[data-theme="aqua"] select:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(61,127,214,.45); }
+html[data-theme="aqua"] .mini, html[data-theme="aqua"] .btn, html[data-theme="aqua"] .days button, html[data-theme="aqua"] .tag,
+html[data-theme="aqua"] .seg button, html[data-theme="aqua"] .dlg-tabs button {
+  color: #1d1f22; border-color: #8e939a; background: var(--pill); text-shadow: none;
+}
+html[data-theme="aqua"] .mini, html[data-theme="aqua"] .btn, html[data-theme="aqua"] .seg { border-radius: 11px; }
+html[data-theme="aqua"] .seg { border-color: #8e939a; }
+html[data-theme="aqua"] .seg button { border-right-color: #b9bec5; }
+html[data-theme="aqua"] .mini:hover, html[data-theme="aqua"] .btn:not(.primary):hover { border-color: #3d7fd6; }
+html[data-theme="aqua"] .seg button.on, html[data-theme="aqua"] .days button.on, html[data-theme="aqua"] .btn.primary,
+html[data-theme="aqua"] .dlg-tabs button.on {
+  color: #0b1e3a; border-color: #2f5fae; background: var(--gel); text-shadow: 0 1px 0 rgba(255,255,255,.4);
+}
+html[data-theme="aqua"] .btn.primary:hover { filter: brightness(1.06); }
+html[data-theme="aqua"] table.grid th { background: linear-gradient(180deg, #fff, #e6e8eb 50%, #dadde1 51%, #eceef0); border-bottom-color: #8e939a; border-right-color: #c9ccd0; }
+html[data-theme="aqua"] table.grid tbody tr:hover td { background: #dbe6f8; }
+html[data-theme="aqua"] .album .art, html[data-theme="aqua"] .album-head .art, html[data-theme="aqua"] .cd-art { background: linear-gradient(135deg, #d5d8dd, #9a9ea4); }
+html[data-theme="aqua"] .album-head, html[data-theme="aqua"] .cd-head, html[data-theme="aqua"] .pl-head { background: linear-gradient(180deg, #e3e6ea, #f6f7f9); }
+html[data-theme="aqua"] .crumbs { background: #eceef1; }
+html[data-theme="aqua"] .scanbar { border-color: #8e939a; border-radius: 6px; }
+html[data-theme="aqua"] .scanbar i { background: var(--gel); }
+html[data-theme="aqua"] #view-settings { background: #c9ccd0; }
+html[data-theme="aqua"] .dlg-body, html[data-theme="aqua"] .modal-box { background: #eceef0; }
+html[data-theme="aqua"] .dlg-body { border-color: #8e939a; border-radius: 0 6px 6px 6px; }
+html[data-theme="aqua"] .dlg-tabs button { border-radius: 6px 6px 0 0; }
+html[data-theme="aqua"] fieldset { border-color: #b9bec5; border-radius: 6px; }
+html[data-theme="aqua"] .out, html[data-theme="aqua"] .svc, html[data-theme="aqua"] .share, html[data-theme="aqua"] .bt-dev,
+html[data-theme="aqua"] .alarm, html[data-theme="aqua"] .pl-pick-list button { background: #fbfbfc; border-color: #c9ccd0; border-radius: 6px; }
+html[data-theme="aqua"] .out:has(input:checked) { background: #e3ecfa; }
+
+/* ---------------------------------------------------------- Transportleiste: Metall mit LCD */
+html[data-theme="aqua"] .transport { background: transparent; border-top: 1px solid #8e939a; box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
+html[data-theme="aqua"] .time, html[data-theme="aqua"] .status-right { color: #3b3f45; }
+html[data-theme="aqua"] .ticker {
+  color: #1d1f22; text-shadow: none; text-align: center; padding: 2px 10px;
+  background: linear-gradient(180deg, #f3f5ea, #dde2cc); border: 1px solid #7e838a; border-radius: 6px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.25), 0 1px 0 rgba(255,255,255,.5);
+}
+html[data-theme="aqua"] .tbtn {
+  color: #2b2e33; border: 1px solid #6f747a;
+  background: radial-gradient(circle at 50% 30%, #fff, #e3e5e8 40%, #b5b9be);
+  box-shadow: inset 0 -1px 2px rgba(0,0,0,.15), 0 1px 1px rgba(255,255,255,.6);
+}
+html[data-theme="aqua"] .tbtn:hover { color: #000; box-shadow: inset 0 -1px 2px rgba(0,0,0,.15), 0 0 0 3px rgba(61,127,214,.35); }
+html[data-theme="aqua"] .tbtn.on { color: #0b1e3a; background: radial-gradient(circle at 50% 30%, #e6f0fd, #7fb0ec 50%, #3a75d0); }
+html[data-theme="aqua"] .playorb {
+  color: #2b2e33; border: 1px solid #5a5e64;
+  background: radial-gradient(circle at 50% 30%, #fff, #e3e5e8 40%, #a9adb3);
+  box-shadow: 0 0 0 4px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.4);
+}
+html[data-theme="aqua"] .playorb svg { filter: none; }
+html[data-theme="aqua"] .playorb:hover { box-shadow: 0 0 0 4px rgba(61,127,214,.4), 0 2px 4px rgba(0,0,0,.4); }
+html[data-theme="aqua"] input[type=range]::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, #3d7fd6 var(--p, 0%), #fff var(--p, 0%)); box-shadow: inset 0 1px 2px rgba(0,0,0,.35);
+}
+html[data-theme="aqua"] input[type=range]::-moz-range-track { background: #fff; box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
+html[data-theme="aqua"] input[type=range]::-moz-range-progress { background: #3d7fd6; }
+html[data-theme="aqua"] input[type=range]::-webkit-slider-thumb { background: radial-gradient(circle at 50% 30%, #fff, #b8d4f5 40%, #3d7fd6); box-shadow: 0 0 0 1px #2f5fae, 0 1px 2px rgba(0,0,0,.4); }
+html[data-theme="aqua"] input[type=range]::-moz-range-thumb { background: radial-gradient(circle at 50% 30%, #fff, #b8d4f5 40%, #3d7fd6); box-shadow: 0 0 0 1px #2f5fae; }
+
+html[data-theme="aqua"] .modal { background: rgba(0,0,0,.4); }
+html[data-theme="aqua"] .modal-box { border-radius: 8px; box-shadow: 0 0 0 1px #5a5e64, 0 18px 50px rgba(0,0,0,.5); }
+
+@media (max-width: 700px) {
+  html[data-theme="aqua"] .wmp { border-radius: 0; }
+  html[data-theme="aqua"] .taskbar { border-right: 0; border-bottom: 1px solid #8e939a; }
+}

@@ -33,6 +33,9 @@ def _web_build() -> str:
 
 WEB_BUILD = _web_build()
 
+# Erscheinungsbilder von "Laeuft gerade" (je eine Datei web/css/tv-<name>.css, "classic" ist tv.css allein)
+TV_THEMES = ("classic", "aero", "nacht", "winamp", "aqua", "hifi", "luna")
+
 HOST = os.environ.get("KS_HOST", "0.0.0.0")
 PORT = int(os.environ.get("KS_PORT", "8080"))
 MPD_HOST = "127.0.0.1"
@@ -79,7 +82,7 @@ DEFAULTS: Dict[str, Any] = {
     "cec_pause_on_tv_off": True,
     "tv_enabled": True,          # "Laeuft gerade"-Bildschirm am HDMI-Ausgang
     "tv_lyrics": True,           # Liedtexte auf dem "Laeuft gerade"-Bildschirm
-    "tv_theme": "classic",       # Erscheinungsbild des "Laeuft gerade"-Bildschirms: "classic" oder "aero"
+    "tv_theme": "classic",       # Erscheinungsbild des "Laeuft gerade"-Bildschirms (siehe TV_THEMES)
     "tv_history": True,          # Ruhebildschirm: zuletzt gehoerte Cover
     "weather_place": "",         # Ruhebildschirm: Wetter fuer diesen Ort (leer = aus)
     "alarms": [],                # Wecker (siehe timers.py)
@@ -116,7 +119,7 @@ _VALIDATORS = {
     "cec_pause_on_tv_off": lambda v: isinstance(v, bool),
     "tv_enabled": lambda v: isinstance(v, bool),
     "tv_lyrics": lambda v: isinstance(v, bool),
-    "tv_theme": lambda v: v in ("classic", "aero"),
+    "tv_theme": lambda v: v in TV_THEMES,
     "tv_history": lambda v: isinstance(v, bool),
     "weather_place": lambda v: isinstance(v, str) and len(v) <= 80,
     "alarms": lambda v: isinstance(v, list) and len(v) <= 10 and all(isinstance(a, dict) for a in v),

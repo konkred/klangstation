@@ -1,0 +1,52 @@
+/* „Läuft gerade“ im Theme Winamp: schwarzer Grund, grüne LCD-Schrift in einem Anzeigefeld mit grauer Kante,
+   unten ein Spektrum aus Leuchtsegmenten (tv.js). Greift nur bei <html data-theme="winamp">. */
+html[data-theme="winamp"] {
+  --glow: #00e000;
+  --glow-strong: #00c000;
+  --ink: #00ff00;
+  --ink-dim: #00a000;
+  --font: "Lucida Console", "DejaVu Sans Mono", "Liberation Mono", monospace;
+}
+html[data-theme="winamp"] body { background: #000; }
+html[data-theme="winamp"] #bg { opacity: .75; }
+html[data-theme="winamp"] .top {
+  color: #c8c8d0; background: repeating-linear-gradient(180deg, #4a4a5e 0 .15vh, #2e2e3c .15vh .4vh);
+  border-bottom: .2vh solid #101016; padding: 1.4vh 3vw;
+}
+html[data-theme="winamp"] .brand b { color: #d6c87a; text-transform: uppercase; letter-spacing: .3em; }
+html[data-theme="winamp"] .orb { border-radius: .4vh; background: linear-gradient(135deg, #ffd000, #f07000 60%, #b03000); box-shadow: none; }
+html[data-theme="winamp"] .clock { color: #00ff00; }
+html[data-theme="winamp"] .info {
+  padding: 3vh 3.5vh; background: #000; text-shadow: 0 0 1vh rgba(0,255,0,.35);
+  box-shadow: 0 0 0 .3vh #101016, 0 0 0 .7vh #39394a, 0 0 0 .8vh #6b6b7d;
+}
+html[data-theme="winamp"] h1 { color: #00ff00; font-size: 6vh; }
+html[data-theme="winamp"] .artist { color: #00d000; }
+html[data-theme="winamp"] .album { color: #00a000; }
+html[data-theme="winamp"] .badge { border-radius: 0; color: #000; background: #00e000; }
+html[data-theme="winamp"] .bar { height: 1.6vh; border-radius: 0; background: #0a0a0e; box-shadow: inset 0 0 0 .2vh #3a3a4a; }
+html[data-theme="winamp"] .fill { background: repeating-linear-gradient(90deg, #00e000 0 1.2vh, transparent 1.2vh 1.6vh); box-shadow: none; }
+html[data-theme="winamp"] .times { color: #00c000; }
+html[data-theme="winamp"] .format { color: #008800; }
+html[data-theme="winamp"] .cover { -webkit-box-reflect: unset; }
+html[data-theme="winamp"] .cover img, html[data-theme="winamp"] .cover-fallback { border: .3vh solid #3a3a4a; border-radius: 0; box-shadow: none; }
+html[data-theme="winamp"] .cover-fallback { color: #00a000; background: #0a0a0e; }
+html[data-theme="winamp"] .lyrics .line { color: rgba(0,160,0,.5); }
+html[data-theme="winamp"] .lyrics .line.now { color: #00ff00; text-shadow: 0 0 2vh rgba(0,255,0,.5); }
+html[data-theme="winamp"] .lyrics .plain { color: #00d000; }
+html[data-theme="winamp"] .lyrics .source { color: #006600; }
+html[data-theme="winamp"] .idle-time { color: rgba(0,224,0,.6); text-shadow: 0 0 3vh rgba(0,255,0,.3); }
+html[data-theme="winamp"] .idle-hint { color: #006600; }
+html[data-theme="winamp"] .idle-weather { color: #00d000; }
+html[data-theme="winamp"] .idle-weather .sym, html[data-theme="winamp"] .idle-alarm { color: #e8d000; }
+html[data-theme="winamp"] .recent { opacity: .5; bottom: 24vh; }
+html[data-theme="winamp"] .recent-item img, html[data-theme="winamp"] .recent-fb { border: .2vh solid #3a3a4a; border-radius: 0; box-shadow: none; }
+html[data-theme="winamp"] .recent-fb { color: #00a000; background: #0a0a0e; }
+
+/* Laufschrift fuer zu lange Titel (scrollText in tv.js) */
+html[data-theme="winamp"] h1, html[data-theme="winamp"] .artist, html[data-theme="winamp"] .album { white-space: nowrap; overflow: hidden; text-overflow: clip; }
+html[data-theme="winamp"] .marquee { display: inline-block; animation: winamp-marquee 10s linear infinite; }
+html[data-theme="winamp"] .marquee > span::after { content: "  ***  "; white-space: pre; }
+@keyframes winamp-marquee { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { html[data-theme="winamp"] .marquee { animation: none; } }
+html[data-theme="winamp"] h1 { display: block; -webkit-line-clamp: unset; }

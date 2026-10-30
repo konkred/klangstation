@@ -29,7 +29,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend, Instrumental-Pausen als Noten: aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key), gecacht; nicht bei Webradio |
 | Lautstärke & Übergänge | Angleichen nach ReplayGain (Album/Titel automatisch) oder dynamisch, Überblenden 2–10 s; nicht bei bit-perfekt |
 | Handy | als App auf den Homescreen legen; auf Wunsch Titel, Cover und Tasten im Sperrbildschirm (Bibliothek, Radio, CD) |
-| Erscheinungsbild | klassisch (Media Player der 2000er) oder Frutiger Aero (Glas, Himmel, Blasen): Oberfläche pro Gerät, „Läuft gerade“ in den Optionen |
+| Erscheinungsbild | Klassisch (Media Player der 2000er), Frutiger Aero, Nacht, Winamp Classic, Aqua (Mac OS X), Hi-Fi-Anlage mit VU-Metern, Luna (Windows XP): Oberfläche pro Gerät (auch automatisch nach Systemeinstellung), „Läuft gerade“ in den Optionen |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
 ## Unterstützte Systeme
@@ -185,10 +185,20 @@ Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
 
 ### Erscheinungsbild
 
-* **Oberfläche:** *Optionen › Ausgabe › Auf diesem Gerät* wechselt zwischen „Klassisch“ und „Frutiger Aero“. Die
-  Wahl gilt nur für diesen Browser, jedes Handy und jeder PC kann ein anderes Erscheinungsbild haben.
-* **„Läuft gerade“:** *Optionen › Fernseher › Erscheinungsbild* gilt für alle Bildschirme, die `/tv` zeigen (in
-  Aero mit aufsteigenden Luftblasen und Glaskarte).
+Zur Wahl stehen:
+
+* **Klassisch:** Media Player der 2000er, dunkles Chrom mit blauen Leuchtakzenten.
+* **Frutiger Aero:** Glas, Himmel und Luftblasen.
+* **Nacht:** fast schwarz, wenig Kontrast, kein Leuchten – für abends und dunkle Räume.
+* **Winamp Classic:** graues Gehäuse, grüne LCD-Schrift, auf dem Fernseher ein Spektrum aus Leuchtsegmenten.
+* **Aqua:** Mac OS X um 2004 mit gebürstetem Metall, auf dem Fernseher der Titel auf einem iPod-Display.
+* **Hi-Fi-Anlage:** Holz, Silberknöpfe und Bernstein-Display; die Visualisierung zeigt zwei VU-Meter.
+* **Luna:** Windows XP mit grünem Play-Knopf, auf dem Fernseher die Wiese mit ziehenden Wolken.
+
+Die **Oberfläche** stellt man unter *Optionen › Ausgabe › Auf diesem Gerät* ein. Die Wahl gilt nur für diesen
+Browser, jedes Handy und jeder PC kann ein anderes Erscheinungsbild haben. „Automatisch“ nimmt Nacht, solange
+das Handy oder der PC dunkel eingestellt ist, sonst Klassisch. **„Läuft gerade“** stellt *Optionen › Fernseher ›
+Erscheinungsbild* für alle Bildschirme ein, die `/tv` zeigen.
 
 ### Handy
 

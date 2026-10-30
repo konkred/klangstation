@@ -14,7 +14,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/theme-aero.css">
-<script>try { document.documentElement.dataset.theme = localStorage.getItem("ks-theme") || "classic"; } catch (e) { /* privat */ }</script>
+<link rel="stylesheet" href="css/theme-dunkel.css">
+<link rel="stylesheet" href="css/theme-nacht.css">
+<link rel="stylesheet" href="css/theme-winamp.css">
+<link rel="stylesheet" href="css/theme-hifi.css">
+<link rel="stylesheet" href="css/theme-aqua.css">
+<link rel="stylesheet" href="css/theme-luna.css">
+<script>try {
+  let t = localStorage.getItem("ks-theme") || "classic";
+  if (t === "auto") t = matchMedia("(prefers-color-scheme: dark)").matches ? "nacht" : "classic";
+  document.documentElement.dataset.theme = t;
+} catch (e) { /* privat */ }</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -188,7 +198,7 @@
               <p class="hint">Bei „Bit-perfekt“ ist beides aus.</p>
               <h4 class="subhead">Auf diesem Gerät</h4>
               <label class="field">Erscheinungsbild
-                <select id="theme-select"><option value="classic">Klassisch (Media Player der 2000er)</option><option value="aero">Frutiger Aero</option></select>
+                <select id="theme-select"><option value="auto">Automatisch (Klassisch, bei dunklem System Nacht)</option><option value="classic">Klassisch (Media Player der 2000er)</option><option value="aero">Frutiger Aero</option><option value="nacht">Nacht (dunkel, gedämpft)</option><option value="winamp">Winamp Classic</option><option value="aqua">Aqua (Mac OS X, gebürstetes Metall)</option><option value="hifi">Hi-Fi-Anlage (Holz, Bernstein, VU-Meter)</option><option value="luna">Luna (Windows XP)</option></select>
               </label>
               <label class="check"><input type="checkbox" id="lock-controls"> Titel und Tasten im Sperrbildschirm und Kontrollzentrum zeigen</label>
               <p class="hint">Gilt nur für diesen Browser. Das Handy zeigt die Steuerung nur, solange die Seite etwas abspielt – darum läuft eine stille Tonspur mit, solange Bibliothek, Radio oder CD spielen. Bei AirPlay und Bluetooth bleibt sie aus.</p>
@@ -222,7 +232,7 @@
               <legend>„Läuft gerade“-Bildschirm</legend>
               <label class="check"><input type="checkbox" name="tv_enabled"> Am HDMI-Ausgang Cover, Titel und Fortschritt im Vollbild zeigen</label>
               <label class="field">Erscheinungsbild des Bildschirms
-                <select name="tv_theme"><option value="classic">Klassisch (Media Player der 2000er)</option><option value="aero">Frutiger Aero</option></select>
+                <select name="tv_theme"><option value="classic">Klassisch (Media Player der 2000er)</option><option value="aero">Frutiger Aero</option><option value="nacht">Nacht (dunkel, gedämpft)</option><option value="winamp">Winamp Classic</option><option value="aqua">Aqua (Mac OS X, gebürstetes Metall)</option><option value="hifi">Hi-Fi-Anlage (Holz, Bernstein, VU-Meter)</option><option value="luna">Luna (Windows XP)</option></select>
               </label>
               <label class="check"><input type="checkbox" name="tv_lyrics"> Liedtexte mitlaufen lassen (aus einer .lrc-Datei neben dem Titel oder von LRCLIB, wenn Online-Metadaten an sind)</label>
               <label class="check"><input type="checkbox" name="tv_history"> Im Ruhezustand die zuletzt gehörten Cover zeigen</label>

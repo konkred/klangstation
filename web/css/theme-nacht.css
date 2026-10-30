@@ -1,0 +1,107 @@
+/* Theme „Nacht“ – fast schwarz, wenig Kontrast, kein Leuchten: für abends im Bett und dunkle Räume.
+   Listen und Dialoge macht theme-dunkel.css dunkel. Greift nur bei <html data-theme="nacht">. */
+html[data-theme="nacht"] {
+  --chrome-hi: #262b34;
+  --chrome-top: #1c2028;
+  --chrome-mid: #15181e;
+  --chrome-low: #101216;
+  --edge: #3a4250;
+  --glow: #7fa8cc;
+  --glow-strong: #4f7fa8;
+  --ink: #c8ced8;
+  --ink-dim: #8a93a2;
+  --list-bg: #13161b;
+  --list-alt: #171a20;
+  --list-ink: #c4cad4;
+  --list-dim: #858e9c;
+  --list-sel: #24303f;
+  --list-line: #232831;
+  --head-top: #1d2128;
+  --head-low: #171a20;
+  --accent: #7fa8cc;
+  --ok: #5fa874;
+  --off: #3a414c;
+  --card: #1a1e25;
+  --card-line: #2c323c;
+  --field-line: #3a424e;
+  --btn-top: #262b33;
+  --btn-low: #1d2128;
+  --btn-line: #363d48;
+  --btn-ink: #c4cad4;
+  --pri-top: #3d6487;
+  --pri-low: #2c4b68;
+  --pri-line: #22394f;
+  --pri-ink: #e6edf5;
+  --panel: #171a20;
+  --page: #0f1115;
+  --soft: #1a1e25;
+  --good: #6fbf88;
+  --bad: #e08080;
+  --art-a: #2a313c;
+  --art-b: #171b22;
+}
+html[data-theme="nacht"] body { background: radial-gradient(ellipse at 20% 0%, #151920 0%, transparent 60%), #08090c; }
+html[data-theme="nacht"] .wmp { box-shadow: 0 0 0 1px #000, inset 0 1px 0 rgba(255,255,255,.05), 0 18px 50px rgba(0,0,0,.7); }
+html[data-theme="nacht"] .titlebar { background: linear-gradient(180deg, var(--chrome-hi), var(--chrome-top)); border-bottom-color: #08090c; text-shadow: none; }
+html[data-theme="nacht"] .orb, html[data-theme="nacht"] .modal-title .orb {
+  background: radial-gradient(circle at 35% 30%, #c4d2df 0, #7590a8 30%, #3b5670 70%, #1a2633 100%); box-shadow: none;
+}
+html[data-theme="nacht"] .lamp.on::before { box-shadow: none; }
+html[data-theme="nacht"] .lamp.active::before { box-shadow: 0 0 4px var(--glow); }
+
+html[data-theme="nacht"] .taskbar { background: rgba(0,0,0,.25); border-right-color: #08090c; box-shadow: none; }
+html[data-theme="nacht"] .taskbar a { text-shadow: none; }
+html[data-theme="nacht"] .taskbar a:hover { background: rgba(255,255,255,.04); border-color: #2c323c; }
+html[data-theme="nacht"] .taskbar a.on { background: #26303d; border-color: #344152; box-shadow: none; }
+html[data-theme="nacht"] .taskbar a.on svg { color: #dde5ee; }
+html[data-theme="nacht"] .taskbar-foot { border-top-color: #232831; }
+
+/* ---------------------------------------------------------- Wiedergabe */
+html[data-theme="nacht"] #view-now { background: #08090c; }
+html[data-theme="nacht"] .stage-info { background: linear-gradient(180deg, transparent, rgba(8,9,12,.85) 60%); }
+html[data-theme="nacht"] .np-text { text-shadow: none; }
+html[data-theme="nacht"] .np-title { color: #dde3ea; }
+html[data-theme="nacht"] .np-format { color: #6b7482; }
+html[data-theme="nacht"] .np-source { color: #0e1116; background: #7f98ad; }
+html[data-theme="nacht"] .cover-wrap { -webkit-box-reflect: below 2px linear-gradient(transparent 75%, rgba(255,255,255,.1)); }
+html[data-theme="nacht"] .cover-wrap img, html[data-theme="nacht"] .cover-fallback { border-color: rgba(255,255,255,.08); box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+html[data-theme="nacht"] .cover-fallback { background: linear-gradient(135deg, #1d222b, #0e1014); }
+html[data-theme="nacht"] .cover-fallback svg { color: rgba(127,168,204,.35); }
+html[data-theme="nacht"] .vis-switch { background: rgba(20,23,28,.85); border-color: #2c323c; }
+html[data-theme="nacht"] .vis-switch:hover { color: var(--ink); border-color: #4f7fa8; }
+
+html[data-theme="nacht"] .playlist-pane { background: #101216; border-left-color: #08090c; }
+html[data-theme="nacht"] .pane-head { background: #1a1e25; border-bottom-color: #08090c; }
+html[data-theme="nacht"] .queue li { color: #8a93a2; border-bottom-color: rgba(255,255,255,.03); }
+html[data-theme="nacht"] .queue li::before, html[data-theme="nacht"] .queue .q-x, html[data-theme="nacht"] .queue-empty { color: #4d5562; }
+html[data-theme="nacht"] .queue li:hover { background: rgba(255,255,255,.03); color: var(--ink); }
+html[data-theme="nacht"] .queue li.cur { color: #dde3ea; background: rgba(127,168,204,.14); }
+html[data-theme="nacht"] .queue .q-t small, html[data-theme="nacht"] .queue .q-d { color: #646d7a; }
+
+/* ---------------------------------------------------------- Transportleiste */
+html[data-theme="nacht"] .transport {
+  background: linear-gradient(180deg, #1c2028, #121418); border-top-color: #08090c;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+html[data-theme="nacht"] .ticker { text-shadow: none; }
+html[data-theme="nacht"] .tbtn {
+  color: #b4bcc8; border-color: #08090c;
+  background: linear-gradient(180deg, #2c323c, #1c2028); box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+html[data-theme="nacht"] .tbtn:hover { color: #e6edf5; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 1px #3d4a5a; }
+html[data-theme="nacht"] .tbtn.on { color: #0e1116; background: linear-gradient(180deg, #9dbbd6, #6a92b6); }
+html[data-theme="nacht"] .playorb {
+  color: #e6edf5; border-color: #08090c;
+  background: radial-gradient(circle at 50% 30%, #4f7fa8, #2c4b68 70%);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.04), 0 3px 6px rgba(0,0,0,.6);
+}
+html[data-theme="nacht"] .playorb:hover { box-shadow: 0 0 0 3px rgba(127,168,204,.25), 0 3px 6px rgba(0,0,0,.6); }
+html[data-theme="nacht"] .playorb svg { filter: none; }
+html[data-theme="nacht"] input[type=range]::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, #5f87ad var(--p, 0%), #08090c var(--p, 0%)); box-shadow: inset 0 1px 2px #000;
+}
+html[data-theme="nacht"] input[type=range]::-moz-range-track { background: #08090c; }
+html[data-theme="nacht"] input[type=range]::-moz-range-progress { background: #5f87ad; }
+html[data-theme="nacht"] input[type=range]::-webkit-slider-thumb { background: radial-gradient(circle at 35% 30%, #dfe6ee, #8ea4b8); box-shadow: 0 1px 2px #000; }
+html[data-theme="nacht"] input[type=range]::-moz-range-thumb { background: radial-gradient(circle at 35% 30%, #dfe6ee, #8ea4b8); box-shadow: 0 1px 2px #000; }
+html[data-theme="nacht"] .modal-title { text-shadow: none; }

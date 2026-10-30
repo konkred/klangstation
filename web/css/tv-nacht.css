@@ -1,0 +1,32 @@
+/* „Läuft gerade“ im Theme Nacht: schwarz, gedämpfte Schrift, kein Leuchten – für Schlafzimmer und dunkle Räume.
+   Greift nur bei <html data-theme="nacht"> (Einstellung tv_theme). */
+html[data-theme="nacht"] {
+  --glow: #7f98b0;
+  --glow-strong: #5c7a96;
+  --ink: #b8c0cb;
+  --ink-dim: #6f7885;
+}
+html[data-theme="nacht"] body { background: #000; }
+html[data-theme="nacht"] #bg { opacity: .6; }
+html[data-theme="nacht"] .top { background: none; }
+html[data-theme="nacht"] .orb { background: radial-gradient(circle at 35% 30%, #9fb0c0, #3b5670 60%, #1a2633); box-shadow: none; }
+html[data-theme="nacht"] .cover { opacity: .85; -webkit-box-reflect: below 1vh linear-gradient(transparent 80%, rgba(255,255,255,.08)); }
+html[data-theme="nacht"] .cover img, html[data-theme="nacht"] .cover-fallback { border: 0; box-shadow: 0 2vh 5vh rgba(0,0,0,.8); }
+html[data-theme="nacht"] .cover-fallback { color: rgba(127,152,176,.3); background: #0d0f12; }
+html[data-theme="nacht"] .info { text-shadow: none; }
+html[data-theme="nacht"] h1 { color: #c9d0d9; }
+html[data-theme="nacht"] .badge { color: #0b0d10; background: #6f8296; }
+html[data-theme="nacht"] .bar { background: #15181d; box-shadow: none; }
+html[data-theme="nacht"] .fill { background: #5c7a96; box-shadow: none; }
+html[data-theme="nacht"] .format { color: #4d5562; }
+html[data-theme="nacht"] .lyrics .line { color: rgba(111,120,133,.5); }
+html[data-theme="nacht"] .lyrics .line.now { color: #c9d0d9; text-shadow: none; }
+html[data-theme="nacht"] .lyrics .plain { color: #9aa3ae; }
+html[data-theme="nacht"] .lyrics .source { color: #3f4651; }
+html[data-theme="nacht"] .idle-time { color: rgba(184,192,203,.45); text-shadow: none; }
+html[data-theme="nacht"] .idle-date { color: #5d6672; }
+html[data-theme="nacht"] .idle-hint { color: #3f4651; }
+html[data-theme="nacht"] .idle-weather { color: #8a93a0; }
+html[data-theme="nacht"] .recent { opacity: .35; }
+html[data-theme="nacht"] .recent-item img, html[data-theme="nacht"] .recent-fb { border: 0; box-shadow: none; }
+html[data-theme="nacht"] .recent-fb { color: rgba(127,152,176,.3); background: #0d0f12; }

@@ -196,9 +196,9 @@ function render() {
   // Wiedergabe-Ansicht
   const src = KIND_LABEL[n.kind] || "";
   $("#np-source").textContent = src + (n.extra ? " · " + n.extra : "");
-  $("#np-title").textContent = n.title || (n.kind ? "" : "Keine Wiedergabe");
-  $("#np-artist").textContent = n.artist || "";
-  $("#np-album").textContent = n.album || "";
+  scrollText($("#np-title"), n.title || (n.kind ? "" : "Keine Wiedergabe"));
+  scrollText($("#np-artist"), n.artist || "");
+  scrollText($("#np-album"), n.album || "");
   $("#np-format").textContent = audioFormat(n);
   setArt($("#np-art"), $("#np-fallback"), n.art || null);
 
@@ -218,7 +218,7 @@ function render() {
 
   const line = n.title ? (playing ? "Wird wiedergegeben: " : n.state === "pause" ? "Angehalten: " : "Bereit: ") +
     n.title + (n.artist ? " – " + n.artist : "") : S.mpd_online ? "Bereit" : "Player startet…";
-  $("#mini-text").textContent = line;
+  scrollText($("#mini-text"), line);
   statusRight();
   const tm = S.timers || {};
   $("#b-timer").classList.toggle("on", !!tm.sleep);
@@ -324,6 +324,7 @@ function showView(name) {
   $$(".view").forEach((v) => { v.hidden = v.id !== "view-" + name; });
   $$("#taskbar a").forEach((a) => a.classList.toggle("on", a.dataset.view === name));
   vis.visible = name === "now";
+  rescroll();  // versteckt hatte die Wiedergabe-Ansicht keine Breite
   if (name === "library") renderLibrary();
   if (name === "radio") renderRadio();
   if (name === "cd") renderCD();
@@ -1349,24 +1350,66 @@ $("#alarm-list").addEventListener("click", async (ev) => {
 });
 
 /* =========================================================== Erscheinungsbild (pro Geraet) */
-const THEME_COLOR = { classic: "#0e1e3d", aero: "#3fa9e6" };
+const THEME_COLOR = { classic: "#0e1e3d", aero: "#3fa9e6", nacht: "#101216", winamp: "#1f1f29", aqua: "#a9adb3",
+  hifi: "#2a2621", luna: "#0a5fe6" };
+// bars: oben, Mitte, unten
 const VIS_PAL = {
   classic: { bars: ["#c6f1ff", "#2fb4ff", "#0b3c8c"], mirror: "rgba(47,180,255,0.18)", peak: "#e8f8ff",
     rings: ["rgba(111,211,255,.55)", "rgba(80,120,255,.45)", "rgba(180,90,255,.35)"] },
   aero: { bars: ["#ffffff", "#6fe0ff", "#3fae2a"], mirror: "rgba(255,255,255,0.25)", peak: "#ffffff",
     rings: ["rgba(255,255,255,.7)", "rgba(120,230,255,.6)", "rgba(150,230,90,.55)"] },
+  nacht: { bars: ["#9dbbd6", "#4f7fa8", "#1d2c3d"], mirror: "rgba(79,127,168,0.12)", peak: "#b8c8d8",
+    rings: ["rgba(127,168,204,.4)", "rgba(100,120,170,.32)", "rgba(130,110,170,.25)"] },
+  winamp: { bars: ["#ff3000", "#e8d000", "#00c000"], mirror: "rgba(0,200,0,0.15)", peak: "#c8c8d0",
+    rings: ["rgba(0,255,0,.6)", "rgba(0,200,0,.45)", "rgba(230,210,0,.35)"] },
+  aqua: { bars: ["#ffffff", "#9cc8ff", "#3a6fd0"], mirror: "rgba(156,200,255,0.18)", peak: "#ffffff",
+    rings: ["rgba(120,180,255,.6)", "rgba(200,120,255,.45)", "rgba(120,255,200,.4)"] },
+  hifi: { bars: ["#ffd38a", "#f0a43a", "#7a3e0a"], mirror: "rgba(240,164,58,0.12)", peak: "#fff0d0",
+    rings: ["rgba(255,181,71,.55)", "rgba(240,140,40,.4)", "rgba(200,90,30,.3)"] },
+  luna: { bars: ["#ffffff", "#7fc6ff", "#2a5fd0"], mirror: "rgba(127,198,255,0.18)", peak: "#ffffff",
+    rings: ["rgba(127,198,255,.6)", "rgba(95,191,76,.5)", "rgba(255,200,80,.4)"] },
 };
-function applyTheme(name) {
-  if (!(name in THEME_COLOR)) name = "classic";
+// "auto": Nacht, solange das System dunkel eingestellt ist, sonst Klassisch
+const darkScheme = matchMedia("(prefers-color-scheme: dark)");
+let themeChoice = "classic";
+try { themeChoice = localStorage.getItem("ks-theme") || "classic"; } catch (e) { /* privat */ }
+function applyTheme() {
+  let name = themeChoice === "auto" ? (darkScheme.matches ? "nacht" : "classic") : themeChoice;
+  if (!(name in THEME_COLOR)) name = themeChoice = "classic";
   document.documentElement.dataset.theme = name;
   $('meta[name="theme-color"]').setAttribute("content", THEME_COLOR[name]);
-  $("#theme-select").value = name;
+  $("#theme-select").value = themeChoice;
 }
-applyTheme(document.documentElement.dataset.theme);
+applyTheme();
+darkScheme.addEventListener("change", () => { applyTheme(); visLabel(); rescroll(); });
 $("#theme-select").addEventListener("change", (ev) => {
-  applyTheme(ev.target.value);
-  try { localStorage.setItem("ks-theme", ev.target.value); } catch (e) { /* privat */ }
+  themeChoice = ev.target.value;
+  applyTheme();
+  visLabel();
+  rescroll();
+  try { localStorage.setItem("ks-theme", themeChoice); } catch (e) { /* privat */ }
 });
+
+/* Winamp: zu lange Texte laufen wie im Original durch (Text *** Text ..., nahtlos). Nur neu aufbauen, wenn sich
+   Text, Theme oder Breite aendern - sonst finge die Laufschrift bei jedem neuen Zustand von vorn an.
+   Gleicher Code in tv.js. */
+const scrollEls = new Set();
+function scrollText(el, text) {
+  scrollEls.add(el);
+  const run = document.documentElement.dataset.theme === "winamp";
+  const key = text + "|" + run + "|" + el.clientWidth;
+  if (el._scrollKey === key) return;
+  el._scrollKey = key;
+  el._scrollText = text;
+  el.textContent = text;
+  if (!run || el.scrollWidth <= el.clientWidth + 1) return;
+  el.innerHTML = `<span class="marquee"><span>${esc(text)}</span><span aria-hidden="true">${esc(text)}</span></span>`;
+  // etwa zwei Schriftgroessen pro Sekunde: auf Handy und Fernseher gleich gut lesbar
+  const speed = parseFloat(getComputedStyle(el).fontSize) * 2;
+  el.firstChild.style.animationDuration = Math.max(5, el.firstChild.offsetWidth / 2 / speed) + "s";
+}
+function rescroll() { for (const el of scrollEls) scrollText(el, el._scrollText); }
+addEventListener("resize", rescroll);
 
 /* =========================================================== Visualisierung */
 const vis = {
@@ -1377,12 +1420,18 @@ const vis = {
   visible: true,
   level: 0,
   peaks: [],
+  vu: [0, 0],
 };
 try { vis.mode = Math.max(0, vis.modes.indexOf(localStorage.getItem("ks-vis") || "Balken")); } catch (e) { /* privat */ }
-$("#vis-switch").textContent = vis.modes[vis.mode];
+// Bei der Hi-Fi-Anlage werden aus den Balken zwei VU-Meter
+function visLabel() {
+  const hifi = document.documentElement.dataset.theme === "hifi";
+  $("#vis-switch").textContent = hifi && vis.mode === 0 ? "VU-Meter" : vis.modes[vis.mode];
+}
+visLabel();
 $("#vis-switch").onclick = () => {
   vis.mode = (vis.mode + 1) % vis.modes.length;
-  $("#vis-switch").textContent = vis.modes[vis.mode];
+  visLabel();
   try { localStorage.setItem("ks-vis", vis.modes[vis.mode]); } catch (e) { /* privat */ }
 };
 
@@ -1407,9 +1456,18 @@ function drawVis(t) {
   g.fillRect(0, 0, w, h);
   g.globalCompositeOperation = "source-over";
   if (vis.mode === 2) { g.clearRect(0, 0, w, h); return; }
-  const P = VIS_PAL[document.documentElement.dataset.theme] || VIS_PAL.classic;
+  const theme = document.documentElement.dataset.theme;
+  const P = VIS_PAL[theme] || VIS_PAL.classic;
 
-  if (vis.mode === 0) {
+  if (vis.mode === 0 && theme === "hifi") {
+    // Zeiger haben Traegheit; ohne Loeschen zoege der Zeiger eine Spur
+    g.clearRect(0, 0, w, h);
+    const mh = Math.min(h * 0.36, (w - 60) / 2 / 1.7), mw = mh * 1.7, gap = Math.min(30, w * 0.04);
+    const x0 = (w - 2 * mw - gap) / 2, y0 = Math.max(12, h * 0.07);
+    vuLevels(vis.vu, s, L);
+    vuMeter(g, x0, y0, mw, mh, vis.vu[0], "L");
+    vuMeter(g, x0 + mw + gap, y0, mw, mh, vis.vu[1], "R");
+  } else if (vis.mode === 0) {
     const n = Math.max(16, Math.floor(w / 18));
     const bw = w / n;
     const base = h * 0.78;
@@ -1449,6 +1507,58 @@ function drawVis(t) {
   }
 }
 requestAnimationFrame(drawVis);
+
+/* VU-Meter im Stil alter Verstaerker: hinterleuchtete Skala, Zeiger mit Traegheit.
+   Gleicher Code in tv.js - der Ton laeuft auf dem Geraet, die Werte sind eine Stimmungsanzeige. */
+function vuLevels(vu, s, L) {
+  const beat = Math.pow(Math.max(0, Math.sin(s * 7.6)), 6);
+  for (let ch = 0; ch < 2; ch++) {
+    const target = L * (0.42 + 0.3 * Math.abs(Math.sin(s * 2.1 + ch) * Math.sin(s * 5.3 + ch * 2)) + 0.22 * beat
+      + 0.06 * Math.sin(s * 13 + ch * 4));
+    vu[ch] += (target - vu[ch]) * (target > vu[ch] ? 0.18 : 0.08);
+  }
+}
+function vuMeter(g, x, y, w, h, v, label) {
+  const dbFrac = (db) => (Math.pow(10, db / 20) - 0.1) / (Math.pow(10, 3 / 20) - 0.1);
+  const cx = x + w / 2, cy = y + h * 1.18, r = h * 0.95, span = 0.85;
+  const ang = (f) => -Math.PI / 2 - span + f * span * 2;
+  g.save();
+  g.beginPath(); g.roundRect(x, y, w, h, h * 0.06);
+  const face = g.createLinearGradient(0, y, 0, y + h);
+  face.addColorStop(0, "#f7e2ac"); face.addColorStop(1, "#e2b765");
+  g.fillStyle = face; g.fill();
+  g.lineWidth = Math.max(2, h * 0.03); g.strokeStyle = "#1e1b17"; g.stroke();
+  g.clip();
+  const glow = g.createRadialGradient(cx, y + h * 0.55, 0, cx, y + h * 0.55, w * 0.6);
+  glow.addColorStop(0, "rgba(255,240,200,.55)"); glow.addColorStop(1, "rgba(255,240,200,0)");
+  g.fillStyle = glow; g.fillRect(x, y, w, h);
+  // Skala: schwarz bis 0 dB, rot darueber
+  g.lineWidth = Math.max(1.5, h * 0.025);
+  g.beginPath(); g.arc(cx, cy, r * 0.82, ang(0), ang(dbFrac(0))); g.strokeStyle = "#2a2117"; g.stroke();
+  g.beginPath(); g.arc(cx, cy, r * 0.82, ang(dbFrac(0)), ang(1)); g.strokeStyle = "#c0281a"; g.lineWidth *= 2.2; g.stroke();
+  g.font = `${Math.round(h * 0.1)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+  for (const db of [-20, -10, -7, -5, -3, -2, -1, 0, 1, 2, 3]) {
+    const a = ang(dbFrac(db)), major = [-20, -10, -5, -3, 0, 3].includes(db);
+    g.beginPath();
+    g.moveTo(cx + Math.cos(a) * r * 0.82, cy + Math.sin(a) * r * 0.82);
+    g.lineTo(cx + Math.cos(a) * r * (major ? 0.93 : 0.89), cy + Math.sin(a) * r * (major ? 0.93 : 0.89));
+    g.strokeStyle = db > 0 ? "#c0281a" : "#2a2117"; g.lineWidth = Math.max(1, h * 0.015); g.stroke();
+    if (major) {
+      g.fillStyle = db > 0 ? "#c0281a" : "#2a2117";
+      g.fillText(db > 0 ? "+" + db : String(db), cx + Math.cos(a) * r * 1.02, cy + Math.sin(a) * r * 1.02);
+    }
+  }
+  g.font = `bold ${Math.round(h * 0.13)}px sans-serif`; g.fillStyle = "#2a2117";
+  g.fillText("VU", cx, y + h * 0.62);
+  g.font = `${Math.round(h * 0.09)}px sans-serif`;
+  g.fillText(label, x + w * 0.1, y + h * 0.86);
+  // Zeiger
+  const a = ang(Math.max(0, Math.min(1.04, v)));
+  g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a) * r * 0.97, cy + Math.sin(a) * r * 0.97);
+  g.strokeStyle = "#111"; g.lineWidth = Math.max(1.5, h * 0.018); g.stroke();
+  g.fillStyle = "#1e1b17"; g.fillRect(x, y + h * 0.9, w, h * 0.1);
+  g.restore();
+}
 
 /* =========================================================== Start */
 (async () => {

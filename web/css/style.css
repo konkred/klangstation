@@ -500,12 +500,14 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
   .cover-wrap { width: 96px; height: 96px; -webkit-box-reflect: unset; }
   .playlist-pane { width: auto; flex: 1; border-left: 0; border-top: 1px solid #06101f; min-height: 220px; }
   .queue .q-x { visibility: visible; }
-  .controls { grid-template-columns: 1fr; gap: 4px; }
+  .transport { padding: 6px 8px 8px; min-width: 0; }
+  .controls { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .mini-now { text-align: center; order: -1; }
   .status-right { display: none; }
-  .buttons { justify-content: center; }
-  .volume { margin-left: 4px; }
-  #vol { width: 70px; }
+  /* Lautstaerke nimmt den Rest der Zeile: die Knopfreihe darf nie breiter als der Bildschirm werden */
+  .buttons { justify-content: center; gap: 4px; min-width: 0; }
+  .volume { flex: 0 1 110px; min-width: 0; margin-left: 2px; }
+  #vol { width: auto; flex: 1; min-width: 36px; }
   table.grid .hide-m { display: none; }
   .albums { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 10px; }
   .cd-head, .album-head { flex-direction: column; align-items: flex-start; }
@@ -516,6 +518,6 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
   .alarm .al-info { white-space: normal; }
   .alarm .mini { grid-row: 2; justify-self: start; }
 }
-@media (max-width: 340px) {
+@media (max-width: 360px) {
   #b-shuffle, #b-repeat { display: none; }
 }

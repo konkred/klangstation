@@ -154,6 +154,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `POST /api/tv/show` (erhöht `launch`, `ks-tv-kiosk` startet ihn neu).
 * **Browser nahm `js`/`css` nach dem Neuladen ungefragt aus dem Cache** (keine Cache-Vorgabe → heuristische
   Frische) → statische Dateien mit `Cache-Control: no-cache` (`RevalidatedStatic` in `main.py`, sonst 304).
+* **Dialog auf dem iPhone ohne „Schließen“:** Im Flex-Dialog braucht der scrollende Inhalt `min-height: 0`, sonst
+  wächst die Box über den Bildschirm; `100vh` ist bei Safari höher als sichtbar → `100dvh`. iOS gibt
+  `input[type=time]` eine Mindestbreite (ragt aus dem Raster) → `appearance: none; min-width: 0`.
 * **MPD `single oneshot`** bleibt nach dem Anhalten stehen → Schlummer-Timer „Titelende“ setzt es danach auf 0.
 * **Nicht erreichbarer Sender:** `addid`/`play` gelingen, MPD meldet den Fehler erst danach (`state: stop` + `error`)
   → der Wecker prüft das in der Lautstärke-Rampe und weicht auf die Bibliothek aus.
@@ -246,6 +249,8 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 * Update vom Stand 26.10. per `install.sh --tv-headless` (2 min 2 s, keine Paketänderung, RPM Fusion bleibt – CPU
   kann x86-64-v3): Daten und Spotify-Anmeldung erhalten, Kiosk (cage + Chromium) läuft, statische Dateien mit
   `no-cache`, keine AVCs. Spotify vom Handy verbindet sich direkt nach dem Neustart.
+* Laut Nutzer: Ruhebildschirm am Monitor passt, AirPlay zeigt den Gerätenamen des iPhones, Spotify ohne Namen
+  (librespot liefert keinen).
 
 **Alma, 26.10.2026**
 

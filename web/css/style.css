@@ -427,8 +427,8 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
 .modal-body input { width: 100%; padding: 6px 8px; border: 1px solid #7f9db9; border-radius: 3px; }
 .modal .dlg-buttons { padding: 8px 14px 12px; margin: 0; }
 /* Schlummer-Timer & Wecker */
-.modal-box.wide { width: min(560px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
-.modal-box.wide .modal-body { overflow-y: auto; }
+.modal-box.wide { width: min(560px, 100%); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+.modal-box.wide .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .subhead.first { margin-top: 0; }
 .sleep-seg { flex-wrap: wrap; }
 .alarm-list { display: grid; gap: 4px; margin-bottom: 8px; }
@@ -448,6 +448,9 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
 .alarm-form .field input, .alarm-form .field select { max-width: none; }
 .alarm-form .field .hint { margin: 0; }
 .modal-body .alarm-form input[type=range] { padding: 0; border: 0; }
+/* iOS gibt Zeitfeldern eine Mindestbreite und zentriert den Wert */
+.alarm-form input[type=time] { -webkit-appearance: none; appearance: none; display: block; min-width: 0; min-height: 30px; background: #fff; }
+.alarm-form input[type=time]::-webkit-date-and-time-value { text-align: left; }
 .days { display: flex; gap: 3px; flex-wrap: wrap; }
 .days button {
   width: 30px; padding: 4px 0; cursor: pointer; border: 1px solid #9fb4d3; border-radius: 3px;

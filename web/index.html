@@ -6,6 +6,12 @@
 <meta name="theme-color" content="#0e1e3d">
 <title>Klangstation</title>
 <link rel="icon" href="img/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<meta name="apple-mobile-web-app-title" content="Klangstation">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -169,6 +175,18 @@
               <p class="hint">Wähle, wo der Ton herauskommen soll. Alle Quellen (Bibliothek, Radio, CD, AirPlay, Spotify) verwenden dieses Gerät.</p>
               <div id="out-list" class="out-list"></div>
               <label class="check"><input type="checkbox" name="bitperfect"> Bit-perfekt (keine Umrechnung, Lautstärke nur am Verstärker)</label>
+              <h4 class="subhead">Wiedergabe (Bibliothek, Radio, CD)</h4>
+              <label class="field">Lautstärke angleichen
+                <select name="loudness"><option value="off">Aus</option><option value="replaygain">Nach ReplayGain-Werten der Dateien</option><option value="dynamic">Dynamisch (auch ohne ReplayGain)</option></select>
+              </label>
+              <p class="hint">ReplayGain gleicht Alben und Titel ohne Klangveränderung an, wirkt aber nur bei Dateien, in denen die Werte stehen (z. B. von foobar2000, beets oder MusicBrainz Picard berechnet). „Dynamisch“ regelt laufend nach und hebt leise Stellen an.</p>
+              <label class="field">Überblenden zwischen Titeln
+                <select name="crossfade"><option value="0">Aus (lückenlos)</option><option value="2">2 Sekunden</option><option value="5">5 Sekunden</option><option value="10">10 Sekunden</option></select>
+              </label>
+              <p class="hint">Bei „Bit-perfekt“ ist beides aus.</p>
+              <h4 class="subhead">Auf diesem Gerät</h4>
+              <label class="check"><input type="checkbox" id="lock-controls"> Titel und Tasten im Sperrbildschirm und Kontrollzentrum zeigen</label>
+              <p class="hint">Gilt nur für diesen Browser. Das Handy zeigt die Steuerung nur, solange die Seite etwas abspielt – darum läuft eine stille Tonspur mit, solange Bibliothek, Radio oder CD spielen. Bei AirPlay und Bluetooth bleibt sie aus.</p>
             </fieldset>
             <fieldset data-pane="svc" hidden>
               <legend>Gerät &amp; Dienste</legend>

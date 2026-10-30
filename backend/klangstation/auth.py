@@ -25,7 +25,7 @@ LOCAL = {"127.0.0.1", "::1"}
 
 # Immer erreichbar: die Seite selbst (ohne Daten) und die Anmeldung
 _PUBLIC_PREFIXES = ("/css/", "/js/", "/img/")
-_PUBLIC_PATHS = {"/", "/index.html", "/tv", "/tv.html", "/api/auth/status", "/api/auth/login", "/api/internal/hook"}
+_PUBLIC_PATHS = {"/", "/index.html", "/manifest.json", "/tv", "/tv.html", "/api/auth/status", "/api/auth/login", "/api/internal/hook"}
 # Bei Stufe "settings" geschuetzt (alles, was Einstellungen oder Geraete veraendert)
 _SETTINGS_PREFIXES = ("/api/settings", "/api/bluetooth/", "/api/shares", "/api/auth/password", "/api/tv/show")
 

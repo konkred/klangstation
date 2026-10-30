@@ -157,6 +157,14 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **Dialog auf dem iPhone ohne „Schließen“:** Im Flex-Dialog braucht der scrollende Inhalt `min-height: 0`, sonst
   wächst die Box über den Bildschirm; `100vh` ist bei Safari höher als sichtbar → `100dvh`. iOS gibt
   `input[type=time]` eine Mindestbreite (ragt aus dem Raster) → `appearance: none; min-width: 0`.
+* **Sperrbildschirm (Media Session):** iOS/Android zeigen die Steuerung nur, wenn die Seite selbst Ton spielt →
+  stille Tonspur, nur bei Bibliothek/Radio/CD. Freischalten beim Antippen **stumm** (`muted` play/pause): eine
+  hörbare Tonspur würde AirPlay/Bluetooth vom selben iPhone unterbrechen.
+  iOS nimmt die Zeit im Sperrbildschirm von der Tonspur, nicht aus `setPositionState` (mit 5-s-Schleife sprang sie
+  nach dem Spulen auf 0:00) → `/api/silence.wav?s=<Titellänge>` (8 kHz, 8 bit, Range-fähig, nur der angefragte
+  Ausschnitt wird erzeugt), Tonspur läuft an derselben Stelle mit.
+* **Dynamische Lautstärke (`volume_normalization`)** gibt es in MPD nur als Startoption → MPD-Neustart wie beim
+  Ausgabewechsel; ReplayGain und Überblenden gehen zur Laufzeit (`replay_gain_mode`, `crossfade`).
 * **MPD `single oneshot`** bleibt nach dem Anhalten stehen → Schlummer-Timer „Titelende“ setzt es danach auf 0.
 * **Nicht erreichbarer Sender:** `addid`/`play` gelingen, MPD meldet den Fehler erst danach (`state: stop` + `error`)
   → der Wecker prüft das in der Lautstärke-Rampe und weicht auf die Bibliothek aus.
@@ -250,7 +258,18 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
   kann x86-64-v3): Daten und Spotify-Anmeldung erhalten, Kiosk (cage + Chromium) läuft, statische Dateien mit
   `no-cache`, keine AVCs. Spotify vom Handy verbindet sich direkt nach dem Neustart.
 * Laut Nutzer: Ruhebildschirm am Monitor passt, AirPlay zeigt den Gerätenamen des iPhones, Spotify ohne Namen
-  (librespot liefert keinen).
+  (librespot liefert keinen). Wecker-Dialog auf dem iPhone (nach Korrektur) bedienbar, Wecker-Test mit Ton: spielt
+  und wird hörbar lauter.
+* Bluetooth (Stick im Betrieb eingesteckt, nach 5 s erkannt): iPhone neu gekoppelt, verbunden ohne Übernahme (MPD
+  spielt weiter), Play übernimmt nach ~1 s (bluealsa-aplay gibt belegtes Gerät frei, Neustart), Pause/Weiter/
+  Titelsprung sofort, Trennen → Leerlauf ohne ungefragtes Weiterspielen von MPD; keine AVCs.
+* Lautstärke angleichen und Überblenden (stumm per `IEC958 off`): Überblenden und ReplayGain sofort zur Laufzeit,
+  „Dynamisch“ startet MPD neu, spielt nach 2 s an derselben Stelle weiter. Media Session in Chromium: Titel, Cover,
+  Pause/Weiter/Nächster, bei Stopp leer. Bibliothek am Alma hat keine ReplayGain-Tags.
+  iPhone (laut Nutzer): Pause/Weiter, Spulen mit richtiger Zeit, Homescreen-App ohne Browserleiste. Pausiert im
+  Hintergrund trennt iOS nach ~10 s die Verbindung; Play im Sperrbildschirm weckt die Seite, sie verbindet in 2 s
+  neu (keine weiße Seite – frühere Meldung war ein Missverständnis). Radio nicht testbar, Radio Browser war gestört
+  (503, nur noch ein Server).
 
 **Alma, 26.10.2026**
 

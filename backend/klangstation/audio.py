@@ -193,12 +193,15 @@ def _q(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
-def mpd_config(*, data_dir: Path, media_root: Path, port: int, device: str, bitperfect: bool) -> str:
+def mpd_config(*, data_dir: Path, media_root: Path, port: int, device: str, bitperfect: bool,
+               normalize: bool = False) -> str:
     alsa = alsa_device(device, bitperfect)
     if bitperfect:
         output_opts = '    mixer_type     "none"\n    auto_resample  "no"\n    auto_channels  "no"\n    auto_format    "no"\n'
     else:
         output_opts = '    mixer_type     "software"\n'
+    # Dynamische Angleichung gibt es nur als Startoption; ReplayGain und Ueberblenden setzt core zur Laufzeit
+    normalization = "yes" if normalize and not bitperfect else "no"
     return f"""# Automatisch erzeugt von Klangstation - Aenderungen werden ueberschrieben
 music_directory     "{_q(str(media_root))}"
 playlist_directory  "{_q(str(data_dir / 'playlists'))}"
@@ -212,6 +215,7 @@ follow_inside_symlinks  "yes"
 restore_paused      "yes"
 log_level           "notice"
 filesystem_charset  "UTF-8"
+volume_normalization "{normalization}"
 
 database {{
     plugin          "simple"

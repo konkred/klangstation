@@ -171,8 +171,10 @@ class Core:
         if "mpd" in which:
             conf = DATA_DIR / "mpd.conf"
             conf.write_text(audio.mpd_config(data_dir=DATA_DIR, media_root=MEDIA_ROOT, port=MPD_PORT,
-                                             device=dev, bitperfect=s.get("bitperfect")), encoding="utf-8")
+                                             device=dev, bitperfect=s.get("bitperfect"),
+                                             normalize=s.get("loudness") == "dynamic"), encoding="utf-8")
             await self.daemons["mpd"].start(["--no-daemon", "--stderr", str(conf)])
+            self._spawn(self._apply_playback())
         if "airplay" in which:
             if s.get("airplay_enabled"):
                 conf = DATA_DIR / "shairport-sync.conf"
@@ -870,6 +872,26 @@ class Core:
                 continue
         log.info("Wiedergabe nach dem Geraetewechsel nicht fortgesetzt: MPD nicht erreichbar")
 
+    async def _apply_playback(self, tries: int = 15) -> None:
+        """ReplayGain und Ueberblenden in MPD setzen (nach dem Start und bei Aenderung).
+
+        Bit-perfekt schliesst beides aus: beides rechnet die Samples um.
+        """
+        s = self.settings
+        bitperfect = s.get("bitperfect")
+        mode = "auto" if s.get("loudness") == "replaygain" and not bitperfect else "off"
+        fade = 0 if bitperfect else s.get("crossfade")
+        for attempt in range(tries):
+            if attempt:
+                await asyncio.sleep(1)
+            try:
+                await self.mpd.run("replay_gain_mode", mode)
+                await self.mpd.run("crossfade", str(fade))
+                return
+            except (ConnectionError, MPDError):
+                continue
+        log.info("ReplayGain/Ueberblenden nicht gesetzt: MPD nicht erreichbar")
+
     async def _is_playing(self) -> bool:
         if self.source == "airplay":
             return self.airplay_active and not self.airplay.meta.get("paused")
@@ -1439,8 +1461,11 @@ class Core:
         forbidden = set(changes) & {"auth_hash", "auth_scope", "shares", "upnp_uuid", "alarms"}
         if forbidden:
             raise ValueError("Diese Einstellung lässt sich hier nicht ändern: " + ", ".join(sorted(forbidden)))
+        old_loudness = self.settings.get("loudness")
         changed = set(self.settings.update(changes))
-        if changed & {"output", "bitperfect"}:
+        # Die dynamische Angleichung kennt MPD nur als Startoption -> Neustart wie beim Geraetewechsel
+        restart_mpd = "loudness" in changed and "dynamic" in (old_loudness, self.settings.get("loudness"))
+        if changed & {"output", "bitperfect"} or restart_mpd:
             # MPD startet fuer das neue Geraet neu und stellt sich dann pausiert wieder her
             resume = self.source in ("mpd", "idle") and await self._is_playing()
             try:
@@ -1450,7 +1475,10 @@ class Core:
                     await self.mpd.run("stop")
             except (ConnectionError, MPDError):
                 pass
-            await self.apply_audio()
+            if changed & {"output", "bitperfect"}:
+                await self.apply_audio()
+            else:
+                await self.apply_audio(("mpd",))
             if resume:
                 self._spawn(self._resume_mpd())
         else:
@@ -1464,6 +1492,8 @@ class Core:
                 await self.apply_audio(("bluetooth",))
             if changed & {"device_name", "cec_enabled"}:
                 await self.apply_audio(("cec",))
+            if changed & {"loudness", "crossfade"}:
+                await self._apply_playback(tries=1)
         if changed & {"weather_place", "metadata_online"}:
             self._spawn(self._weather_now())
         if "tv_enabled" in changed and self.settings.get("tv_enabled"):

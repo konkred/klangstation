@@ -27,6 +27,8 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | „Läuft gerade“ | Vollbild unter `/tv` (Cover, Titel, Fortschritt) am HDMI-Ausgang oder in jedem Browser; im Ruhezustand wandernde Uhr mit Datum, nächstem Wecker, Wetter ([Open-Meteo](https://open-meteo.com), optional) und einem Band der zuletzt gehörten Cover |
 | Schlummer-Timer & Wecker | Timer (15–90 min oder Titelende) blendet die letzten 30 s aus und hält an; Wecker zu Uhrzeit und Wochentagen mit Radio-Favorit, Wiedergabeliste oder Bibliothek im Zufall, wird über 2 min lauter, schaltet optional nach einer Weile wieder aus, Rückfall auf die Bibliothek, wenn der Sender nicht spielt |
 | Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend, Instrumental-Pausen als Noten: aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key), gecacht; nicht bei Webradio |
+| Lautstärke & Übergänge | Angleichen nach ReplayGain (Album/Titel automatisch) oder dynamisch, Überblenden 2–10 s; nicht bei bit-perfekt |
+| Handy | als App auf den Homescreen legen; auf Wunsch Titel, Cover und Tasten im Sperrbildschirm (Bibliothek, Radio, CD) |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
 ## Unterstützte Systeme
@@ -170,6 +172,24 @@ angeschlossen ist. Solange dort nichts von Hand gewählt ist, nimmt Klangstation
 USB-DAC oder I²S-HAT, dann HDMI/DP mit erkanntem Gerät, dann die Klinke. Ein HDMI-Ausgang ohne
 angeschlossenes Gerät wird nie automatisch gewählt. Beim Wechsel spielt laufende Musik nach wenigen Sekunden
 am neuen Ausgang weiter.
+
+Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
+
+* **Lautstärke angleichen:** „Nach ReplayGain-Werten“ nutzt die in den Dateien gespeicherten Werte (Album-Wert
+  bei geordneter Wiedergabe, Titel-Wert bei Zufall) und verändert den Klang nicht. Dateien ohne diese Werte
+  bleiben, wie sie sind. Werte lassen sich z. B. mit foobar2000, beets oder MusicBrainz Picard berechnen.
+  „Dynamisch“ regelt laufend nach und wirkt auch ohne ReplayGain; dafür startet der Player kurz neu.
+* **Überblenden:** 2, 5 oder 10 Sekunden zwischen zwei Titeln; „Aus“ spielt lückenlos.
+* Bei *Bit-perfekt* ist beides aus.
+
+### Handy
+
+* **Als App:** In Safari *Teilen › Zum Home-Bildschirm*, in Chrome *Zum Startbildschirm hinzufügen*. Klangstation
+  öffnet sich dann ohne Browserleisten.
+* **Sperrbildschirm:** *Optionen › Ausgabe › Auf diesem Gerät* zeigt Titel, Cover und Tasten im Sperrbildschirm und
+  Kontrollzentrum. Handys tun das nur, solange die Seite selbst etwas abspielt – darum läuft eine stille
+  Tonspur mit, solange Bibliothek, Radio oder CD spielen. Bei AirPlay und Bluetooth bleibt sie aus, damit sie die
+  Wiedergabe des Handys nicht unterbricht. Die Einstellung gilt nur für diesen Browser.
 
 ### „Läuft gerade“-Bildschirm
 

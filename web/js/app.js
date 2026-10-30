@@ -232,6 +232,7 @@ function render() {
   if (currentView === "settings") renderBluetooth();
   vis.playing = playing;
   tick();
+  updateLock();
 }
 
 function paintRange(r) {
@@ -1071,7 +1072,7 @@ $("#settings-form").addEventListener("submit", async (ev) => {
     if (!el.name || (el.name !== "output" && !(el.name in settings))) continue;
     if (el.type === "checkbox") data[el.name] = el.checked;
     else if (el.type === "radio") { if (el.checked) data.output = el.value || null; }
-    else if (el.name === "spotify_bitrate" || el.name === "cec_standby_minutes") data[el.name] = +el.value;
+    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade"].includes(el.name)) data[el.name] = +el.value;
     else data[el.name] = el.value;
   }
   $("#save-msg").textContent = "Wird übernommen…";
@@ -1084,6 +1085,102 @@ $("#settings-form").addEventListener("submit", async (ev) => {
     $("#save-msg").textContent = "";
   }
 });
+
+/* =========================================================== Sperrbildschirm (Media Session) */
+// Handys zeigen Titel und Tasten im Sperrbildschirm nur, solange die Seite selbst Ton abspielt. Darum laeuft
+// auf Wunsch eine stille Tonspur mit - nur bei Bibliothek, Radio und CD: bei AirPlay und Bluetooth spielt das
+// Handy selbst, die Tonspur wuerde dessen Wiedergabe unterbrechen.
+const lock = { on: false, audio: null, key: "", unlocked: false, len: 0 };
+try { lock.on = localStorage.getItem("ks-lock") === "1"; } catch (e) { /* privat */ }
+
+function silentTrack() {
+  const a = new Audio();
+  a.preload = "auto";
+  setSilence(a, 5);
+  return a;
+}
+// iOS nimmt die Zeitanzeige im Sperrbildschirm von der Tonspur der Seite: sie ist darum so lang wie der Titel
+// und laeuft an derselben Stelle. Ohne Laenge (Radio) genuegen 5 s in Schleife.
+function setSilence(a, seconds) {
+  a.loop = seconds === 5;
+  a.src = "api/silence.wav?s=" + seconds;
+  lock.len = seconds;
+}
+
+function lockActive() {
+  const n = (S && S.now) || {};
+  return lock.on && LOCAL_KINDS.has(n.kind) && (n.state === "play" || n.state === "pause");
+}
+
+function updateLock() {
+  if (!("mediaSession" in navigator) || !lock.audio || lock.audio.muted) return;
+  const ms = navigator.mediaSession, n = (S && S.now) || {};
+  if (!lockActive()) {
+    lock.audio.pause();
+    if (lock.key) { ms.metadata = null; ms.playbackState = "none"; lock.key = ""; }
+    return;
+  }
+  const pos = n.duration ? Math.min(elapsedNow(), n.duration) : 0, a = lock.audio;
+  const len = n.duration ? Math.ceil(n.duration) + 1 : 5;
+  if (lock.len !== len) setSilence(a, len);
+  if (n.duration && Math.abs(a.currentTime - pos) > 2) {
+    try { a.currentTime = pos; } catch (e) { /* noch nicht geladen */ }
+  }
+  try {
+    if (n.duration) ms.setPositionState({ duration: n.duration, position: pos, playbackRate: 1 });
+    else ms.setPositionState();
+  } catch (e) { /* aeltere Browser */ }
+  const key = [n.title, n.artist, n.album, n.art].join("|");
+  if (key !== lock.key) {
+    lock.key = key;
+    ms.metadata = new MediaMetadata({
+      title: n.title || "", artist: n.artist || (n.kind === "radio" ? n.extra || "" : ""), album: n.album || "",
+      artwork: n.art ? [{ src: new URL(n.art, location.href).href, sizes: "512x512" }] : [],
+    });
+  }
+  ms.playbackState = n.state === "play" ? "playing" : "paused";
+  if (n.state !== "play") lock.audio.pause();
+  else if (lock.unlocked && lock.audio.paused) lock.audio.play().catch(() => {});
+}
+
+function setupLock() {
+  if (lock.audio || !("mediaSession" in navigator)) return;
+  lock.audio = silentTrack();
+  const ms = navigator.mediaSession;
+  const on = (action, fn) => { try { ms.setActionHandler(action, fn); } catch (e) { /* nicht unterstuetzt */ } };
+  on("play", () => { lock.audio.play().catch(() => {}); post("/api/player/play"); });
+  on("pause", () => { lock.audio.pause(); post("/api/player/pause"); });
+  on("nexttrack", () => post("/api/player/next"));
+  on("previoustrack", () => post("/api/player/prev"));
+  on("seekto", (d) => {
+    const n = (S && S.now) || {};
+    if (!n.duration) return;
+    try { lock.audio.currentTime = d.seekTime; } catch (e) { /* noch nicht geladen */ }
+    try { navigator.mediaSession.setPositionState({ duration: n.duration, position: d.seekTime, playbackRate: 1 }); } catch (e) { /* egal */ }
+    post("/api/player/seek", { position: d.seekTime });
+  });
+}
+
+// iOS laesst Ton erst zu, nachdem die Tonspur einmal bei einer Beruehrung gestartet wurde. Das geschieht stumm:
+// stumme Wiedergabe unterbricht nicht, was das Handy gerade selbst spielt (z. B. AirPlay zur Klangstation).
+function unlockLock() {
+  setupLock();
+  const a = lock.audio;
+  if (!a || lock.unlocked) return;
+  a.muted = true;
+  a.play().then(() => { a.pause(); a.muted = false; lock.unlocked = true; updateLock(); }, () => { a.muted = false; });
+}
+
+const lockBox = $("#lock-controls");
+lockBox.checked = lock.on;
+if (!("mediaSession" in navigator)) { lockBox.disabled = true; lockBox.parentElement.title = "Dieser Browser kann das nicht"; }
+lockBox.addEventListener("change", () => {
+  lock.on = lockBox.checked;
+  try { localStorage.setItem("ks-lock", lock.on ? "1" : "0"); } catch (e) { /* privat */ }
+  if (lock.on) unlockLock();
+  else updateLock();
+});
+document.addEventListener("pointerdown", () => { if (lock.on) unlockLock(); }, { capture: true });
 
 /* =========================================================== Schlummer-Timer & Wecker */
 const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];

@@ -5,13 +5,14 @@ import asyncio
 import contextlib
 import hmac
 import logging
+import struct
 from pathlib import Path
 
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse, Response
+from starlette.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -196,6 +197,58 @@ async def art(request):
     if isinstance(result, Path):
         return FileResponse(str(result), media_type="image/jpeg", headers=ART_CACHE)
     return Response(status_code=404)
+
+
+_SILENCE_RATE = 8000  # 8 bit mono: 8 KB je Sekunde
+
+
+def _silence_header(size: int) -> bytes:
+    return (b"RIFF" + struct.pack("<I", 36 + size) + b"WAVEfmt " +
+            struct.pack("<IHHIIHH", 16, 1, 1, _SILENCE_RATE, _SILENCE_RATE, 1, 8) + b"data" + struct.pack("<I", size))
+
+
+async def silence(request):
+    """Stille in Laenge des Titels fuer die Sperrbildschirm-Steuerung am Handy.
+
+    iOS nimmt die Zeitanzeige dort von der Tonspur, die die Seite abspielt - sie muss so lang sein wie der
+    Titel und an derselben Stelle laufen. Erzeugt wird nur der angefragte Ausschnitt (Safari fragt in Teilen).
+    """
+    try:
+        seconds = min(max(int(request.query_params.get("s", "5")), 1), 4 * 3600)
+    except ValueError:
+        return Response(status_code=400)
+    size = seconds * _SILENCE_RATE
+    total = 44 + size
+    start, end = 0, total - 1
+    rng = request.headers.get("range", "")
+    if rng.startswith("bytes="):
+        a, _, b = rng[6:].split(",")[0].partition("-")
+        try:
+            if a:
+                start, end = int(a), min(int(b), total - 1) if b else total - 1
+            elif b:
+                start = max(total - int(b), 0)
+        except ValueError:
+            pass
+        if start > end or start >= total:
+            return Response(status_code=416, headers={"Content-Range": f"bytes */{total}"})
+    header = _silence_header(size)
+
+    async def chunks():
+        pos = start
+        while pos <= end:
+            n = min(65536, end - pos + 1)
+            if pos < 44:
+                part = (header + b"\x80" * 65536)[pos:pos + n]
+            else:
+                part = b"\x80" * n
+            yield part
+            pos += len(part)
+
+    headers = {"Accept-Ranges": "bytes", "Content-Length": str(end - start + 1), "Cache-Control": "public, max-age=86400"}
+    if rng:
+        headers["Content-Range"] = f"bytes {start}-{end}/{total}"
+    return StreamingResponse(chunks(), status_code=206 if rng else 200, media_type="audio/wav", headers=headers)
 
 
 async def art_cd(request):
@@ -526,6 +579,7 @@ routes = [
     Route("/api/library/update", library_update, methods=["POST"]),
     Route("/api/media", media_list),
     Route("/api/art", art),
+    Route("/api/silence.wav", silence),
     Route("/api/art/cd", art_cd),
     Route("/api/art/airplay", art_airplay),
     Route("/api/lyrics", lyrics),

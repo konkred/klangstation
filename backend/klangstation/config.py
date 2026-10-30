@@ -57,6 +57,8 @@ DEFAULTS: Dict[str, Any] = {
     "device_name": _default_name(),
     "output": None,              # ALSA-Geraet, None = automatisch waehlen
     "bitperfect": False,         # hw: statt plughw:, kein Software-Mixer in MPD
+    "loudness": "off",           # Lautstaerke angleichen: "off", "replaygain" (Tags) oder "dynamic" (MPD-Normalisierung)
+    "crossfade": 0,              # Ueberblenden zwischen Titeln in Sekunden
     "airplay_enabled": True,
     "spotify_enabled": True,
     "spotify_bitrate": 320,
@@ -91,6 +93,8 @@ _VALIDATORS = {
     "device_name": lambda v: isinstance(v, str) and 0 < len(v.strip()) <= 40,
     "output": lambda v: v is None or (isinstance(v, str) and len(v) < 200),
     "bitperfect": lambda v: isinstance(v, bool),
+    "loudness": lambda v: v in ("off", "replaygain", "dynamic"),
+    "crossfade": lambda v: v in (0, 2, 5, 10),
     "airplay_enabled": lambda v: isinstance(v, bool),
     "spotify_enabled": lambda v: isinstance(v, bool),
     "spotify_bitrate": lambda v: v in (96, 160, 320),

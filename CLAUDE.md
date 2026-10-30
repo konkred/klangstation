@@ -1,6 +1,7 @@
 # Klangstation – Arbeitskontext für Claude
 
-Musik-Streaming-Webapp (Python/Starlette + MPD) im WMP-2000er-Stil für headless Debian- und RHEL-Systeme
+Musik-Streaming-Webapp (Python/Starlette + MPD) im Stil der 2000er (WMP-Skin, wahlweise Frutiger Aero) für
+headless Debian- und RHEL-Systeme
 (ARM und x86). Was das Projekt kann und wie es installiert wird, steht in der README.md. Diese Datei hält fest,
 was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der Fehlersuche und den Teststand.
 
@@ -26,9 +27,10 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
   `main.py` die HTTP-/WebSocket-Routen, `audio.py` ALSA-Erkennung und Konfigurationen für mpd/shairport/
   librespot/gmediarender/bluealsa-aplay, `lyrics.py` Liedtexte (`.lrc`, LRCLIB), `timers.py` Schlummer-Timer und
   Wecker, `weather.py` Wetter für den Ruhebildschirm (Open-Meteo).
-* `web/` – Oberfläche (`index.html`, `js/app.js`, `css/style.css`; Themes als eigene Datei, z. B.
-  `css/theme-aero.css`/`css/tv-aero.css`, nur unter `html[data-theme=…]`; Oberfläche per localStorage, `/tv` per
-  Einstellung `tv_theme`), `/tv` = „Läuft gerade“-Bildschirm.
+* `web/` – Oberfläche (`index.html`, `js/app.js`, `css/style.css`) und „Läuft gerade“ unter `/tv` (`tv.html`,
+  `js/tv.js`, `css/tv.css`). Themes liegen je in einer eigenen Datei (`css/theme-aero.css`, `css/tv-aero.css`) und
+  greifen nur unter `html[data-theme=…]`: die Oberfläche merkt sich das Theme pro Browser (localStorage), `/tv`
+  folgt der Einstellung `tv_theme`.
 * `system/` – systemd-Units, udev-Regel, Hilfsskripte, SELinux-Modul. `ks-netmount` ist ein root-Hilfsdienst
   (Socket nur für Gruppe klangstation): SMB/NFS lesend einhängen, gerippte CDs auf USB speichern.
   `ks-automount` hängt USB/SD ein und aus, `ks-tv-kiosk` startet den Kiosk-Browser.
@@ -66,6 +68,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `ks-tv-kiosk` enthält `@PORT@` – beim Einzeleinspielen per `sed` ersetzen.
 * **Alma (root):** scp nach `/root/klangstation`, dann `bash install.sh --tv-headless` oder einzelne Dateien
   mit `install -m 0644` nach `/opt/klangstation/...` und `systemctl restart klangstation`.
+* Nur Web-Dateien geändert: kein Neustart nötig (`no-cache`), Browser neu laden; den Kiosk (headless) per
+  `systemctl restart klangstation-tv` – das unterbricht die Wiedergabe nicht.
 
 ### Testtechniken
 
@@ -108,6 +112,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   ffmpeg-free aus EPEL (MP3/AAC/WMA/APE/WV/DSF gehen).
 * **Headless-Mixer:** Regler stehen auf frischen Systemen stumm/0 % → `audio.prepare_mixer`.
 * **vc4hdmi (Pi)** hat keinen Jack-Regler → Anschlussstatus aus `/sys/class/drm/card*-HDMI-A-<n+1>/status`.
+* **Dynamische Lautstärke (`volume_normalization`)** gibt es in MPD nur als Startoption → MPD-Neustart wie beim
+  Ausgabewechsel; ReplayGain und Überblenden gehen zur Laufzeit (`replay_gain_mode`, `crossfade`).
+* **MPD `single oneshot`** bleibt nach dem Anhalten stehen → Schlummer-Timer „Titelende“ setzt es danach auf 0.
+* **Nicht erreichbarer Sender:** `addid`/`play` gelingen, MPD meldet den Fehler erst danach (`state: stop` + `error`)
+  → der Wecker prüft das in der Lautstärke-Rampe und weicht auf die Bibliothek aus.
 
 ### CD
 
@@ -152,8 +161,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `--disable-features=Translate --lang=de` in `ks-tv-kiosk`, `tv.html` mit `translate="no"`.
 * **Kiosk lädt neue Oberflächen-Dateien nicht von selbst** → `web_build` im Zustand (Kennung aus Pfad, Größe und
   Änderungszeit der Dateien in `web/`, beim Start berechnet): ändert sie sich, lädt `/tv` neu. Greift also erst nach
-  einem Neustart von Klangstation. Einzeln eingespielte Web-Dateien ohne Neustart: Browser beenden und
-  `POST /api/tv/show` (erhöht `launch`, `ks-tv-kiosk` startet ihn neu).
+  einem Neustart von Klangstation. Einzeln eingespielte Web-Dateien ohne Neustart: `klangstation-tv` neu starten
+  oder Browser beenden und `POST /api/tv/show` (erhöht `launch`, `ks-tv-kiosk` startet ihn neu).
 * **Browser nahm `js`/`css` nach dem Neuladen ungefragt aus dem Cache** (keine Cache-Vorgabe → heuristische
   Frische) → statische Dateien mit `Cache-Control: no-cache` (`RevalidatedStatic` in `main.py`, sonst 304).
 * **Dialog auf dem iPhone ohne „Schließen“:** Im Flex-Dialog braucht der scrollende Inhalt `min-height: 0`, sonst
@@ -162,14 +171,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **Sperrbildschirm (Media Session):** iOS/Android zeigen die Steuerung nur, wenn die Seite selbst Ton spielt →
   stille Tonspur, nur bei Bibliothek/Radio/CD. Freischalten beim Antippen **stumm** (`muted` play/pause): eine
   hörbare Tonspur würde AirPlay/Bluetooth vom selben iPhone unterbrechen.
-  iOS nimmt die Zeit im Sperrbildschirm von der Tonspur, nicht aus `setPositionState` (mit 5-s-Schleife sprang sie
-  nach dem Spulen auf 0:00) → `/api/silence.wav?s=<Titellänge>` (8 kHz, 8 bit, Range-fähig, nur der angefragte
-  Ausschnitt wird erzeugt), Tonspur läuft an derselben Stelle mit.
-* **Dynamische Lautstärke (`volume_normalization`)** gibt es in MPD nur als Startoption → MPD-Neustart wie beim
-  Ausgabewechsel; ReplayGain und Überblenden gehen zur Laufzeit (`replay_gain_mode`, `crossfade`).
-* **MPD `single oneshot`** bleibt nach dem Anhalten stehen → Schlummer-Timer „Titelende“ setzt es danach auf 0.
-* **Nicht erreichbarer Sender:** `addid`/`play` gelingen, MPD meldet den Fehler erst danach (`state: stop` + `error`)
-  → der Wecker prüft das in der Lautstärke-Rampe und weicht auf die Bibliothek aus.
+* **Zeit im Sperrbildschirm** nimmt iOS von der Tonspur, nicht aus `setPositionState` (mit 5-s-Schleife sprang sie
+  nach dem Spulen auf 0:00) → `/api/silence.wav?s=<Titellänge>` (8 kHz, 8 bit, Range-fähig, erzeugt nur den
+  angefragten Ausschnitt), die Tonspur läuft an derselben Stelle mit.
+* **Pausierte Seite im Hintergrund:** iOS trennt nach ~10 s den WebSocket; die Seite verbindet beim Zurückkehren
+  in 2 s neu, Play im Sperrbildschirm weckt sie. Ein Service Worker (Offline-Hülle) ginge nur über HTTPS.
 * **Liedtexte:** eingebettete Texte (Tag `LYRICS`) nicht über MPD `readcomments` lesen – mehrzeilige Werte
   passen nicht ins Zeilenprotokoll. Darum nur `.lrc` neben der Datei und LRCLIB.
 * **WebSocket-Ablehnung** erst nach `websocket.accept` schließen, sonst sieht der Browser 1006 statt 4401.
@@ -185,12 +191,15 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 
 ### Noch offen
 
+* **Pi zu Hause** hat noch den Stand vom 26.10. (ohne Liedtexte, Timer/Wecker, Wetter, Themes, Sperrbildschirm).
+  Update nur nach Rückfrage; danach Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher testen.
+* Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
+  Radio Browser gestört).
 * **CEC unter RHEL:** braucht einen USB-CEC-Adapter (z. B. Pulse-Eight), die Intel-Grafik kann kein CEC.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
   `vcgencmd get_throttled`). Erster Lauf am 26.10.2026 nach 35 min abgebrochen (unauffällig).
-* Entfällt: Scan einer noch größeren Bibliothek.
 * Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst am Pi „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Alma.
 
@@ -214,6 +223,22 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
   ~15 s CIFS-Wiederverbindung über WLAN).
 * Aufgeräumt: Testdateien, Testplaylist „Test Update“ und Radio-Favorit entfernt; Wiedergabeliste „SynoTest“
   ist geblieben.
+
+**Alma, 26.10.2026**
+
+* Update per `install.sh --tv-headless` (1 min 47 s; Einstellungen, Geheimnis, Spotify-Anmeldung, Freigabe mit
+  Passwort unverändert, keine Paketänderung).
+* Neustart während Radio: Web nach 65 s (davon 39 s Firmware), alle Dienste, Freigabe, Stick, Bluetooth,
+  SELinux-Modul da, kein ungefragtes Weiterspielen.
+* CD: Rippen in den internen Speicher (3 min 15 s), Auswerfen per Taste während des Rippens.
+* USB: FAT32-Umlaute; Speichern auf NTFS und FAT32; Abziehen/Anstecken per USB-`authorized` mit offener Datei,
+  schnelles Wiederanstecken (neuer Gerätename), ausgeschaltete remove-Regel (Rückfallweg) und echtes Abziehen.
+* Bluetooth: übersteht Neustart, Stick wird im laufenden Betrieb erkannt; mit iPhone keine Übernahme bei
+  Bit-perfekt-Wechseln (pausiert und frisch verbunden), Play übernimmt sofort.
+* Spotify übernimmt von AirPlay ohne Absturz von librespot.
+* Störfälle: Webradio spielt 7 s nach Netzrückkehr wieder; Synology-Ausfall 40 s und 210 s → setzt an derselben
+  Stelle fort.
+* WebSocket 4401 statt 1006 (per TestClient).
 
 **Pi OS Lite frisch (unterwegs), 27.10.2026**
 
@@ -266,28 +291,12 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
   spielt weiter), Play übernimmt nach ~1 s (bluealsa-aplay gibt belegtes Gerät frei, Neustart), Pause/Weiter/
   Titelsprung sofort, Trennen → Leerlauf ohne ungefragtes Weiterspielen von MPD; keine AVCs.
 * Lautstärke angleichen und Überblenden (stumm per `IEC958 off`): Überblenden und ReplayGain sofort zur Laufzeit,
-  „Dynamisch“ startet MPD neu, spielt nach 2 s an derselben Stelle weiter. Media Session in Chromium: Titel, Cover,
-  Pause/Weiter/Nächster, bei Stopp leer. Bibliothek am Alma hat keine ReplayGain-Tags.
-  iPhone (laut Nutzer): Pause/Weiter, Spulen mit richtiger Zeit, Homescreen-App ohne Browserleiste. Pausiert im
-  Hintergrund trennt iOS nach ~10 s die Verbindung; Play im Sperrbildschirm weckt die Seite, sie verbindet in 2 s
-  neu (keine weiße Seite – frühere Meldung war ein Missverständnis). Radio nicht testbar, Radio Browser war gestört
-  (503, nur noch ein Server).
-
-**Alma, 26.10.2026**
-
-* Update per `install.sh --tv-headless` (1 min 47 s; Einstellungen, Geheimnis, Spotify-Anmeldung, Freigabe mit
-  Passwort unverändert, keine Paketänderung).
-* Neustart während Radio: Web nach 65 s (davon 39 s Firmware), alle Dienste, Freigabe, Stick, Bluetooth,
-  SELinux-Modul da, kein ungefragtes Weiterspielen.
-* CD: Rippen in den internen Speicher (3 min 15 s), Auswerfen per Taste während des Rippens.
-* USB: FAT32-Umlaute; Speichern auf NTFS und FAT32; Abziehen/Anstecken per USB-`authorized` mit offener Datei,
-  schnelles Wiederanstecken (neuer Gerätename), ausgeschaltete remove-Regel (Rückfallweg) und echtes Abziehen.
-* Bluetooth: übersteht Neustart, Stick wird im laufenden Betrieb erkannt; mit iPhone keine Übernahme bei
-  Bit-perfekt-Wechseln (pausiert und frisch verbunden), Play übernimmt sofort.
-* Spotify übernimmt von AirPlay ohne Absturz von librespot.
-* Störfälle: Webradio spielt 7 s nach Netzrückkehr wieder; Synology-Ausfall 40 s und 210 s → setzt an derselben
-  Stelle fort.
-* WebSocket 4401 statt 1006 (per TestClient).
+  „Dynamisch“ startet MPD neu und spielt nach 2 s an derselben Stelle weiter. Die Bibliothek am Alma hat keine
+  ReplayGain-Tags.
+* Sperrbildschirm: in Chromium Titel, Cover, Pause/Weiter/Nächster, bei Stopp leer; am iPhone (laut Nutzer)
+  Pause/Weiter und Spulen mit richtiger Zeit, Play weckt die pausierte Seite. Homescreen-App ohne Browserleiste.
+* Themes: Frutiger Aero (gedämpft) für Oberfläche und `/tv` im Browser (Desktop, 320–390 px) und am Monitor
+  (Kiosk); laut Nutzer angenehm. Knopfreihe passt ab 320 px.
 
 ### Behobene Fehler
 
@@ -321,3 +330,9 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
   USB-DAC/I²S-HAT, dann HDMI mit erkanntem Gerät (Wunsch des Nutzers), dann Klinke, dann HDMI unbekannt.
 * Übersetzen-Popup von Chromium im Kiosk abgeschaltet.
 * Spotify-Übernahme von AirPlay dauerte 30–60 s oder scheiterte → `ks-spotify-sink` (siehe Lehren).
+
+**30.10.2026**
+
+* Wecker-Dialog auf dem iPhone: „Schließen“ nicht erreichbar, Zeitfeld ragte heraus (siehe Lehren).
+* Sperrbildschirm sprang nach dem Spulen auf 0:00 → Tonspur in Titellänge (siehe Lehren).
+* Knopfreihe auf schmalen Handys 22 px zu breit → Lautstärkeregler flexibel, Zufall/Wiederholen erst unter 360 px weg.

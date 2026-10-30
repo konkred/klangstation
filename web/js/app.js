@@ -1093,18 +1093,12 @@ $("#settings-form").addEventListener("submit", async (ev) => {
 const lock = { on: false, audio: null, key: "", unlocked: false, len: 0 };
 try { lock.on = localStorage.getItem("ks-lock") === "1"; } catch (e) { /* privat */ }
 
-function silentTrack() {
-  const a = new Audio();
-  a.preload = "auto";
-  setSilence(a, 5);
-  return a;
-}
 // iOS nimmt die Zeitanzeige im Sperrbildschirm von der Tonspur der Seite: sie ist darum so lang wie der Titel
 // und laeuft an derselben Stelle. Ohne Laenge (Radio) genuegen 5 s in Schleife.
-function setSilence(a, seconds) {
-  a.loop = seconds === 5;
-  a.src = "api/silence.wav?s=" + seconds;
-  lock.len = seconds;
+function setSilence(seconds, loop) {
+  lock.audio.loop = loop;
+  lock.audio.src = "api/silence.wav?s=" + seconds;
+  lock.len = loop ? -1 : seconds;
 }
 
 function lockActive() {
@@ -1121,8 +1115,8 @@ function updateLock() {
     return;
   }
   const pos = n.duration ? Math.min(elapsedNow(), n.duration) : 0, a = lock.audio;
-  const len = n.duration ? Math.ceil(n.duration) + 1 : 5;
-  if (lock.len !== len) setSilence(a, len);
+  const len = n.duration ? Math.ceil(n.duration) + 1 : -1;
+  if (lock.len !== len) setSilence(len > 0 ? len : 5, len < 0);
   if (n.duration && Math.abs(a.currentTime - pos) > 2) {
     try { a.currentTime = pos; } catch (e) { /* noch nicht geladen */ }
   }
@@ -1145,7 +1139,9 @@ function updateLock() {
 
 function setupLock() {
   if (lock.audio || !("mediaSession" in navigator)) return;
-  lock.audio = silentTrack();
+  lock.audio = new Audio();
+  lock.audio.preload = "auto";
+  setSilence(5, true);
   const ms = navigator.mediaSession;
   const on = (action, fn) => { try { ms.setActionHandler(action, fn); } catch (e) { /* nicht unterstuetzt */ } };
   on("play", () => { lock.audio.play().catch(() => {}); post("/api/player/play"); });
@@ -1156,7 +1152,7 @@ function setupLock() {
     const n = (S && S.now) || {};
     if (!n.duration) return;
     try { lock.audio.currentTime = d.seekTime; } catch (e) { /* noch nicht geladen */ }
-    try { navigator.mediaSession.setPositionState({ duration: n.duration, position: d.seekTime, playbackRate: 1 }); } catch (e) { /* egal */ }
+    try { ms.setPositionState({ duration: n.duration, position: d.seekTime, playbackRate: 1 }); } catch (e) { /* egal */ }
     post("/api/player/seek", { position: d.seekTime });
   });
 }

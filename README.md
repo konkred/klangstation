@@ -43,7 +43,7 @@ armv7. Mit Desktop oder ohne (dann zeigt `--tv-headless` den „Läuft gerade“
 |---|---|
 | Raspberry Pi 4, Raspberry Pi OS (Debian 13 „trixie“), aarch64, mit Desktop | alle Quellen, CD-Wiedergabe und Rippen (USB-Laufwerk), Synology per SMB (auch Serverausfall), Webradio bei Netzausfall, CEC, HDMI-Ton und Klinke, Bluetooth mit iPhone, Update und Neustart |
 | Raspberry Pi 4, Raspberry Pi OS Lite (Debian 13), aarch64, ohne Desktop | Installation von null mit `--tv-headless`, alle Dienste, „Läuft gerade“ am Fernseher, AirPlay ↔ Spotify, NFS-Freigabe (auch Serverausfall), Update und Neustart |
-| PC, AlmaLinux 10.2, x86_64, ohne Desktop (SELinux aktiv) | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (USB-Stick RTL8761BU, iPhone, Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks mit FAT32 und NTFS (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe (internes SATA-Laufwerk) und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Update und Neustart |
+| PC, AlmaLinux 10.2, x86_64, ohne Desktop (SELinux aktiv) | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (USB-Stick RTL8761BU, iPhone, Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks mit FAT32 und NTFS (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe (internes SATA-Laufwerk) und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Lautstärke angleichen und Überblenden, Sperrbildschirm und Home-Bildschirm-App (iPhone), Wecker, beide Erscheinungsbilder, Update und Neustart |
 | PC (Celeron ohne AVX), AlmaLinux 10.2 x86_64_v2, mit GNOME (SELinux aktiv) | Installation auf frischem System (ffmpeg aus EPEL statt RPM Fusion), „Läuft gerade“ per Firefox nach dem Anmelden, AirPlay ↔ Spotify, UPnP (mconnect), Bluetooth mit iPhone, NFS-Freigabe (auch Serverausfall), CD über USB-Laufwerk (MusicBrainz-Neuversuch, Rippen auf USB-Stick, Rückfall in den internen Speicher), Neustart |
 
 Noch nicht geprüft: CEC unter RHEL-Systemen (braucht einen USB-CEC-Adapter).
@@ -183,11 +183,15 @@ Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
 * **Überblenden:** 2, 5 oder 10 Sekunden zwischen zwei Titeln; „Aus“ spielt lückenlos.
 * Bei *Bit-perfekt* ist beides aus.
 
+### Erscheinungsbild
+
+* **Oberfläche:** *Optionen › Ausgabe › Auf diesem Gerät* wechselt zwischen „Klassisch“ und „Frutiger Aero“. Die
+  Wahl gilt nur für diesen Browser, jedes Handy und jeder PC kann ein anderes Erscheinungsbild haben.
+* **„Läuft gerade“:** *Optionen › Fernseher › Erscheinungsbild* gilt für alle Bildschirme, die `/tv` zeigen (in
+  Aero mit aufsteigenden Luftblasen und Glaskarte).
+
 ### Handy
 
-* **Erscheinungsbild:** *Optionen › Ausgabe › Auf diesem Gerät* wechselt zwischen „Klassisch“ und „Frutiger Aero“.
-  Die Wahl gilt nur für diesen Browser. Den „Läuft gerade“-Bildschirm stellt *Optionen › Fernseher ›
-  Erscheinungsbild* für alle Geräte ein (in Aero mit aufsteigenden Luftblasen und Glaskarte).
 * **Als App:** In Safari *Teilen › Zum Home-Bildschirm*, in Chrome *Zum Startbildschirm hinzufügen*. Klangstation
   öffnet sich dann ohne Browserleisten.
 * **Sperrbildschirm:** *Optionen › Ausgabe › Auf diesem Gerät* zeigt Titel, Cover und Tasten im Sperrbildschirm und
@@ -289,7 +293,8 @@ systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
   „Bravia Sync“, Philips „EasyLink“). PC-Monitore unterstützen CEC meist gar nicht.
   Test: `cec-ctl -d /dev/cec0 --to 0 --give-device-power-status`.
 * **Radio-Suche schlägt fehl:** Die Radio-Browser-Server setzen zeitweise Verbindungen zurück; Klangstation versucht
-  es automatisch mehrfach über alle Server.
+  es automatisch mehrfach über alle Server. Ist der Dienst ganz ausgefallen (Meldung 503), hilft nur abwarten –
+  gespeicherte Favoriten spielen weiter, weil sie die Adresse des Senders direkt kennen.
 * **AirPlay 2:** Installiert wird klassisches AirPlay (geht mit allen iPhones/Macs). Für AirPlay 2 (Multiroom in der
   Home-App) shairport-sync mit `--with-airplay-2` und `nqptp` bauen.
 
@@ -384,4 +389,5 @@ UPnP/DLNA-Renderer und einen Bluetooth-Empfänger mit, damit erreicht man prakti
 | POST | `/api/sleep` `{minutes}` | Schlummer-Timer (`0` = aus, `"track"` = Titelende) |
 | GET/POST | `/api/alarms` · `/api/alarms/{save,toggle,remove,test}` | Wecker |
 | GET/POST | `/api/settings` | Einstellungen, Ausgabegeräte, Dienststatus |
+| GET | `/api/silence.wav?s=` | stille Tonspur für den Sperrbildschirm (`s` Sekunden, mit Range) |
 | GET/POST | `/api/bluetooth` · `/api/bluetooth/{pairing_on,pairing_off,disconnect,remove}` `{path}` | Bluetooth |

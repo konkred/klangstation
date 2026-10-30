@@ -27,7 +27,8 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
   librespot/gmediarender/bluealsa-aplay, `lyrics.py` Liedtexte (`.lrc`, LRCLIB), `timers.py` Schlummer-Timer und
   Wecker, `weather.py` Wetter für den Ruhebildschirm (Open-Meteo).
 * `web/` – Oberfläche (`index.html`, `js/app.js`, `css/style.css`; Themes als eigene Datei, z. B.
-  `css/theme-aero.css`, nur unter `html[data-theme=…]`), `/tv` = „Läuft gerade“-Bildschirm.
+  `css/theme-aero.css`/`css/tv-aero.css`, nur unter `html[data-theme=…]`; Oberfläche per localStorage, `/tv` per
+  Einstellung `tv_theme`), `/tv` = „Läuft gerade“-Bildschirm.
 * `system/` – systemd-Units, udev-Regel, Hilfsskripte, SELinux-Modul. `ks-netmount` ist ein root-Hilfsdienst
   (Socket nur für Gruppe klangstation): SMB/NFS lesend einhängen, gerippte CDs auf USB speichern.
   `ks-automount` hängt USB/SD ein und aus, `ks-tv-kiosk` startet den Kiosk-Browser.

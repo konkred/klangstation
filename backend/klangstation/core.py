@@ -469,6 +469,7 @@ class Core:
             "services": {n: {"available": d.available, "running": d.running} for n, d in self.daemons.items()},
             "bluetooth": self.bt.public(),
             "tv_lyrics": self.settings.get("tv_lyrics"),
+            "tv_theme": self.settings.get("tv_theme"),
             "timers": self.timers.public(),
             "history": self.history if self.settings.get("tv_history") else [],
             "weather": self.weather.public(),

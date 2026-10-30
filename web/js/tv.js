@@ -48,6 +48,7 @@ function render() {
   if (!S) return;
   const n = S.now || {};
   $("#device").textContent = S.device_name || "";
+  document.documentElement.dataset.theme = S.tv_theme || "classic";
   // „Läuft gerade“ bei Wiedergabe und kurz pausiert; sonst Bildschirmschoner
   const active = n.kind && (n.state === "play" || n.state === "pause") && (n.title || n.artist);
   $("#playing").hidden = !active;
@@ -275,6 +276,8 @@ function draw(t) {
   level += ((playing ? 1 : 0.25) - level) * 0.02;
   const s = t / 1000;
   g.clearRect(0, 0, w, h);
+  const aero = document.documentElement.dataset.theme === "aero";
+  if (aero) drawBubbles(g, w, h, s);
   g.globalCompositeOperation = "lighter";
   for (let k = 0; k < 3; k++) {
     g.beginPath();
@@ -283,11 +286,32 @@ function draw(t) {
         + Math.sin(x / 90 + s * 0.6 + k) * h * 0.015 * level;
       x === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
     }
-    g.strokeStyle = ["rgba(111,211,255,.35)", "rgba(80,120,255,.28)", "rgba(180,90,255,.22)"][k];
+    g.strokeStyle = (aero ? ["rgba(255,255,255,.35)", "rgba(150,235,255,.3)", "rgba(150,220,100,.28)"]
+      : ["rgba(111,211,255,.35)", "rgba(80,120,255,.28)", "rgba(180,90,255,.22)"])[k];
     g.lineWidth = 2 + level * 3;
     g.stroke();
   }
   g.globalCompositeOperation = "source-over";
+}
+
+/* Aero: Luftblasen steigen langsam auf - ruhig genug fuer den Fernseher, nichts steht still */
+const bubbles = Array.from({ length: 18 }, (_, i) => ({
+  x: Math.random(), r: 0.012 + Math.random() * 0.035, speed: 0.008 + Math.random() * 0.018,
+  phase: Math.random() * 6.28, y0: Math.random(),
+}));
+function drawBubbles(g, w, h, s) {
+  const u = Math.min(w, h);
+  for (const b of bubbles) {
+    const y = (1.1 - ((b.y0 + s * b.speed * (0.5 + level)) % 1.2)) * h;
+    const x = (b.x + Math.sin(s * 0.3 + b.phase) * 0.02) * w, r = b.r * u;
+    const grad = g.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.05, x, y, r);
+    grad.addColorStop(0, "rgba(255,255,255,.75)");
+    grad.addColorStop(0.25, "rgba(255,255,255,.08)");
+    grad.addColorStop(0.85, "rgba(255,255,255,.12)");
+    grad.addColorStop(1, "rgba(255,255,255,.55)");
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2);
+    g.fillStyle = grad; g.fill();
+  }
 }
 
 clock();

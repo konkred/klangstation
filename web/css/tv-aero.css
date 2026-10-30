@@ -1,0 +1,59 @@
+/* „Läuft gerade“ im Theme Frutiger Aero: Abendhimmel, dunkler Hügel, aufsteigende Blasen, dunkel getöntes Glas
+   (wie Windows 7) mit heller Schrift – gedämpft, damit der Fernseher im dunklen Raum nicht blendet.
+   Greift nur bei <html data-theme="aero"> (Einstellung tv_theme). */
+html[data-theme="aero"] {
+  --glow: #7fdcff;
+  --glow-strong: #2cc0ef;
+  --ink: #f2f9ff;
+  --ink-dim: #b9d8ec;
+  --font: "Segoe UI", Frutiger, "Frutiger Linotype", "Myriad Pro", Ubuntu, "DejaVu Sans", sans-serif;
+  color-scheme: dark;
+}
+html[data-theme="aero"] body {
+  background:
+    radial-gradient(ellipse 70% 32% at 25% 108%, #2c6a12 0%, #3f8a1f 40%, rgba(60,120,30,0) 75%),
+    radial-gradient(ellipse 60% 30% at 85% 112%, #255d0f 0%, #3a7f1c 45%, rgba(55,110,25,0) 78%),
+    radial-gradient(ellipse 45% 30% at 75% 8%, rgba(160,215,255,.25), rgba(160,215,255,0) 70%),
+    linear-gradient(180deg, #0b3a66 0%, #155a91 35%, #2675ab 65%, #2f80b3 85%, #2c6a4a 100%);
+}
+html[data-theme="aero"] #bg { opacity: .8; }
+
+html[data-theme="aero"] .top { background: linear-gradient(180deg, rgba(5,30,55,.45), rgba(5,30,55,0)); }
+html[data-theme="aero"] .orb { box-shadow: 0 0 1.2vh rgba(127,220,255,.7); }
+
+/* Wiedergabe: dunkel getönte Glaskarte mit Glanzkante */
+html[data-theme="aero"] .info {
+  text-shadow: 0 .2vh .6vh rgba(0,20,40,.6);
+  padding: 4vh 4vh 3vh; border-radius: 2.4vh;
+  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.04) 45%, rgba(10,40,70,.25) 46%, rgba(10,40,70,.4));
+  -webkit-backdrop-filter: blur(1.5vh); backdrop-filter: blur(1.5vh);
+  box-shadow: inset 0 0 0 .15vh rgba(255,255,255,.3), inset 0 .2vh 0 rgba(255,255,255,.35), 0 2vh 5vh rgba(0,20,40,.45);
+}
+html[data-theme="aero"] .cover img, html[data-theme="aero"] .cover-fallback {
+  border: .4vh solid rgba(255,255,255,.75); border-radius: 1.4vh;
+  box-shadow: 0 2.5vh 6vh rgba(0,20,40,.55);
+}
+html[data-theme="aero"] .cover-fallback { color: rgba(255,255,255,.75); background: linear-gradient(135deg, #3d9bd0, #134f86); }
+html[data-theme="aero"] .badge {
+  color: #163d05; text-shadow: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.15) 50%, transparent 51%), linear-gradient(180deg, #a6dc78, #4f9a29);
+  box-shadow: 0 .2vh .6vh rgba(0,30,10,.4);
+}
+html[data-theme="aero"] .bar { background: rgba(5,25,45,.55); box-shadow: inset 0 .2vh .4vh rgba(0,0,0,.4), 0 .1vh 0 rgba(255,255,255,.2); }
+html[data-theme="aero"] .fill { background: linear-gradient(180deg, #8ef0ff, #1ab0e2 55%, #0f8cc7); box-shadow: 0 0 1.2vh rgba(26,176,226,.5); }
+html[data-theme="aero"] .format { color: #8fb8d4; }
+
+html[data-theme="aero"] .lyrics .line { color: rgba(185,216,236,.45); }
+html[data-theme="aero"] .lyrics .line.now { color: var(--ink); text-shadow: 0 0 2vh rgba(127,220,255,.5); }
+html[data-theme="aero"] .lyrics .plain { color: rgba(242,249,255,.85); }
+html[data-theme="aero"] .lyrics .source { color: #7fa6c2; }
+
+/* Ruhezustand */
+html[data-theme="aero"] .idle-time { color: rgba(242,249,255,.8); text-shadow: 0 0 4vh rgba(127,220,255,.35), 0 .3vh 1vh rgba(0,20,40,.5); }
+html[data-theme="aero"] .idle-hint { color: #8fb8d4; }
+html[data-theme="aero"] .recent { opacity: .7; }
+html[data-theme="aero"] .recent-item img, html[data-theme="aero"] .recent-fb {
+  border: .25vh solid rgba(255,255,255,.7); border-radius: 1vh; box-shadow: 0 1vh 2.5vh rgba(0,20,40,.5);
+}
+html[data-theme="aero"] .recent-item img { background: #1d5d8f; }
+html[data-theme="aero"] .recent-fb { color: rgba(255,255,255,.75); background: linear-gradient(135deg, #3d9bd0, #134f86); }

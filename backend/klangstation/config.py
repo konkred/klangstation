@@ -79,6 +79,7 @@ DEFAULTS: Dict[str, Any] = {
     "cec_pause_on_tv_off": True,
     "tv_enabled": True,          # "Laeuft gerade"-Bildschirm am HDMI-Ausgang
     "tv_lyrics": True,           # Liedtexte auf dem "Laeuft gerade"-Bildschirm
+    "tv_theme": "classic",       # Erscheinungsbild des "Laeuft gerade"-Bildschirms: "classic" oder "aero"
     "tv_history": True,          # Ruhebildschirm: zuletzt gehoerte Cover
     "weather_place": "",         # Ruhebildschirm: Wetter fuer diesen Ort (leer = aus)
     "alarms": [],                # Wecker (siehe timers.py)
@@ -115,6 +116,7 @@ _VALIDATORS = {
     "cec_pause_on_tv_off": lambda v: isinstance(v, bool),
     "tv_enabled": lambda v: isinstance(v, bool),
     "tv_lyrics": lambda v: isinstance(v, bool),
+    "tv_theme": lambda v: v in ("classic", "aero"),
     "tv_history": lambda v: isinstance(v, bool),
     "weather_place": lambda v: isinstance(v, str) and len(v) <= 80,
     "alarms": lambda v: isinstance(v, list) and len(v) <= 10 and all(isinstance(a, dict) for a in v),

@@ -173,7 +173,6 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
 ### Noch offen
 
 * **CEC unter RHEL:** braucht einen USB-CEC-Adapter (z. B. Pulse-Eight), die Intel-Grafik kann kein CEC.
-* Der Alma-PC zu Hause wird vom Nutzer neu installiert (kein Update mehr nötig).
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -241,6 +240,12 @@ Für Nutzer zusammengefasst in der README („Getestet auf“).
   Sender → nach 2 s Bibliothek im Zufall, 15-min-Timer gesetzt, Wecker danach aus; bei laufender Musik bleibt er
   still. Wetter (Open-Meteo) und unbekannter Ort, Verlauf, Ruhebildschirm mit Coverband, Ersatzbild, Uhr weicht
   dem Band aus.
+
+**Alma, 30.10.2026**
+
+* Update vom Stand 26.10. per `install.sh --tv-headless` (2 min 2 s, keine Paketänderung, RPM Fusion bleibt – CPU
+  kann x86-64-v3): Daten und Spotify-Anmeldung erhalten, Kiosk (cage + Chromium) läuft, statische Dateien mit
+  `no-cache`, keine AVCs. Spotify vom Handy verbindet sich direkt nach dem Neustart.
 
 **Alma, 26.10.2026**
 

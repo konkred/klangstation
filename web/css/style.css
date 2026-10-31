@@ -209,6 +209,10 @@ svg { width: 1em; height: 1em; }
   background: linear-gradient(180deg, #fff, #d8e3f3);
 }
 .mini:hover, .btn:hover { border-color: var(--accent); background: linear-gradient(180deg, #fff, #c4d8f5); }
+.pane-acts { display: flex; align-items: center; gap: 4px; }
+.pane-head .tbtn.small { width: 24px; height: 24px; }
+.pane-head .tbtn.small svg { width: 12px; height: 12px; }
+.pane-head #b-repeat { margin-right: 6px; }
 .pane-head .mini { padding: 1px 8px; font-size: 11px; color: var(--ink); background: rgba(255,255,255,.08); border-color: rgba(143,179,234,.35); }
 .btn.primary { color: #fff; border-color: #123f8a; background: linear-gradient(180deg, #6aa1ec, #2a5fb5); text-shadow: 0 1px 0 rgba(0,0,0,.3); }
 .btn.primary:hover { background: linear-gradient(180deg, #7db0f5, #3470cc); }
@@ -296,7 +300,7 @@ table.grid .ico img, table.grid .ico svg { width: 22px; height: 22px; object-fit
 }
 .dlg-tabs button.on { background: #fbfcfe; font-weight: bold; }
 .dlg-body { background: #fbfcfe; border: 1px solid #8ea6c8; border-radius: 0 4px 4px 4px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
-fieldset { border: 1px solid #b9c9df; border-radius: 4px; padding: 10px 14px 14px; margin: 0; }
+fieldset { min-width: 0; border: 1px solid #b9c9df; border-radius: 4px; padding: 10px 14px 14px; margin: 0; }
 legend { color: var(--accent); padding: 0 4px; font-weight: bold; }
 .hint { color: var(--list-dim); margin: 4px 0 10px; }
 .field { display: flex; flex-direction: column; gap: 3px; margin: 10px 0; }
@@ -486,32 +490,69 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
   .cover-wrap { width: 120px; height: 120px; }
   .np-title { font-size: 19px; }
 }
+/* Handy: Navigation als Leiste unten (wie bei Apps), darüber der Mini-Player; nur das Nötigste sichtbar */
 @media (max-width: 700px) {
   body { padding: 0; }
-  .wmp { border-radius: 0; }
-  .frame { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  .taskbar { flex-direction: row; overflow-x: auto; padding: 6px 8px; border-right: 0; border-bottom: 1px solid #06101f; gap: 4px; }
-  .taskbar a { flex: none; padding: 6px 10px; }
+  .wmp { border-radius: 0; grid-template-rows: auto minmax(0, 1fr) auto auto; }
+  .frame { display: contents; }
+  .titlebar { grid-row: 1; padding: 6px 12px; padding-top: max(6px, env(safe-area-inset-top)); }
+  .titletext span, .lamps { display: none; }
+  .content { grid-row: 2; }
+  .transport { grid-row: 3; padding: 6px 10px 8px; min-width: 0; }
+  .taskbar {
+    grid-row: 4; flex-direction: row; gap: 2px; overflow: visible;
+    padding: 4px 4px max(4px, env(safe-area-inset-bottom));
+    border-right: 0; border-top: 1px solid #06101f; box-shadow: none;
+  }
+  .taskbar a { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 2px; padding: 5px 2px; font-size: 10px; font-weight: normal; }
+  .taskbar a svg { width: 20px; height: 20px; }
+  .taskbar a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .taskbar-foot { display: none; }
-  .titletext span { display: none; }
+
+  /* Wiedergabe: großes Cover, Titel darunter, Liste folgt; die Visualisierung wäre hier nur Unruhe */
   #view-now { flex-direction: column; overflow-y: auto; }
-  .stage { flex: none; height: 52vh; min-height: 280px; }
-  .stage-info { padding: 14px; gap: 12px; }
-  .cover-wrap { width: 96px; height: 96px; -webkit-box-reflect: unset; }
-  .playlist-pane { width: auto; flex: 1; border-left: 0; border-top: 1px solid #06101f; min-height: 220px; }
+  #view-now .stage { flex: none; }
+  #vis, .vis-switch { display: none; }
+  #view-now .stage-info {
+    position: relative; flex-direction: column; align-items: center; text-align: center;
+    gap: 14px; padding: 22px 18px 18px; background: none;
+  }
+  #view-now .cover-wrap { width: min(64vw, 300px); height: min(64vw, 300px); -webkit-box-reflect: unset; }
+  #view-now .np-text { width: 100%; }
+  .np-title { font-size: 20px; }
+  .np-artist { font-size: 15px; }
+  .np-format { display: none; }
+  .playlist-pane { width: auto; flex: 1 0 auto; border-left: 0; border-top: 1px solid #06101f; min-height: 160px; }
+  .queue { overflow: visible; }
   .queue .q-x { visibility: visible; }
-  .transport { padding: 6px 8px 8px; min-width: 0; }
+
+  /* Mini-Player: Titelzeile nur außerhalb der Wiedergabe-Ansicht, ohne Stopp (Pause genügt) */
   .controls { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .mini-now { text-align: center; order: -1; }
-  .status-right { display: none; }
+  body[data-view="now"] .mini-now { display: none; }
+  .status-right, #b-stop { display: none; }
   /* Lautstaerke nimmt den Rest der Zeile: die Knopfreihe darf nie breiter als der Bildschirm werden */
-  .buttons { justify-content: center; gap: 4px; min-width: 0; }
-  .volume { flex: 0 1 110px; min-width: 0; margin-left: 2px; }
-  #vol { width: auto; flex: 1; min-width: 36px; }
+  .buttons { justify-content: center; gap: 6px; min-width: 0; }
+  .volume { flex: 0 1 130px; min-width: 0; margin-left: 4px; }
+  #vol { width: auto; flex: 1; min-width: 40px; }
+
   table.grid .hide-m { display: none; }
-  .albums { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 10px; }
+  .albums { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; padding: 10px; }
+  .toolbar { gap: 6px; }
+  .toolbar .seg { flex: 1 1 100%; }
+  .toolbar .seg button { flex: 1; padding: 5px 4px; }
   .cd-head, .album-head { flex-direction: column; align-items: flex-start; }
-  .lamps .lamp span { display: none; }
+
+  /* Optionen: Reiter in einer wischbaren Zeile, ganze Breite für den Inhalt */
+  .dialog { margin: 0; padding: 0; }
+  .dlg-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 8px 8px 0; }
+  .dlg-tabs::-webkit-scrollbar { display: none; }
+  .dlg-tabs button { flex: none; }
+  .dlg-body { border-radius: 0; border-left: 0; border-right: 0; padding: 10px; box-shadow: none; }
+  fieldset { padding: 8px 10px 12px; }
+  .field input, .field select { max-width: none; }
+  .hint { font-size: 11px; }
+  .out { grid-template-columns: auto 34px minmax(0, 1fr); }
   .share-form { grid-template-columns: 1fr; }
   .alarm-form { grid-template-columns: 1fr; }
   .alarm { grid-template-columns: auto auto 1fr; }
@@ -519,5 +560,5 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
   .alarm .mini { grid-row: 2; justify-self: start; }
 }
 @media (max-width: 360px) {
-  #b-shuffle, #b-repeat { display: none; }
+  .pane-head #b-repeat { margin-right: 2px; }
 }

@@ -144,5 +144,5 @@ html[data-theme="luna"] .modal-box { background: #ece9d8; border-radius: 8px 8px
 
 @media (max-width: 700px) {
   html[data-theme="luna"] .wmp { border-radius: 0; }
-  html[data-theme="luna"] .taskbar { border-right: 0; border-bottom: 1px solid #4a5fbf; }
+  html[data-theme="luna"] .taskbar { border-right: 0; border-top: 1px solid #4a5fbf; }
 }

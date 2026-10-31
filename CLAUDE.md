@@ -156,6 +156,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 
 ### Kiosk und Oberfläche
 
+* **Handy-Layout (≤ 700 px):** `.frame` ist `display: contents`, Navigation als Leiste unten (Zeile 4 im Raster von
+  `.wmp`); auf „Wiedergabe“ (`body[data-view]`) großes Cover ohne Visualisierung, Mini-Player nur in den anderen
+  Ansichten.
 * **Kiosk (`--tv-headless`):** Chromium startet sonst PipeWire/WirePlumber in der Kiosk-Sitzung, WirePlumber
   setzt die ALSA-Regler zurück (HDMI/DP stumm) → für den Benutzer klangstation maskiert. Dienst an
   `multi-user.target`, nicht `graphical.target`.
@@ -180,6 +183,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   in 2 s neu, Play im Sperrbildschirm weckt sie. Ein Service Worker (Offline-Hülle) ginge nur über HTTPS.
 * **Liedtexte:** eingebettete Texte (Tag `LYRICS`) nicht über MPD `readcomments` lesen – mehrzeilige Werte
   passen nicht ins Zeilenprotokoll. Darum nur `.lrc` neben der Datei und LRCLIB.
+* **Einstellungen am Handy zu breit:** `fieldset` hat standardmäßig `min-width: min-content` und wächst mit dem
+  breitesten Inhalt aus dem Raster → `fieldset { min-width: 0 }`.
 * **WebSocket-Ablehnung** erst nach `websocket.accept` schließen, sonst sieht der Browser 1006 statt 4401.
 
 ### Python

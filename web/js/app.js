@@ -265,7 +265,7 @@ async function loadQueue() {
     return;
   }
   if (!queueItems.length) {
-    ol.innerHTML = '<div class="queue-empty">Die Wiedergabeliste ist leer.<br>Wähle Musik in der Medienbibliothek, im Radio oder von CD.</div>';
+    ol.innerHTML = '<div class="queue-empty">Die Wiedergabeliste ist leer.<br>Wähle Musik in der Bibliothek, im Radio oder von CD.</div>';
     return;
   }
   ol.innerHTML = queueItems.map((q) => `
@@ -321,6 +321,7 @@ let currentView = "now";
 function showView(name) {
   if (!$("#view-" + name)) name = "now";
   currentView = name;
+  document.body.dataset.view = name;
   $$(".view").forEach((v) => { v.hidden = v.id !== "view-" + name; });
   $$("#taskbar a").forEach((a) => a.classList.toggle("on", a.dataset.view === name));
   vis.visible = name === "now";
@@ -1442,6 +1443,7 @@ function drawVis(t) {
   if (!vis.visible || document.hidden) return;
   const c = vis.canvas;
   const w = c.clientWidth, h = c.clientHeight;
+  if (!w) return;  // am Handy ausgeblendet
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
   const g = c.getContext("2d");

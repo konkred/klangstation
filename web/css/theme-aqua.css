@@ -159,5 +159,5 @@ html[data-theme="aqua"] .modal-box { border-radius: 8px; box-shadow: 0 0 0 1px #
 
 @media (max-width: 700px) {
   html[data-theme="aqua"] .wmp { border-radius: 0; }
-  html[data-theme="aqua"] .taskbar { border-right: 0; border-bottom: 1px solid #8e939a; }
+  html[data-theme="aqua"] .taskbar { border-right: 0; border-top: 1px solid #8e939a; }
 }

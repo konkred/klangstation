@@ -224,6 +224,6 @@ html[data-theme="aero"] .modal-title {
 
 @media (max-width: 700px) {
   html[data-theme="aero"] .wmp { border-radius: 0; }
-  html[data-theme="aero"] .taskbar { border-right: 0; border-bottom: 1px solid rgba(80,160,210,.35); }
+  html[data-theme="aero"] .taskbar { border-right: 0; border-top: 1px solid rgba(80,160,210,.35); }
   html[data-theme="aero"] .playlist-pane { border-left: 0; border-top: 1px solid rgba(255,255,255,.85); }
 }

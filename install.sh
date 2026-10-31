@@ -9,11 +9,12 @@ PREFIX=/opt/klangstation
 DATA=/var/lib/klangstation
 MEDIA=/media/klangstation
 SVC_USER=klangstation
-PORT=8080
+PORT=
 WITH_AIRPLAY=1
 WITH_SPOTIFY=1
 WITH_UPNP=1
 WITH_BLUETOOTH=1
+WITH_WIFI=1
 SPOTIFY_SOURCE=0
 TV_HEADLESS=0
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -34,6 +35,7 @@ UPnP und Bluetooth. Die Optionen lassen sich beliebig kombinieren.
   --port <n>
       Weboberflaeche auf Port <n> statt 8080 (Firewall und Kiosk werden angepasst).
       Verwenden, wenn 8080 belegt ist, oder mit --port 80 fuer eine Adresse ohne Port.
+      Ohne --port behaelt ein Update den bisherigen Port (auch einen in den Optionen geaenderten).
 
   --no-airplay
       shairport-sync nicht installieren: kein AirPlay-Lautsprecher.
@@ -50,6 +52,10 @@ UPnP und Bluetooth. Die Optionen lassen sich beliebig kombinieren.
   --no-bluetooth
       bluez/bluez-alsa nicht installieren, Bluetooth- und WirePlumber-Konfiguration unveraendert lassen.
       Verwenden ohne Bluetooth-Adapter oder wenn Bluetooth fuer anderes gebraucht wird.
+
+  --no-wifi
+      Keine WLAN-Unterstuetzung (NetworkManager-WLAN, wpa_supplicant, Firmware fuer USB-WLAN-Sticks).
+      Verwenden, wenn das Geraet nur per Kabel im Netz haengt und kein WLAN-Stick vorgesehen ist.
 
   --spotify-from-source
       librespot mit Cargo bauen statt aus dem Raspotify-Paketarchiv (nur Debian/Raspberry Pi OS;
@@ -84,6 +90,7 @@ while [ $# -gt 0 ]; do
         --no-spotify) WITH_SPOTIFY=0; shift ;;
         --no-upnp) WITH_UPNP=0; shift ;;
         --no-bluetooth) WITH_BLUETOOTH=0; shift ;;
+        --no-wifi) WITH_WIFI=0; shift ;;
         --spotify-from-source) SPOTIFY_SOURCE=1; shift ;;
         --tv-headless) TV_HEADLESS=1; shift ;;
         -h|--help) usage; exit 0 ;;
@@ -100,6 +107,11 @@ case " ${ID:-} ${ID_LIKE:-} " in
     *) die "Nicht unterstuetzte Distribution: ${PRETTY_NAME:-$ID}" ;;
 esac
 ARCH="$(uname -m)"
+# Update ohne --port: bisherigen Port behalten (laesst sich auch unter Optionen > Netzwerk aendern)
+if [ -z "$PORT" ]; then
+    PORT="$(sed -n 's/^Environment=KS_PORT=\([0-9]\+\)$/\1/p' /etc/systemd/system/klangstation.service 2>/dev/null | head -n1)"
+    PORT="${PORT:-8080}"
+fi
 PY=python3
 log "System: ${PRETTY_NAME:-$ID} ($ARCH), Familie: $FAMILY"
 
@@ -209,6 +221,19 @@ install_debian() {
     if [ "$WITH_BLUETOOTH" = 1 ]; then
         apt-get install -y --no-install-recommends bluez bluez-alsa-utils
     fi
+    if [ "$WITH_WIFI" = 1 ]; then
+        # WLAN ueber NetworkManager. Unter Debian/Ubuntu laesst NetworkManager Adapter, die ifupdown bzw.
+        # netplan schon verwalten, in Ruhe - die Kabelverbindung aendert sich durch die Installation nicht.
+        apt-get install -y --no-install-recommends network-manager wpasupplicant iw rfkill
+        # Firmware fuer gaengige USB-WLAN-Sticks (Realtek, MediaTek, Atheros) und Intel-Karten, soweit vorhanden
+        # (braucht die Komponente non-free-firmware, die Raspberry Pi OS und Debian ab 12 mitbringen)
+        local fw="" p
+        for p in firmware-realtek firmware-mediatek firmware-atheros firmware-iwlwifi; do
+            apt-cache show "$p" >/dev/null 2>&1 && fw="$fw $p"
+        done
+        # shellcheck disable=SC2086
+        [ -z "$fw" ] || apt-get install -y --no-install-recommends $fw || warn "WLAN-Firmware liess sich nicht installieren"
+    fi
     if [ "$WITH_SPOTIFY" = 1 ] && ! command -v librespot >/dev/null 2>&1 && [ ! -x "$PREFIX/bin/librespot" ]; then
         local deb_arch; deb_arch="$(dpkg --print-architecture)"
         if [ "$SPOTIFY_SOURCE" = 0 ] && { [ "$deb_arch" = amd64 ] || [ "$deb_arch" = arm64 ] || [ "$deb_arch" = armhf ]; }; then
@@ -272,6 +297,18 @@ install_rhel() {
     if [ "$WITH_SPOTIFY" = 1 ] && ! command -v librespot >/dev/null 2>&1 && [ ! -x "$PREFIX/bin/librespot" ]; then
         build_librespot
     fi
+    if [ "$WITH_WIFI" = 1 ] && ! rpm -q NetworkManager-wifi >/dev/null 2>&1; then
+        # Server-Installationen bringen NetworkManager ohne WLAN-Modul mit; geladen wird es erst nach einem
+        # Neustart von NetworkManager (bestehende Verbindungen bleiben dabei bestehen)
+        if dnf install -y NetworkManager NetworkManager-wifi wpa_supplicant iw; then
+            systemctl try-restart NetworkManager.service || true
+        else
+            warn "WLAN-Unterstuetzung liess sich nicht installieren"
+        fi
+    fi
+    if [ "$WITH_WIFI" = 1 ]; then
+        dnf install -y realtek-firmware mt7xxx-firmware atheros-firmware iwlwifi-mvm-firmware >/dev/null 2>&1 || true
+    fi
 }
 
 install_firewall() {
@@ -310,7 +347,7 @@ cp -r "$SRC/backend" "$SRC/web" "$SRC/system" "$SRC/requirements.txt" "$PREFIX/"
 find "$PREFIX/backend" -name '__pycache__' -prune -exec rm -rf {} +
 # Rechte unabhaengig von der Quelle setzen (ZIP/scp von Windows liefert oft 700/600)
 chmod -R u=rwX,go=rX "$PREFIX/backend" "$PREFIX/web" "$PREFIX/system" "$PREFIX/requirements.txt"
-for script in hooks/ks-hook ks-automount ks-netmount ks-tv-kiosk ks-reset-password ks-spotify-sink; do
+for script in hooks/ks-hook ks-automount ks-netmount ks-netadmin ks-tv-kiosk ks-reset-password ks-spotify-sink; do
     sed -i 's/\r$//' "$PREFIX/system/$script"
     chmod 0755 "$PREFIX/system/$script"
 done
@@ -333,6 +370,8 @@ udevadm control --reload-rules || true
 # Er haengt ausschliesslich SMB/NFS lesend unter $MEDIA/Netz-* ein und aus.
 log "Richte das Einhaengen von Netzwerkfreigaben ein..."
 install -m 0644 "$PREFIX/system/ks-netmount.socket" "$PREFIX/system/ks-netmount@.service" /etc/systemd/system/
+# Netzwerk (Optionen > Netzwerk): WLAN, IP-Adressen, SSH und Port aendert ebenfalls nur ein root-Hilfsdienst
+install -m 0644 "$PREFIX/system/ks-netadmin.socket" "$PREFIX/system/ks-netadmin@.service" /etc/systemd/system/
 rm -rf "$DATA/mpd-cache"   # frueher: Cache von MPDs SMB-Einbindung (enthielt Zugangsdaten im Dateinamen)
 
 # Die Distributionsdienste wuerden das Audiogeraet blockieren - Klangstation startet eigene Instanzen
@@ -398,6 +437,14 @@ EOF
 fi
 
 sed "s/@PORT@/${PORT}/" "$PREFIX/system/klangstation.service" > /etc/systemd/system/klangstation.service
+# Ports unter 1024 (z. B. 80) darf der Dienstbenutzer nur mit dieser Faehigkeit belegen
+if [ "$PORT" -lt 1024 ]; then
+    install -d /etc/systemd/system/klangstation.service.d
+    printf '[Service]\n# Port unter 1024 (z. B. 80)\nAmbientCapabilities=CAP_NET_BIND_SERVICE\n' \
+        > /etc/systemd/system/klangstation.service.d/port.conf
+else
+    rm -f /etc/systemd/system/klangstation.service.d/port.conf
+fi
 
 # "Laeuft gerade"-Bildschirm: mit Desktop per Autostart in der Sitzung, ohne Desktop optional per cage
 if [ "$TV_HEADLESS" = 1 ]; then
@@ -417,7 +464,7 @@ elif [ "$(systemctl get-default)" = graphical.target ] && [ -d /etc/xdg/autostar
 fi
 systemctl daemon-reload
 install_firewall
-systemctl enable --now ks-netmount.socket
+systemctl enable --now ks-netmount.socket ks-netadmin.socket
 systemctl enable klangstation.service
 systemctl restart klangstation.service
 if [ "$TV_HEADLESS" = 1 ]; then

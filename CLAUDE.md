@@ -25,7 +25,7 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
 
 * `backend/klangstation/` – App. `core.py` ist die Zentrale (Quellen, Ausgabe, CD, Rippen, Freigaben, Wächter),
   `main.py` die HTTP-/WebSocket-Routen, `audio.py` ALSA-Erkennung und Konfigurationen für mpd/shairport/
-  librespot/gmediarender/bluealsa-aplay, `lyrics.py` Liedtexte (`.lrc`, LRCLIB), `timers.py` Schlummer-Timer und
+  librespot/gmediarender/bluealsa-aplay, `network.py` Netzwerk (liest per nmcli/ip/ss), `lyrics.py` Liedtexte (`.lrc`, LRCLIB), `timers.py` Schlummer-Timer und
   Wecker, `weather.py` Wetter für den Ruhebildschirm (Open-Meteo).
 * `web/` – Oberfläche (`index.html`, `js/app.js`, `css/style.css`) und „Läuft gerade“ unter `/tv` (`tv.html`,
   `js/tv.js`, `css/tv.css`). Themes liegen je in einer eigenen Datei (`css/theme-<name>.css`, `css/tv-<name>.css`) und
@@ -34,7 +34,8 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
   `theme-dunkel.css` macht für Nacht, Winamp und Hi-Fi die hellen Listen und Dialoge dunkel (über Variablen wie
   `--card`, `--btn-top`). Eigene Bilder je Theme: `VIS_PAL`/VU-Meter in `app.js`, `draw()` in `tv.js`.
 * `system/` – systemd-Units, udev-Regel, Hilfsskripte, SELinux-Modul. `ks-netmount` ist ein root-Hilfsdienst
-  (Socket nur für Gruppe klangstation): SMB/NFS lesend einhängen, gerippte CDs auf USB speichern.
+  (Socket nur für Gruppe klangstation): SMB/NFS lesend einhängen, gerippte CDs auf USB speichern. `ks-netadmin`
+  ebenso für Netzwerk: WLAN, IPv4 mit Rücknahme-Zeitgeber, SSH, Port der Weboberfläche.
   `ks-automount` hängt USB/SD ein und aus, `ks-tv-kiosk` startet den Kiosk-Browser.
 * `install.sh` – Installer und Updater (Optionen: `--help`). Unter RHEL baut er mpd, shairport-sync,
   gmediarender, bluez-alsa und librespot aus dem Quellcode.
@@ -187,6 +188,18 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   breitesten Inhalt aus dem Raster → `fieldset { min-width: 0 }`.
 * **WebSocket-Ablehnung** erst nach `websocket.accept` schließen, sonst sieht der Browser 1006 statt 4401.
 
+### Netzwerk und systemd
+
+* **`nmcli -g a,b,c`** gibt jedes Feld in einer eigenen Zeile aus, leere Felder als Leerzeile → nur den letzten
+  Zeilenumbruch abschneiden, nicht `rstrip("\n")`.
+* **`ip -j addr`** enthält die DHCP-Restlaufzeiten → als Änderungs-Signatur nur Name, Zustand und Adressen nehmen,
+  sonst „ändert“ sich das Netz alle paar Sekunden.
+* **`systemd-run --on-active`** ohne `AccuracySec` feuert bis zu 1 min später; ein abgelaufener transienter Zeitgeber
+  bleibt geladen und blockiert seinen Namen → eindeutige Namen bzw. vorher `stop` + `reset-failed`.
+* **cage** blockiert SIGTERM/SIGINT (signalfd) und vererbt die Sperre an das Kiosk-Skript; nach SIGTERM wartet cage
+  auf das Skript → `klangstation-tv` hing beim Stoppen 90 s. Abhilfe: `ExecStop=-pkill -KILL -x ks-tv-kiosk`.
+* **Port-Probe** vor dem Wechsel mit `SO_REUSEADDR` (wie uvicorn), sonst gilt der alte Port wegen TIME_WAIT als belegt.
+
 ### Python
 
 * **asyncio hält Aufgaben nur schwach** → ohne Referenz räumt der Garbage Collector sie mitten im Lauf weg
@@ -198,6 +211,8 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
+* **WLAN in Optionen › Netzwerk** ungetestet: mit USB-WLAN-Stick am Alma/OptiPlex (Einstecken im Betrieb, Suchen,
+  Verbinden – das Passwort gibt der Nutzer ein –, Vergessen) und mit dem eingebauten WLAN am Pi (rfkill/Land).
 * **Pi zu Hause** hat noch den Stand vom 26.10. (ohne Liedtexte, Timer/Wecker, Wetter, Themes, Sperrbildschirm).
   Update nur nach Rückfrage; danach Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher testen.
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
@@ -306,6 +321,18 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
   (Kiosk); laut Nutzer angenehm. Knopfreihe passt ab 320 px.
 * Themes Nacht, Winamp, Aqua, Hi-Fi und Luna (Oberfläche: Wiedergabe, Bibliothek, Optionen, Wecker-Dialog bei 1280 und
   390 px ohne Überlauf; `/tv` mit Wiedergabe und Ruhebildschirm im Browser). Noch nicht am Monitor und am iPhone.
+
+**Alma, 31.10.2026**
+
+* Update per `install.sh --tv-headless` mit WLAN-Unterstützung (NetworkManager-wifi nachinstalliert, NM neu
+  gestartet, Kabelverbindung blieb), `ks-netadmin.socket` läuft, keine AVCs.
+* Netzwerk (per API, über die eigene Verbindung): feste IPv4 statt DHCP → „Behalten?“ in der Oberfläche, ohne
+  Bestätigung nach 120 s zurück auf DHCP; mit Bestätigung bleibt sie; „Zurücknehmen“ stellt sofort zurück.
+  Prüfungen (Gateway außerhalb, Broadcast-Adresse, falsche UUID, kurzes WLAN-Passwort, Port 22/belegt) greifen.
+* Port der Weboberfläche 8080 → 8082 → 8080: je 4 s, Kiosk zieht mit, firewalld angepasst.
+* SSH aus (neue Verbindung abgelehnt, laufende Sitzung bleibt) und wieder an.
+* Oberfläche (Reiter Netzwerk) bei 390 px im Klassisch- und Nacht-Theme ohne Überlauf.
+* WLAN noch nicht getestet (kein Adapter am Alma).
 
 ### Behobene Fehler
 

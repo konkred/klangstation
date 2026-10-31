@@ -500,6 +500,16 @@ async def bluetooth_get(request):
     return ok(core.bt.public())
 
 
+async def network_get(request):
+    return ok(await core.net.info())
+
+
+async def network_action(request):
+    res = await core.net.action(request.path_params["action"], await body(request))
+    core.push()
+    return ok(res)
+
+
 async def bluetooth_action(request):
     data = await body(request)
     await core.bt_action(request.path_params["action"], str(data.get("path", "")))
@@ -597,6 +607,8 @@ routes = [
     Route("/api/services", services),
     Route("/api/bluetooth", bluetooth_get),
     Route("/api/bluetooth/{action}", bluetooth_action, methods=["POST"]),
+    Route("/api/network", network_get),
+    Route("/api/network/{action}", network_action, methods=["POST"]),
     Route("/api/auth/status", auth_status),
     Route("/api/auth/login", auth_login, methods=["POST"]),
     Route("/api/auth/logout", auth_logout, methods=["POST"]),

@@ -1,0 +1,421 @@
+#!/usr/bin/python3 -I
+"""Von systemd (ks-netadmin.socket) als root gestartet: Netzwerk-Einstellungen fuer Klangstation.
+
+Erlaubt ist ausschliesslich:
+  * WLAN: suchen, mit einem Netz verbinden (WPA/WPA2/WPA3-Personal oder offen), gespeicherte WLANs
+    trennen und vergessen, WLAN ein- und ausschalten
+  * IPv4 eines NetworkManager-Profils auf DHCP oder feste Adresse stellen - mit automatischer Ruecknahme,
+    wenn die Aenderung nicht innerhalb von ROLLBACK_SECONDS bestaetigt wird
+  * den SSH-Server ein- und ausschalten
+  * den Port der Weboberflaeche aendern (Dienst, Kiosk, Firewall)
+Den Socket erreicht nur die Gruppe klangstation.
+Anfrage: eine JSON-Zeile auf stdin, Antwort: eine JSON-Zeile auf stdout.
+Aufruf mit --rollback (vom Zeitgeber ks-net-rollback.timer): alte IP-Einstellung wiederherstellen.
+"""
+import ipaddress
+import json
+import os
+import re
+import socket
+import subprocess
+import sys
+import time
+import uuid as uuidlib
+
+PREFIX = "/opt/klangstation"
+STATE_DIR = "/run/ks-netadmin"
+ROLLBACK_FILE = STATE_DIR + "/rollback.json"
+ROLLBACK_UNIT = "ks-net-rollback"
+ROLLBACK_SECONDS = 120
+NM_DIR = "/etc/NetworkManager/system-connections"
+UNIT_FILE = "/etc/systemd/system/klangstation.service"
+PORT_DROPIN = "/etc/systemd/system/klangstation.service.d/port.conf"
+KIOSK = PREFIX + "/system/ks-tv-kiosk"
+ENV = {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LC_ALL": "C"}
+
+UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+IFNAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,14}$")
+
+
+def answer(ok, error="", **extra):
+    sys.stdout.write(json.dumps(dict(ok=ok, error=error, **extra)) + "\n")
+    sys.stdout.flush()
+    sys.exit(0)
+
+
+def run(cmd, timeout=30):
+    """(Rueckgabecode, Ausgabe bzw. letzte Fehlerzeile)."""
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=ENV)
+    except subprocess.TimeoutExpired:
+        return 124, "Zeitueberschreitung"
+    except FileNotFoundError:
+        return 127, f"{cmd[0]} fehlt"
+    if res.returncode == 0:
+        return 0, res.stdout
+    lines = (res.stderr or res.stdout).strip().splitlines()
+    return res.returncode, lines[-1] if lines else f"{cmd[0]} beendet mit Code {res.returncode}"
+
+
+def nm_error(msg):
+    """nmcli-Meldungen kuerzen ("Error: Connection activation failed: (7) Secrets were required ...")."""
+    msg = re.sub(r"^Error:\s*", "", msg or "").strip()
+    if "Secrets were required" in msg or "802-1x" in msg or "psk" in msg.lower():
+        return "Passwort falsch oder Netz verlangt eine Anmeldung, die Klangstation nicht unterstützt"
+    if "No network with SSID" in msg:
+        return "WLAN nicht gefunden"
+    if "not running" in msg.lower() or "could not create nmclient" in msg.lower():
+        return "NetworkManager läuft nicht"
+    return msg[:200]
+
+
+def need_uuid(req):
+    value = str(req.get("uuid", ""))
+    if not UUID.match(value):
+        answer(False, "Ungültige Verbindung")
+    return value
+
+
+def con_type(uuid):
+    code, out = run(["nmcli", "-g", "connection.type", "connection", "show", "uuid", uuid])
+    return out.strip() if code == 0 else ""
+
+
+# ------------------------------------------------------------------ WLAN
+def keyfile_escape(value):
+    """Wert fuer eine GKeyFile-Datei (NetworkManager-Keyfile)."""
+    value = value.replace("\\", "\\\\").replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r")
+    return "\\s" + value[1:] if value.startswith(" ") else value
+
+
+def wifi_connections_for(ssid_bytes):
+    """UUIDs gespeicherter WLAN-Profile mit dieser SSID."""
+    code, out = run(["nmcli", "-t", "-f", "UUID,TYPE", "connection", "show"])
+    found = []
+    for line in out.splitlines() if code == 0 else []:
+        uid, _, kind = line.partition(":")
+        if kind != "802-11-wireless":
+            continue
+        c, ssid = run(["nmcli", "-g", "802-11-wireless.ssid", "connection", "show", "uuid", uid])
+        if c == 0 and ssid.rstrip("\n").replace("\\:", ":").encode() == ssid_bytes:
+            found.append(uid)
+    return found
+
+
+def do_wifi_connect(req):
+    ssid = req.get("ssid")
+    password = req.get("password") or ""
+    security = str(req.get("security", "wpa-psk"))
+    ifname = str(req.get("ifname") or "")
+    if not isinstance(ssid, str) or not ssid or len(ssid.encode()) > 32 or any(ord(c) < 32 for c in ssid):
+        answer(False, "Ungültiger WLAN-Name")
+    if not isinstance(password, str):
+        answer(False, "Ungültiges Passwort")
+    if ifname and not IFNAME.match(ifname):
+        answer(False, "Ungültiger Adapter")
+    if security not in ("none", "wpa-psk", "sae"):
+        answer(False, "Diese Art der WLAN-Anmeldung (z. B. WPA-Enterprise) wird nicht unterstützt")
+    if security != "none":
+        hexkey = len(password) == 64 and all(c in "0123456789abcdefABCDEF" for c in password)
+        if not hexkey and not (8 <= len(password) <= 63 and all(32 <= ord(c) < 127 for c in password)):
+            answer(False, "Das WLAN-Passwort muss 8 bis 63 Zeichen lang sein (ohne Umlaute)")
+    ssid_bytes = ssid.encode()
+    old = wifi_connections_for(ssid_bytes)
+    uid = str(uuidlib.uuid4())
+    name = "WLAN " + "".join(c for c in ssid if c.isprintable() and c not in "\\/")[:40]
+    lines = [
+        "[connection]", f"id={keyfile_escape(name)}", f"uuid={uid}", "type=wifi", "autoconnect=true",
+        "[wifi]", "mode=infrastructure", "ssid=" + "".join(f"{b};" for b in ssid_bytes),
+    ]
+    if req.get("hidden"):
+        lines.append("hidden=true")
+    if security != "none":
+        lines += ["[wifi-security]", f"key-mgmt={security}", f"psk={keyfile_escape(password)}"]
+    lines += ["[ipv4]", "method=auto", "[ipv6]", "addr-gen-mode=default", "method=auto", ""]
+    os.makedirs(NM_DIR, mode=0o700, exist_ok=True)
+    path = os.path.join(NM_DIR, f"klangstation-{uid}.nmconnection")
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    run(["rfkill", "unblock", "wifi"], timeout=5)
+    run(["nmcli", "radio", "wifi", "on"], timeout=10)
+    code, out = run(["nmcli", "connection", "load", path])
+    if code != 0:
+        os.unlink(path)
+        answer(False, nm_error(out))
+    cmd = ["nmcli", "--wait", "45", "connection", "up", "uuid", uid]
+    if ifname:
+        cmd += ["ifname", ifname]
+    code, out = run(cmd, timeout=60)
+    if code != 0:
+        run(["nmcli", "connection", "delete", "uuid", uid])
+        answer(False, nm_error(out))
+    for other in old:   # aeltere Profile fuer dasselbe Netz ersetzen
+        run(["nmcli", "connection", "delete", "uuid", other])
+    answer(True, uuid=uid)
+
+
+def do_wifi_forget(req):
+    uid = need_uuid(req)
+    if con_type(uid) != "802-11-wireless":
+        answer(False, "Nur WLAN-Verbindungen lassen sich hier löschen")
+    code, out = run(["nmcli", "connection", "delete", "uuid", uid])
+    answer(code == 0, "" if code == 0 else nm_error(out))
+
+
+def do_con(req, up):
+    uid = need_uuid(req)
+    if con_type(uid) != "802-11-wireless":
+        answer(False, "Nur WLAN-Verbindungen lassen sich hier trennen")
+    code, out = run(["nmcli", "--wait", "45", "connection", "up" if up else "down", "uuid", uid], timeout=60)
+    answer(code == 0, "" if code == 0 else nm_error(out))
+
+
+def do_wifi_radio(req):
+    on = bool(req.get("on"))
+    if on:
+        run(["rfkill", "unblock", "wifi"], timeout=5)
+    code, out = run(["nmcli", "radio", "wifi", "on" if on else "off"])
+    answer(code == 0, "" if code == 0 else nm_error(out))
+
+
+def do_wifi_scan(req):
+    code, out = run(["nmcli", "device", "wifi", "rescan"], timeout=20)
+    # "Scanning not allowed immediately following previous scan" ist kein Fehler
+    answer(True)
+
+
+# ------------------------------------------------------------------ IPv4 mit Ruecknahme
+def ipv4_settings(uid):
+    fields = ["ipv4.method", "ipv4.addresses", "ipv4.gateway", "ipv4.dns"]
+    code, out = run(["nmcli", "-g", ",".join(fields), "connection", "show", "uuid", uid])
+    if code != 0:
+        return None
+    # leere Felder sind leere Zeilen - nur den letzten Zeilenumbruch abschneiden
+    values = (out[:-1] if out.endswith("\n") else out).split("\n")
+    if len(values) != len(fields):
+        return None
+    return dict(zip(fields, values))
+
+
+def apply_ipv4(uid, cfg):
+    args = ["nmcli", "connection", "modify", "uuid", uid]
+    for key in ("ipv4.method", "ipv4.addresses", "ipv4.gateway", "ipv4.dns"):
+        args += [key, cfg.get(key, "")]
+    code, out = run(args)
+    if code != 0:
+        return nm_error(out)
+    code, out = run(["nmcli", "--wait", "30", "connection", "up", "uuid", uid], timeout=45)
+    return "" if code == 0 else nm_error(out)
+
+
+def cancel_rollback():
+    run(["systemctl", "stop", ROLLBACK_UNIT + ".timer", ROLLBACK_UNIT + ".service"], timeout=10)
+    try:
+        os.unlink(ROLLBACK_FILE)
+    except FileNotFoundError:
+        pass
+
+
+def do_ipv4(req):
+    uid = need_uuid(req)
+    if con_type(uid) not in ("802-3-ethernet", "802-11-wireless"):
+        answer(False, "Nur LAN- und WLAN-Verbindungen lassen sich hier einstellen")
+    if os.path.exists(ROLLBACK_FILE):
+        answer(False, "Bitte zuerst die vorige Änderung bestätigen oder zurücknehmen")
+    method = req.get("method")
+    if method == "auto":
+        new = {"ipv4.method": "auto", "ipv4.addresses": "", "ipv4.gateway": "", "ipv4.dns": ""}
+    elif method == "manual":
+        try:
+            iface = ipaddress.IPv4Interface(f"{req.get('address', '')}/{int(req.get('prefix', 24))}")
+            gateway = ipaddress.IPv4Address(req["gateway"]) if req.get("gateway") else None
+            dns = [ipaddress.IPv4Address(d) for d in req.get("dns") or []][:3]
+        except (ValueError, TypeError, KeyError):
+            answer(False, "Adresse, Präfix, Gateway oder DNS-Server ungültig")
+        if not (8 <= iface.network.prefixlen <= 30) or iface.ip in (iface.network.network_address,
+                                                                   iface.network.broadcast_address):
+            answer(False, "Diese Adresse passt nicht zum Präfix")
+        if gateway and gateway not in iface.network:
+            answer(False, "Das Gateway liegt nicht im selben Netz")
+        new = {"ipv4.method": "manual", "ipv4.addresses": str(iface), "ipv4.gateway": str(gateway or ""),
+               "ipv4.dns": ",".join(str(d) for d in dns)}
+    else:
+        answer(False, "Unbekannte Methode")
+    old = ipv4_settings(uid)
+    if old is None:
+        answer(False, "Verbindung nicht gefunden")
+    os.makedirs(STATE_DIR, mode=0o700, exist_ok=True)
+    with open(ROLLBACK_FILE, "w", encoding="utf-8") as fh:
+        json.dump({"uuid": uid, "old": old}, fh)
+    # Erst den Zeitgeber, dann die Aenderung: bricht die Verbindung weg, kommt die alte Einstellung zurueck.
+    # Ein abgelaufener Zeitgeber vom letzten Mal bliebe sonst geladen und blockierte den Namen.
+    run(["systemctl", "stop", ROLLBACK_UNIT + ".timer", ROLLBACK_UNIT + ".service"], timeout=10)
+    run(["systemctl", "reset-failed", ROLLBACK_UNIT + ".timer", ROLLBACK_UNIT + ".service"], timeout=10)
+    code, out = run(["systemd-run", f"--unit={ROLLBACK_UNIT}", f"--on-active={ROLLBACK_SECONDS}",
+                     "--timer-property=AccuracySec=1s", "--collect", PREFIX + "/system/ks-netadmin", "--rollback"])
+    if code != 0:
+        os.unlink(ROLLBACK_FILE)
+        answer(False, f"Ruecknahme-Zeitgeber liess sich nicht anlegen: {out}")
+    error = apply_ipv4(uid, new)
+    if error:
+        cancel_rollback()
+        apply_ipv4(uid, old)
+        answer(False, error)
+    answer(True, seconds=ROLLBACK_SECONDS)
+
+
+def rollback():
+    try:
+        with open(ROLLBACK_FILE, encoding="utf-8") as fh:
+            data = json.load(fh)
+        os.unlink(ROLLBACK_FILE)
+    except (OSError, ValueError):
+        return
+    error = apply_ipv4(data["uuid"], data["old"])
+    print("IP-Einstellung zurueckgenommen" + (f" (Fehler: {error})" if error else ""), file=sys.stderr)
+
+
+def do_ipv4_confirm(req):
+    if not os.path.exists(ROLLBACK_FILE):
+        answer(True)
+    cancel_rollback()
+    answer(True)
+
+
+def do_ipv4_revert(req):
+    run(["systemctl", "stop", ROLLBACK_UNIT + ".timer"], timeout=10)
+    rollback()
+    answer(True)
+
+
+# ------------------------------------------------------------------ SSH
+def ssh_units():
+    """(Dienst, Socket oder None) - Debian: ssh, RHEL: sshd."""
+    for name in ("ssh", "sshd"):
+        code, out = run(["systemctl", "list-unit-files", "--no-legend", f"{name}.service"], timeout=10)
+        if code == 0 and out.strip():
+            code, out = run(["systemctl", "list-unit-files", "--no-legend", f"{name}.socket"], timeout=10)
+            return f"{name}.service", (f"{name}.socket" if code == 0 and out.strip() else None)
+    return None, None
+
+
+def do_ssh(req):
+    service, sock = ssh_units()
+    if not service:
+        answer(False, "Kein SSH-Server installiert (Paket openssh-server)")
+    if req.get("enable"):
+        code, out = run(["systemctl", "enable", "--now", service])
+    else:
+        # Socket-Aktivierung (z. B. Ubuntu) wuerde sshd sonst beim naechsten Zugriff wieder starten.
+        # Laufende Sitzungen bleiben bestehen.
+        units = [u for u in (sock, service) if u]
+        code, out = run(["systemctl", "disable", "--now"] + units)
+    answer(code == 0, "" if code == 0 else out)
+
+
+# ------------------------------------------------------------------ Port der Weboberflaeche
+def current_port():
+    try:
+        with open(UNIT_FILE, encoding="utf-8") as fh:
+            m = re.search(r"^Environment=KS_PORT=(\d+)\s*$", fh.read(), re.M)
+        return int(m.group(1)) if m else 8080
+    except OSError:
+        return 8080
+
+
+def firewall(old, new):
+    code, _ = run(["firewall-cmd", "--state"], timeout=10)
+    if code == 0:
+        # laufend und dauerhaft getrennt aendern - ohne --reload, der alle Regeln neu laedt
+        for perm in ([], ["--permanent"]):
+            run(["firewall-cmd", *perm, f"--add-port={new}/tcp"])
+            run(["firewall-cmd", *perm, f"--remove-port={old}/tcp"])
+        return
+    code, out = run(["ufw", "status"], timeout=10)
+    if code == 0 and "Status: active" in out:
+        run(["ufw", "allow", f"{new}/tcp"])
+        run(["ufw", "delete", "allow", f"{old}/tcp"])
+
+
+def do_port(req):
+    try:
+        new = int(req.get("port"))
+    except (TypeError, ValueError):
+        answer(False, "Ungültiger Port")
+    old = current_port()
+    if new == old:
+        answer(True, port=new)
+    if not (new == 80 or 1024 <= new <= 65535):
+        answer(False, "Erlaubt sind 80 und 1024 bis 65535")
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # wie uvicorn: alte Verbindungen in TIME_WAIT (z. B. nach dem Zurueckwechseln) zaehlen nicht als belegt
+    probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        probe.bind(("0.0.0.0", new))
+    except OSError:
+        answer(False, f"Port {new} wird schon von einem anderen Programm verwendet")
+    finally:
+        probe.close()
+    try:
+        with open(UNIT_FILE, encoding="utf-8") as fh:
+            unit = fh.read()
+        unit, count = re.subn(r"^Environment=KS_PORT=\d+\s*$", f"Environment=KS_PORT={new}", unit, flags=re.M)
+        if not count:
+            answer(False, "Dienstdatei unbekannt – bitte install.sh erneut ausführen")
+        with open(UNIT_FILE + ".tmp", "w", encoding="utf-8") as fh:
+            fh.write(unit)
+        os.replace(UNIT_FILE + ".tmp", UNIT_FILE)
+        if new < 1024:
+            os.makedirs(os.path.dirname(PORT_DROPIN), exist_ok=True)
+            with open(PORT_DROPIN, "w", encoding="utf-8") as fh:
+                fh.write("[Service]\n# Port unter 1024 (z. B. 80)\nAmbientCapabilities=CAP_NET_BIND_SERVICE\n")
+        elif os.path.exists(PORT_DROPIN):
+            os.unlink(PORT_DROPIN)
+        with open(KIOSK, encoding="utf-8") as fh:
+            kiosk = fh.read()
+        kiosk = re.sub(r'^URL="http://127\.0\.0\.1:\d+"', f'URL="http://127.0.0.1:{new}"', kiosk, flags=re.M)
+        with open(KIOSK + ".tmp", "w", encoding="utf-8") as fh:
+            fh.write(kiosk)
+        os.chmod(KIOSK + ".tmp", 0o755)
+        os.replace(KIOSK + ".tmp", KIOSK)
+    except OSError as exc:
+        answer(False, f"Speichern fehlgeschlagen: {exc.strerror or exc}")
+    firewall(old, new)
+    run(["systemctl", "daemon-reload"])
+    # Erst antworten, dann neu starten (die Anfrage kommt von Klangstation selbst)
+    restart = "systemctl restart klangstation.service; " \
+              "systemctl -q is-active klangstation-tv.service && systemctl restart klangstation-tv.service; true"
+    # eindeutiger Name: ein abgelaufener Zeitgeber vom letzten Wechsel bleibt geladen und blockiert sonst
+    code, out = run(["systemd-run", f"--unit=ks-port-restart-{int(time.time())}", "--on-active=2",
+                     "--timer-property=AccuracySec=100ms", "--collect",
+                     "/bin/sh", "-c", restart])
+    if code != 0:
+        answer(False, f"Neustart liess sich nicht planen: {out}")
+    answer(True, port=new)
+
+
+def main():
+    if sys.argv[1:] == ["--rollback"]:
+        rollback()
+        return
+    try:
+        req = json.loads(sys.stdin.readline(8192) or "{}")
+    except ValueError:
+        answer(False, "Ungueltige Anfrage")
+    if not isinstance(req, dict):
+        answer(False, "Ungueltige Anfrage")
+    actions = {
+        "wifi_connect": do_wifi_connect, "wifi_forget": do_wifi_forget, "wifi_radio": do_wifi_radio,
+        "wifi_scan": do_wifi_scan, "wifi_up": lambda r: do_con(r, True), "wifi_down": lambda r: do_con(r, False),
+        "ipv4": do_ipv4, "ipv4_confirm": do_ipv4_confirm, "ipv4_revert": do_ipv4_revert,
+        "ssh": do_ssh, "port": do_port,
+    }
+    fn = actions.get(req.get("action"))
+    if not fn:
+        answer(False, "Unbekannte Aktion")
+    fn(req)
+
+
+if __name__ == "__main__":
+    main()

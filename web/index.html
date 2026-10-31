@@ -51,6 +51,8 @@
     <symbol id="i-usb" viewBox="0 0 24 24"><path d="M15 7v4h1v2h-3V5h2l-3-4-3 4h2v8H8v-2.1A2 2 0 1 0 6 11v2a2 2 0 0 0 2 2h3v3.1a2.5 2.5 0 1 0 2 0V15h3a2 2 0 0 0 2-2v-2h1V7z" fill="currentColor"/></symbol>
     <symbol id="i-bt" viewBox="0 0 24 24"><path d="M17.7 7.7 12 2h-1v7.6L6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l4.6-4.6V22h1l5.7-5.7-4.3-4.3zM13 5.8l1.9 1.9L13 9.6zm1.9 10.5L13 18.2v-3.8z" fill="currentColor"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 5h12v2H3zm0 4h12v2H3zm0 4h8v2H3zm13 0v-2h2v2h3v2h-3v3h-2v-3h-3v-2z" fill="currentColor"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M12 18.5a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6zM5.6 13.2a9 9 0 0 1 12.8 0L17 14.6a7 7 0 0 0-10 0zM2.4 10a13.5 13.5 0 0 1 19.2 0l-1.4 1.4a11.5 11.5 0 0 0-16.4 0zm6.4 6.4a4.5 4.5 0 0 1 6.4 0l-1.4 1.4a2.5 2.5 0 0 0-3.6 0z" fill="currentColor"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3h1v11H6V10zm2 0h6V7a3 3 0 0 0-6 0z" fill="currentColor"/></symbol>
     <symbol id="i-net" viewBox="0 0 24 24"><path d="M4 4h16v8H4zm2 2v4h12V6zm5 8h2v3h4v2H7v-2h4z" fill="currentColor"/></symbol>
     <symbol id="i-rip" viewBox="0 0 24 24"><path d="M11 2h2v9.2l3.3-3.3 1.4 1.4L12 15 6.3 9.3l1.4-1.4 3.3 3.3zM4 17h16v5H4zm2 2v1h12v-1z" fill="currentColor"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M14.5 2.5A9.5 9.5 0 1 0 21.5 17 7.6 7.6 0 0 1 14.5 2.5z" fill="currentColor"/></symbol>
@@ -182,6 +184,7 @@
             <button data-tab="meta">CD &amp; Metadaten</button>
             <button data-tab="tv">Fernseher</button>
             <button data-tab="shares">Freigaben</button>
+            <button data-tab="net">Netzwerk</button>
             <button data-tab="access">Zugang</button>
             <button data-tab="help">Hilfe</button>
             <button data-tab="about">Info</button>
@@ -272,6 +275,24 @@
                 <label class="field smb-only">Passwort<input data-f="password" type="password" autocomplete="new-password"></label>
                 <button type="button" class="btn primary" id="share-add">Freigabe einbinden</button>
               </div>
+            </fieldset>
+            <fieldset data-pane="net" hidden>
+              <legend>Netzwerk</legend>
+              <h4 class="subhead first">Netzwerkadapter</h4>
+              <div id="net-adapters" class="share-list"><p class="hint">Wird geladen …</p></div>
+              <h4 class="subhead">WLAN</h4>
+              <div id="net-wifi"></div>
+              <h4 class="subhead">Fernzugriff per SSH</h4>
+              <label class="check"><input type="checkbox" id="net-ssh"> SSH-Server eingeschaltet</label>
+              <p class="hint" id="net-ssh-state">Zum Verwalten des Geräts von einem PC aus (z. B. <code>ssh pi@…</code>). Angemeldet wird mit einem Benutzerkonto des Systems.</p>
+              <h4 class="subhead">Ports</h4>
+              <p class="hint">Diese Ports sind auf diesem Gerät gerade offen.</p>
+              <div id="net-ports"></div>
+              <div class="net-port-form">
+                <label class="field">Port der Weboberfläche<input type="number" id="net-webport" min="80" max="65535" inputmode="numeric"></label>
+                <button type="button" class="btn" id="net-port-set">Port ändern</button>
+              </div>
+              <p class="hint">Erlaubt sind 80 (Adresse ohne Port) und 1024 bis 65535. Klangstation startet danach neu, die Seite wechselt von selbst zur neuen Adresse.</p>
             </fieldset>
             <fieldset data-pane="access" hidden>
               <legend>Zugangsschutz</legend>
@@ -393,6 +414,16 @@
                 </ul>
               </details>
               <details>
+                <summary>Netzwerk, WLAN und SSH</summary>
+                <ul>
+                  <li><b>Optionen › Netzwerk</b> zeigt alle Netzwerkadapter mit ihren Adressen (IPv4, IPv6, Gateway, DNS, MAC).</li>
+                  <li><b>IP-Einstellungen</b>: DHCP (automatisch vom Router) oder eine feste Adresse. Danach erscheint oben „Behalten?“. Bestätigst du nicht innerhalb von 2 Minuten – etwa weil die neue Adresse nicht erreichbar ist –, kommt die alte Einstellung von selbst zurück. Eine feste Adresse am besten auch im Router reservieren.</li>
+                  <li><b>WLAN</b>: Netz antippen, Passwort eingeben, „Verbinden“. Gespeicherte Netze verbinden sich automatisch wieder. Kein WLAN im PC? Ein USB-WLAN-Stick genügt, er erscheint nach dem Einstecken nach wenigen Sekunden.</li>
+                  <li><b>SSH</b> schaltet den Fernzugriff für die Verwaltung per Kommandozeile ein oder aus. Brauchst du ihn nicht, lass ihn aus.</li>
+                  <li><b>Ports</b> listet, was auf dem Gerät von außen erreichbar ist. Den Port der Weboberfläche kannst du ändern, z. B. auf 80 – dann reicht die Adresse ohne „:8080“.</li>
+                </ul>
+              </details>
+              <details>
                 <summary>Zugangsschutz</summary>
                 <ul>
                   <li>Unter <b>Optionen › Zugang</b> legst du ein Passwort fest – nur für die Optionen oder für die ganze Oberfläche.</li>
@@ -450,6 +481,11 @@
       <div class="status-right" id="status-right"></div>
     </div>
   </footer>
+</div>
+<div class="net-confirm" id="net-confirm" role="alertdialog" hidden>
+  <span id="net-confirm-text"></span>
+  <button type="button" class="btn primary" id="net-keep">Behalten</button>
+  <button type="button" class="btn" id="net-revert">Zurücknehmen</button>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 

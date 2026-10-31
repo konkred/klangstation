@@ -230,6 +230,7 @@ function render() {
 
   if (currentView === "cd") renderCD();
   if (currentView === "settings") renderBluetooth();
+  networkState();
   vis.playing = playing;
   tick();
   updateLock();
@@ -856,10 +857,13 @@ $("#cd-autoplay").onchange = async (ev) => {
 /* =========================================================== Optionen */
 const KIND_TXT = { usb: "USB", hdmi: "HDMI", analog: "Analog", i2s: "DAC", other: "ALSA" };
 
+let settingsTab = "out";
 segTabs($("#set-tabs"), (tab) => {
   $$("#settings-form fieldset").forEach((f) => { f.hidden = f.dataset.pane !== tab; });
-  // Hilfe und Info haben nichts zu uebernehmen
-  $("#settings-form .dlg-buttons").hidden = tab === "help" || tab === "about";
+  // Hilfe, Info und Netzwerk haben nichts zu uebernehmen (Netzwerk wirkt sofort)
+  $("#settings-form .dlg-buttons").hidden = tab === "help" || tab === "about" || tab === "net";
+  settingsTab = tab;
+  if (tab === "net") loadNetwork();
   if (tab === "help" && S) $$(".help-name").forEach((el) => { el.textContent = "„" + S.device_name + "“"; });
 });
 
@@ -1067,6 +1071,283 @@ setInterval(() => {
     renderBluetooth();
   }
 }, 1000);
+
+/* Netzwerk: Adapter, WLAN, SSH, Ports (Aenderungen erledigt der root-Hilfsdienst ks-netadmin) */
+let net = null, netRev = -1, netBusy = false;
+const NET_STATE = { connected: "verbunden", disconnected: "nicht verbunden", unavailable: "kein Kabel bzw. nicht bereit",
+  unmanaged: "nicht von NetworkManager verwaltet", connecting: "verbindet …", "connected (externally)": "verbunden",
+  "connecting (getting IP configuration)": "bezieht Adresse …", deactivating: "trennt …", up: "verbunden", down: "aus" };
+
+async function loadNetwork() {
+  try { net = await api("/api/network", { quiet: true }); } catch (e) {
+    $("#net-adapters").innerHTML = `<p class="hint">${esc(e.message)}</p>`;
+    return;
+  }
+  netRev = S && S.network ? S.network.rev : netRev;
+  renderNetwork();
+}
+
+// Formular offen oder Eingabe aktiv: nicht neu zeichnen, sonst ist die Eingabe weg
+const netEditing = () => netBusy || $$("#view-settings [data-pane='net'] .net-open").length > 0;
+
+function networkState() {
+  const n = S && S.network;
+  if (!n) return;
+  renderNetConfirm(n.pending);
+  if (currentView === "settings" && settingsTab === "net" && n.rev !== netRev && !netEditing()) loadNetwork();
+}
+
+function ipRow(label, value) {
+  return value ? `<dt>${label}</dt><dd>${value}</dd>` : "";
+}
+
+function renderNetwork() {
+  if (!net) return;
+  const ad = net.adapters.map((a) => {
+    const v4 = a.ipv4.map(esc).join("<br>");
+    const how = a.method === "manual" ? "feste Adresse" : a.method === "auto" ? "DHCP" : "";
+    const state = NET_STATE[a.state] || a.state;
+    const name = a.type === "wifi" && a.ssid ? `${a.kind} „${esc(a.ssid)}“` : a.kind;
+    const cfg = a.config || {};
+    return `
+    <div class="share net-ad" data-uuid="${esc(a.uuid)}" data-name="${esc(a.name)}">
+      ${ICON(a.type === "wifi" ? "wifi" : "net")}
+      <span><b>${name} · ${esc(a.name)}${a.usb ? " (USB)" : ""}</b>
+        <small><span class="${a.ipv4.length ? "ok" : ""}">${esc(state)}</span>${a.speed && a.ipv4.length ? " · " + esc(a.speed) : ""}${how ? " · " + how : ""}</small></span>
+      ${a.editable ? '<button type="button" class="mini" data-net="edit">IP-Einstellungen</button>' : "<span></span>"}
+      <span></span>
+      <dl class="net-dl">${ipRow("IPv4", v4)}${ipRow("Gateway", esc(a.gateway))}${ipRow("DNS", a.dns.map(esc).join(", "))}
+        ${ipRow("IPv6", a.ipv6.map(esc).join("<br>"))}${ipRow("MAC", esc(a.mac))}</dl>
+      ${a.editable ? `
+      <div class="share-form net-ipform" hidden>
+        <label class="field">IPv4-Adresse beziehen
+          <select data-ip="method"><option value="auto"${a.method === "auto" ? " selected" : ""}>Automatisch (DHCP)</option>
+          <option value="manual"${a.method === "manual" ? " selected" : ""}>Feste Adresse</option></select></label>
+        <span></span>
+        <label class="field ip-man">Adresse<input data-ip="address" inputmode="decimal" placeholder="192.168.1.50" value="${esc((cfg.address || a.ipv4[0] || "").split("/")[0])}"></label>
+        <label class="field ip-man">Präfix (Netzmaske)<select data-ip="prefix">${[24, 16, 8, 25, 26, 27, 28, 23, 22, 20].map((p) =>
+          `<option value="${p}"${String(p) === ((cfg.address || a.ipv4[0] || "/24").split("/")[1] || "24") ? " selected" : ""}>/${p}${p === 24 ? " (255.255.255.0)" : p === 16 ? " (255.255.0.0)" : p === 8 ? " (255.0.0.0)" : ""}</option>`).join("")}</select></label>
+        <label class="field ip-man">Gateway (Router)<input data-ip="gateway" inputmode="decimal" placeholder="192.168.1.1" value="${esc(cfg.gateway || a.gateway)}"></label>
+        <label class="field ip-man">DNS-Server (mit Komma getrennt)<input data-ip="dns" inputmode="decimal" placeholder="192.168.1.1" value="${esc((cfg.dns && cfg.dns.length ? cfg.dns : a.dns.filter((d) => d.includes("."))).join(", "))}"></label>
+        <div class="net-btns"><button type="button" class="btn primary" data-net="ipv4">Übernehmen</button>
+          <button type="button" class="btn" data-net="cancel">Abbrechen</button></div>
+        <p class="hint">Wird die neue Einstellung nicht innerhalb von 2 Minuten bestätigt, stellt Klangstation die alte von selbst wieder her.</p>
+      </div>` : ""}
+    </div>`;
+  }).join("");
+  $("#net-adapters").innerHTML = (net.managed ? "" : '<p class="hint">NetworkManager fehlt oder läuft nicht – die Adressen werden nur angezeigt.</p>') +
+    (ad || '<p class="hint">Keine Netzwerkadapter gefunden.</p>');
+  $$("#net-adapters .net-ipform").forEach(ipManual);
+  renderWifi();
+  const ssh = net.ssh;
+  $("#net-ssh").checked = ssh.active;
+  $("#net-ssh").disabled = !ssh.installed;
+  $("#net-ssh-state").innerHTML = !ssh.installed
+    ? "Kein SSH-Server installiert (Paket openssh-server)."
+    : (ssh.active ? `Eingeschaltet – erreichbar mit <code>ssh &lt;Benutzer&gt;@${esc(net.hostname)}.local</code>.` : "Ausgeschaltet.") +
+      (ssh.active !== ssh.enabled ? (ssh.enabled ? " Startet beim nächsten Hochfahren." : " Startet beim nächsten Hochfahren nicht von selbst.") : "");
+  $("#net-ports").innerHTML = `<table class="grid net-ports"><thead><tr><th class="port">Port</th><th>Dienst</th><th class="hide-m">erreichbar</th></tr></thead><tbody>
+    ${net.ports.map((p) => `<tr><td class="port">${p.port}/${p.proto}</td><td>${esc(p.name)}</td><td class="hide-m">${p.local ? "nur am Gerät" : "im Netzwerk"}</td></tr>`).join("")}
+    </tbody></table>`;
+  if (document.activeElement !== $("#net-webport")) $("#net-webport").value = net.web_port;
+}
+
+function ipManual(form) {
+  const manual = $("[data-ip='method']", form).value === "manual";
+  $$(".ip-man", form).forEach((el) => { el.hidden = !manual; });
+}
+
+function signalBars(pct) {
+  return `<span class="net-sig" title="Signal ${pct} %"><i class="${pct > 15 ? "on" : ""}"></i><i class="${pct > 40 ? "on" : ""}"></i><i class="${pct > 60 ? "on" : ""}"></i><i class="${pct > 80 ? "on" : ""}"></i></span>`;
+}
+
+function renderWifi() {
+  const w = net.wifi;
+  const box = $("#net-wifi");
+  if (!w.adapters.length) { box.innerHTML = `<p class="hint">${esc(w.hint)}</p>`; return; }
+  if (!net.managed) { box.innerHTML = '<p class="hint">WLAN braucht NetworkManager.</p>'; return; }
+  const savedSsids = new Set(w.saved.map((s) => s.ssid));
+  const rows = w.networks.map((n, i) => `
+    <div class="share net-wl${n.active ? " cur" : ""}" data-i="${i}">
+      ${ICON("wifi")}
+      <span><b>${esc(n.ssid)}</b><small>${n.active ? '<span class="ok">verbunden</span> · ' : ""}${n.band}${n.secured ? " · " + ICON("lock") : " · offen"}${savedSsids.has(n.ssid) && !n.active ? " · gespeichert" : ""}</small></span>
+      ${signalBars(n.signal)}
+      ${n.active ? '<button type="button" class="mini" data-net="down">Trennen</button>'
+        : n.security === "enterprise" ? '<span class="hint">nicht unterstützt</span>'
+        : '<button type="button" class="mini" data-net="pick">Verbinden</button>'}
+    </div>`).join("");
+  const saved = w.saved.map((s) => `
+    <div class="share" data-uuid="${esc(s.uuid)}">
+      ${ICON("wifi")}<span><b>${esc(s.ssid)}</b><small>${s.device ? '<span class="ok">aktiv</span>' : "verbindet sich automatisch, wenn in Reichweite"}</small></span>
+      ${s.device ? "<span></span>" : '<button type="button" class="mini" data-net="up">Verbinden</button>'}
+      <button type="button" class="mini" data-net="forget">Vergessen</button>
+    </div>`).join("");
+  box.innerHTML = `
+    <div class="net-wifi-head">
+      <label class="check"><input type="checkbox" id="net-radio"${w.radio ? " checked" : ""}> WLAN eingeschaltet</label>
+      ${w.radio ? '<button type="button" class="mini" data-net="scan">Neu suchen</button><button type="button" class="mini" data-net="hidden">Verborgenes Netz …</button>' : ""}
+    </div>
+    ${w.radio ? `<div class="share-list">${rows || '<p class="hint">Keine WLANs gefunden. „Neu suchen“ versucht es noch einmal.</p>'}</div>
+    <div class="share-form net-join" hidden>
+      <label class="field">WLAN-Name (SSID)<input data-w="ssid" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label class="field net-sec">Sicherheit<select data-w="security"><option value="wpa-psk">WPA2/WPA3-Personal</option><option value="sae">nur WPA3</option><option value="none">offen (ohne Passwort)</option></select></label>
+      <label class="field net-pw">Passwort<input data-w="password" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <div class="net-btns"><button type="button" class="btn primary" data-net="connect">Verbinden</button>
+        <button type="button" class="btn" data-net="cancel">Abbrechen</button></div>
+    </div>` : ""}
+    ${saved ? `<h4 class="subhead">Gespeicherte WLANs</h4><div class="share-list">${saved}</div>` : ""}`;
+}
+
+function openJoin(n) {
+  const form = $("#net-wifi .net-join");
+  form.hidden = false;
+  form.classList.add("net-open");
+  form.dataset.hidden = n ? "" : "1";
+  const ssid = $("[data-w='ssid']", form);
+  ssid.value = n ? n.ssid : "";
+  ssid.closest(".field").hidden = !!n;
+  $(".net-sec", form).hidden = !!n;
+  $("[data-w='security']", form).value = n ? n.security : "wpa-psk";
+  $(".net-pw", form).hidden = n ? n.security === "none" : false;
+  $("[data-w='password']", form).value = "";
+  const i = String(net.wifi.networks.indexOf(n));
+  $$("#net-wifi .net-wl").forEach((r) => r.classList.toggle("sel", !!n && r.dataset.i === i));
+  (n && n.security !== "none" ? $("[data-w='password']", form) : ssid).focus();
+}
+
+async function netDo(action, data, msg) {
+  netBusy = true;
+  try {
+    await post("/api/network/" + action, data);
+    if (msg) toast(msg);
+  } catch (e) { /* Meldung kam schon */ }
+  netBusy = false;
+  await loadNetwork();
+}
+
+$("#net-adapters").addEventListener("click", async (ev) => {
+  const b = ev.target.closest("[data-net]");
+  if (!b) return;
+  const card = b.closest(".net-ad");
+  const form = $(".net-ipform", card);
+  if (b.dataset.net === "edit") { form.hidden = !form.hidden; form.classList.toggle("net-open", !form.hidden); return; }
+  if (b.dataset.net === "cancel") { form.hidden = true; form.classList.remove("net-open"); return; }
+  if (b.dataset.net !== "ipv4") return;
+  const v = (k) => $(`[data-ip='${k}']`, form).value.trim();
+  const data = { uuid: card.dataset.uuid, method: v("method"), address: v("address"), prefix: +v("prefix"),
+    gateway: v("gateway"), dns: v("dns").split(/[\s,;]+/).filter(Boolean) };
+  const port = location.port ? ":" + location.port : "";
+  const viaThis = card.querySelector(".net-dl").textContent.includes(location.hostname);
+  const target = data.method === "manual" ? `http://${data.address}${port}` : `http://${net.hostname}.local${port}`;
+  if (!confirm(`IP-Einstellungen von ${card.dataset.name} ändern?\n\n` +
+      (viaThis ? `Danach ist Klangstation unter ${target} erreichbar. Öffne die Adresse und bestätige dort innerhalb von 2 Minuten – sonst wird die alte Einstellung wiederhergestellt.`
+               : "Bestätige die Änderung danach innerhalb von 2 Minuten, sonst wird die alte Einstellung wiederhergestellt."))) return;
+  b.disabled = true; b.textContent = "Wird angewendet …";
+  netBusy = true;
+  try {
+    await post("/api/network/ipv4", data);
+    form.classList.remove("net-open");
+  } catch (e) {
+    if (viaThis) alert(`Die Verbindung ist weg – vermutlich hat die neue Adresse schon gegriffen.\n\nÖffne ${target} und bestätige dort.`);
+  }
+  netBusy = false;
+  b.disabled = false; b.textContent = "Übernehmen";
+  await loadNetwork();
+});
+$("#net-adapters").addEventListener("change", (ev) => {
+  if (ev.target.matches("[data-ip='method']")) ipManual(ev.target.closest(".net-ipform"));
+});
+
+$("#net-wifi").addEventListener("click", async (ev) => {
+  const b = ev.target.closest("[data-net]");
+  if (!b) return;
+  const act = b.dataset.net;
+  const form = $("#net-wifi .net-join");
+  if (act === "scan") { b.disabled = true; b.textContent = "Sucht …"; await netDo("wifi_scan", {}); return; }
+  if (act === "hidden") { openJoin(null); return; }
+  if (act === "pick") { openJoin(net.wifi.networks[+b.closest("[data-i]").dataset.i]); return; }
+  if (act === "cancel") { form.hidden = true; form.classList.remove("net-open"); return; }
+  if (act === "connect") {
+    const v = (k) => $(`[data-w='${k}']`, form).value;
+    const data = { ssid: v("ssid").trim(), security: v("security"), password: v("password"), hidden: form.dataset.hidden === "1" };
+    if (!data.ssid) { toast("Bitte den WLAN-Namen eingeben.", true); return; }
+    b.disabled = true; b.textContent = "Verbindet …";
+    netBusy = true;
+    try {
+      await post("/api/network/wifi_connect", data);
+      toast(`Mit „${data.ssid}“ verbunden.`);
+      form.classList.remove("net-open");
+    } catch (e) { b.disabled = false; b.textContent = "Verbinden"; netBusy = false; return; }
+    netBusy = false;
+    await loadNetwork();
+    return;
+  }
+  if (act === "down") {
+    const n = net.wifi.networks[+b.closest("[data-i]").dataset.i];
+    const s = net.wifi.saved.find((x) => x.ssid === n.ssid && x.device);
+    if (!s) return;
+    if (!confirm(`Vom WLAN „${n.ssid}“ trennen?` + (location.hostname && net.adapters.some((a) => a.type === "wifi" && a.ipv4.some((ip) => ip.startsWith(location.hostname + "/")))
+      ? "\n\nDu bist gerade über dieses WLAN verbunden – die Seite ist danach nicht mehr erreichbar." : ""))) return;
+    await netDo("wifi_down", { uuid: s.uuid });
+    return;
+  }
+  const row = b.closest("[data-uuid]");
+  if (act === "up") { b.disabled = true; b.textContent = "Verbindet …"; await netDo("wifi_up", { uuid: row.dataset.uuid }); return; }
+  if (act === "forget") {
+    if (!confirm("Dieses WLAN vergessen? Das Passwort muss danach neu eingegeben werden.")) return;
+    await netDo("wifi_forget", { uuid: row.dataset.uuid }, "WLAN vergessen.");
+  }
+});
+$("#net-wifi").addEventListener("change", async (ev) => {
+  if (ev.target.id === "net-radio") await netDo("wifi_radio", { on: ev.target.checked });
+  if (ev.target.matches("[data-w='security']")) $("#net-wifi .net-pw").hidden = ev.target.value === "none";
+});
+$("#net-wifi").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && ev.target.closest(".net-join")) { ev.preventDefault(); $("#net-wifi [data-net='connect']").click(); }
+});
+
+$("#net-ssh").addEventListener("change", async (ev) => {
+  const on = ev.target.checked;
+  if (!on && !confirm("SSH ausschalten?\n\nDanach ist das Gerät nur noch über diese Oberfläche, Tastatur und Bildschirm erreichbar. Laufende SSH-Sitzungen bleiben bestehen.")) {
+    ev.target.checked = true;
+    return;
+  }
+  await netDo("ssh", { enable: on }, on ? "SSH eingeschaltet." : "SSH ausgeschaltet.");
+});
+
+$("#net-port-set").onclick = async () => {
+  const port = +$("#net-webport").value;
+  if (port === net.web_port) return;
+  if (!(port === 80 || (port >= 1024 && port <= 65535))) { toast("Erlaubt sind 80 und 1024 bis 65535.", true); return; }
+  const url = `${location.protocol}//${location.hostname}${port === 80 ? "" : ":" + port}/`;
+  if (!confirm(`Weboberfläche auf Port ${port} umstellen?\n\nKlangstation startet dafür neu (die Wiedergabe stoppt kurz). Neue Adresse: ${url}\nLesezeichen und Home-Bildschirm-Apps müssen danach neu angelegt werden.`)) return;
+  try { await post("/api/network/port", { port }); } catch (e) { return; }
+  toast(`Port ${port} gesetzt – die Seite wechselt gleich zur neuen Adresse …`);
+  // warten, bis Klangstation auf dem neuen Port antwortet (no-cors: nur erreichbar ja/nein)
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    try { await fetch(url + "api/auth/status", { mode: "no-cors", cache: "no-store" }); break; } catch (e) { /* noch nicht da */ }
+  }
+  location.href = url + "#settings";
+};
+
+/* Neue IP-Einstellung bestaetigen (sonst nimmt das Geraet sie nach 2 Minuten zurueck) */
+let netConfirmTimer = null;
+function renderNetConfirm(p) {
+  const bar = $("#net-confirm");
+  clearInterval(netConfirmTimer);
+  if (!p) { bar.hidden = true; return; }
+  let left = p.left;
+  const show = () => {
+    $("#net-confirm-text").textContent = `Neue Netzwerkeinstellung behalten? Sonst wird sie in ${Math.max(0, left)} s zurückgenommen.`;
+    left -= 1;
+  };
+  show();
+  bar.hidden = false;
+  netConfirmTimer = setInterval(show, 1000);
+}
+$("#net-keep").onclick = async () => { await post("/api/network/ipv4_confirm"); toast("Netzwerkeinstellung behalten."); };
+$("#net-revert").onclick = async () => { await post("/api/network/ipv4_revert").catch(() => {}); toast("Alte Einstellung wird wiederhergestellt …"); };
 
 $("#settings-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();

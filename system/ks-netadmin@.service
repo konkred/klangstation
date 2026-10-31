@@ -1,0 +1,10 @@
+[Unit]
+Description=Klangstation: Netzwerk-Einstellung aendern
+CollectMode=inactive-or-failed
+
+[Service]
+ExecStart=/opt/klangstation/system/ks-netadmin
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+TimeoutSec=90

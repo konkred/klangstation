@@ -1,0 +1,14 @@
+[Unit]
+Description=Klangstation: Netzwerk-Einstellungen (Socket)
+
+[Socket]
+# Nur der Dienstbenutzer klangstation darf Anfragen stellen
+ListenStream=/run/ks-netadmin.sock
+SocketUser=root
+SocketGroup=klangstation
+SocketMode=0660
+Accept=yes
+MaxConnections=4
+
+[Install]
+WantedBy=sockets.target

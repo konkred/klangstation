@@ -25,6 +25,7 @@ from .config import (BIN_BLUEALSA_APLAY, BIN_GMEDIARENDER, BIN_LIBRESPOT, BIN_MP
 from .daemons import Daemon
 from .lyrics import Lyrics
 from .mpd import MPD, MPDError, build, to_objects
+from .network import Network
 from .musicbrainz import MusicBrainz, Unavailable
 from .radio import RadioBrowser
 from .timers import Timers
@@ -75,6 +76,7 @@ class Core:
         self.ripper.on_change = self.push
         self.upnp = UpnpRenderer()
         self.bt = Bluetooth()
+        self.net = Network()
         self.daemons = {
             "mpd": Daemon("mpd", BIN_MPD, on_line=self.shares.on_mpd_line),
             "airplay": Daemon("airplay", BIN_SHAIRPORT),
@@ -122,6 +124,7 @@ class Core:
             asyncio.create_task(self._guarded("Freigabe-Waechter", self._share_loop)),
             asyncio.create_task(self._guarded("Schlummer-Timer und Wecker", self.timers.loop)),
             asyncio.create_task(self._guarded("Wetter", self._weather_loop)),
+            asyncio.create_task(self._guarded("Netzwerk-Ueberwachung", self._net_loop)),
         ]
         if self.daemons["airplay"].available:
             self._tasks.append(asyncio.create_task(self._guarded("AirPlay-Metadaten", self.airplay.run)))
@@ -468,6 +471,7 @@ class Core:
             "mpd_online": False,
             "services": {n: {"available": d.available, "running": d.running} for n, d in self.daemons.items()},
             "bluetooth": self.bt.public(),
+            "network": self.net.public(),
             "tv_lyrics": self.settings.get("tv_lyrics"),
             "tv_theme": self.settings.get("tv_theme"),
             "timers": self.timers.public(),
@@ -582,6 +586,13 @@ class Core:
             os.replace(tmp, path)
         except OSError as exc:
             log.info("Verlauf nicht gespeichert: %s", exc)
+
+    async def _net_loop(self) -> None:
+        # Adapter (z. B. USB-WLAN-Stick) und Adressen live in den Optionen
+        while True:
+            if await self.net.changed():
+                self.push()
+            await asyncio.sleep(3)
 
     async def _weather_loop(self) -> None:
         while True:

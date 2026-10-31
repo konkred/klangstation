@@ -30,6 +30,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Lautstärke & Übergänge | Angleichen nach ReplayGain (Album/Titel automatisch) oder dynamisch, Überblenden 2–10 s; nicht bei bit-perfekt |
 | Handy | als App auf den Homescreen legen; auf Wunsch Titel, Cover und Tasten im Sperrbildschirm (Bibliothek, Radio, CD) |
 | Erscheinungsbild | Klassisch (Media Player der 2000er), Frutiger Aero, Nacht, Winamp Classic, Aqua (Mac OS X), Hi-Fi-Anlage mit VU-Metern, Luna (Windows XP): Oberfläche pro Gerät (auch automatisch nach Systemeinstellung), „Läuft gerade“ in den Optionen |
+| Netzwerk | Adapter mit IPv4/IPv6, Gateway, DNS und MAC; DHCP oder feste Adresse (mit automatischer Rücknahme, wenn nicht bestätigt); WLAN suchen und verbinden, auch mit USB-WLAN-Stick im laufenden Betrieb; SSH ein/aus; offene Ports und Port der Weboberfläche |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
 ## Unterstützte Systeme
@@ -114,6 +115,7 @@ Die Optionen lassen sich beliebig kombinieren. `sudo ./install.sh --help` zeigt 
 | `--no-airplay` | `shairport-sync` wird nicht installiert bzw. gebaut, das Gerät erscheint nicht als AirPlay-Lautsprecher. | Wenn niemand Apple-Geräte nutzt, oder um auf RHEL-Systemen den Quellcode-Build zu sparen. |
 | `--no-spotify` | `librespot` wird nicht installiert, kein Spotify Connect. | Ohne Spotify-Premium-Konto. Spart unter RHEL-Systemen und auf Debian ohne passendes Paket den Rust-Build, der auf einem Raspberry Pi 20–60 Minuten dauert. |
 | `--no-upnp` | `gmediarender` wird nicht installiert, das Gerät erscheint nicht als UPnP/DLNA-Renderer. | Wenn niemand von Android-Apps, Windows („Wiedergeben auf“) oder einem NAS aus abspielt. |
+| `--no-wifi` | Keine WLAN-Unterstützung: NetworkManager-WLAN, `wpa_supplicant` und Firmware für USB-WLAN-Sticks werden nicht installiert. | Wenn das Gerät nur per Kabel im Netz hängt und kein WLAN vorgesehen ist. |
 | `--no-bluetooth` | `bluez` und `bluez-alsa` werden nicht installiert, die Bluetooth-Konfiguration bleibt unverändert. Auf Systemen mit Desktop wird auch WirePlumber nicht angefasst. | Ohne Bluetooth-Adapter, oder wenn Bluetooth am Gerät für etwas anderes gebraucht wird (Tastatur, Kopfhörer am Desktop). |
 | `--spotify-from-source` | `librespot` wird mit Cargo aus dem Quellcode gebaut statt aus dem Raspotify-Paketarchiv geholt. | Nur Debian/Raspberry Pi OS: wenn kein fremdes Paketarchiv eingebunden werden soll oder das Raspotify-Paket Probleme macht. Unter RHEL-Systemen wird ohnehin gebaut. |
 | `--tv-headless` | Installiert `cage` (minimaler Wayland-Kiosk) und `chromium` und richtet den Dienst `klangstation-tv` ein. Er zeigt den „Läuft gerade“-Bildschirm nach jedem Start im Vollbild auf dem ersten Bildschirm (tty1), ohne Anmeldung und ohne Desktop. | Auf Systemen **ohne** Desktop (Raspberry Pi OS Lite, AlmaLinux-Server, Debian ohne GUI), wenn am HDMI-/DP-Ausgang ein Fernseher oder Monitor hängt. Auf Systemen **mit** Desktop nicht nötig, dort startet der Bildschirm automatisch nach dem Anmelden. |
@@ -166,7 +168,7 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 
 | Port | Dienst |
 |---|---|
-| 8080/tcp (bzw. `--port`) | Weboberfläche |
+| 8080/tcp (bzw. `--port` oder *Optionen › Netzwerk*) | Weboberfläche |
 | 5353/udp (mDNS) | `.local`-Namen, AirPlay- und Spotify-Erkennung |
 | 5000/tcp, 6001–6011/udp | AirPlay |
 | 4070/tcp | Spotify Connect |
@@ -176,7 +178,8 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 
 * **Debian/Raspberry Pi OS:** Pakete aus den offiziellen Quellen: `mpd`, `shairport-sync`, `gmediarender`,
   `bluez-alsa-utils`, `avahi-daemon`, `cdparanoia`, `flac`, `cifs-utils`, `nfs-common`, `alsa-utils`,
-  `ntfs-3g`, `v4l-utils` (CEC). `librespot` kommt aus dem Raspotify-Archiv (amd64/arm64/armhf), sonst per Cargo.
+  `ntfs-3g`, `v4l-utils` (CEC), für WLAN `network-manager`, `wpasupplicant`, `iw` und Firmware für USB-Sticks
+  (`firmware-realtek`, `-mediatek`, `-atheros`, `-iwlwifi`). `librespot` kommt aus dem Raspotify-Archiv (amd64/arm64/armhf), sonst per Cargo.
 * **RHEL/Alma/Rocky/Fedora:** Aktiviert EPEL, CRB und RPM Fusion Free. Was dort nicht als Paket existiert, wird
   aus dem Quellcode gebaut und nach `/usr/local` installiert: unter EL10 `mpd` (neueste 0.24.x),
   `shairport-sync`, `gmediarender`, `bluez-alsa`; `librespot` immer per Cargo. `ntfs-3g` kommt aus EPEL
@@ -298,6 +301,30 @@ Ordner schon, wird „(2)“ angehängt. Unbekannte CDs landen unter `Unbekannte
 
 Private Kopien eigener CDs sind in Deutschland erlaubt, solange kein Kopierschutz umgangen wird.
 
+### Netzwerk
+
+*Optionen › Netzwerk* zeigt alle Netzwerkadapter mit Zustand, IPv4- und IPv6-Adressen, Gateway, DNS-Servern und
+MAC-Adresse. Geändert wird über NetworkManager (Raspberry Pi OS, AlmaLinux und die meisten Desktops nutzen ihn
+ohnehin; unter Debian/Ubuntu ohne NetworkManager installiert ihn der Installer für WLAN und lässt die
+bestehende Kabelverbindung in Ruhe).
+
+* **IP-Einstellungen:** pro LAN-/WLAN-Verbindung DHCP oder feste Adresse mit Präfix, Gateway und DNS. Danach
+  erscheint oben ein Hinweis „Behalten?“. Wird die Änderung nicht innerhalb von 2 Minuten bestätigt – etwa weil
+  die neue Adresse nicht erreichbar ist –, stellt das Gerät die alte Einstellung von selbst wieder her.
+* **WLAN:** Netze suchen, mit Passwort verbinden (WPA2/WPA3-Personal oder offen, auch verborgene Netze),
+  trennen, vergessen und WLAN ganz abschalten. Unternehmens-WLANs (802.1X) werden nicht unterstützt.
+  Gespeicherte WLANs verbinden sich automatisch, sobald sie in Reichweite sind.
+* **WLAN-Stick:** Hat das Gerät kein WLAN (viele PCs), genügt ein USB-WLAN-Stick. Er wird im laufenden Betrieb
+  erkannt und erscheint nach wenigen Sekunden. Der Installer bringt Firmware für gängige Realtek-, MediaTek-
+  und Atheros-Chips mit. Unter RHEL fehlen im Kernel einige Realtek-Treiber (z. B. RTL8821CU); Sticks mit
+  MediaTek MT7601U/MT7610U/MT7612U oder Realtek RTL8812BU/RTL8822BU laufen dort ohne Zusatztreiber.
+* **SSH:** schaltet den SSH-Server ein oder aus (`ssh`/`sshd`). Laufende Sitzungen bleiben beim Ausschalten bestehen.
+* **Ports:** Liste der offenen Ports mit Dienst und ob sie im Netzwerk oder nur am Gerät erreichbar sind. Den Port
+  der Weboberfläche kann man ändern (80 oder 1024–65535); Dienst, Kiosk-Bildschirm und Firewall werden angepasst,
+  die Seite wechselt danach von selbst zur neuen Adresse. Ein späteres Update behält den Port.
+
+Die Änderungen nimmt der root-Hilfsdienst `ks-netadmin` vor (siehe Technik).
+
 ### Zugangsschutz
 
 *Optionen › Zugang*: Passwort für „nur Optionen, Bluetooth-Kopplung und Freigaben“ oder „die gesamte Oberfläche“.
@@ -317,6 +344,10 @@ journalctl -u klangstation-tv -b    # "Läuft gerade" ohne Desktop
 systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
 ```
 
+* **Nicht mehr erreichbar nach IP-Änderung:** 2 Minuten warten – dann gilt wieder die alte Einstellung.
+  Danach unter `http://<hostname>.local:8080` (bzw. dem eigenen Port) neu laden.
+* **WLAN-Stick erscheint nicht:** `ip link` zeigt, ob der Kernel ihn erkennt; `dmesg | tail` nennt fehlende
+  Firmware. Unter RHEL fehlen manche Realtek-Treiber (siehe Netzwerk).
 * **Kein Ton:** Unter *Optionen › Ausgabe* den richtigen Ausgang wählen. Hinter HDMI-/DP-Ausgängen steht,
   ob ein Monitor angeschlossen ist. Ob ALSA selbst Ton ausgibt: `speaker-test -D plughw:CARD=<Karte>,DEV=<n> -c 2 -l 1`.
 * **Kein Ton über HDMI am Pi:** Monitor muss beim Booten angeschlossen sein. Klangstation verwendet für `vc4hdmi`
@@ -384,6 +415,16 @@ System die Freigaben ein (`mount.cifs`/`mount.nfs`). Der Dienstbenutzer darf das
 der root-Hilfsdienst `ks-netmount` (`ks-netmount.socket`, erreichbar nur für die Gruppe `klangstation`). Er kann
 ausschließlich SMB/NFS lesend unter `Netz-*` ein- und aushängen und gerippte CDs auf USB-Medien kopieren. Das
 Passwort übergibt er per Datei an `mount.cifs`, die nur während des Einhängens in `/run/ks-netmount` (nur root) liegt.
+
+### Netzwerk und `ks-netadmin`
+
+Lesen geht ohne Rechte (`nmcli`, `ip`, `ss`, `systemctl`). Ändern darf nur der root-Hilfsdienst `ks-netadmin`
+(`ks-netadmin.socket`, nur für die Gruppe `klangstation`). Er kann ausschließlich: WLAN verbinden, trennen und
+vergessen, WLAN ein-/ausschalten, IPv4 einer LAN-/WLAN-Verbindung auf DHCP oder eine feste Adresse stellen,
+den SSH-Server ein-/ausschalten und den Port der Weboberfläche ändern. WLAN-Passwörter schreibt er direkt in ein
+NetworkManager-Profil (`/etc/NetworkManager/system-connections`, nur root), nie auf die Kommandozeile. Vor einer
+IP-Änderung legt er einen Zeitgeber `ks-net-rollback.timer` an (2 Minuten), der die alte Einstellung
+wiederherstellt, falls die Oberfläche die neue nicht bestätigt.
 
 Die MP3-Decoder `mpg123` und `mad` sind abgeschaltet: Sie lesen beim Einlesen jede MP3 ohne Xing-Header komplett,
 was über WLAN Stunden dauert. MP3 spielt `ffmpeg` ab.

@@ -20,6 +20,10 @@ UtmpMode=user
 ExecStart=/usr/bin/cage -s -- /opt/klangstation/system/ks-tv-kiosk
 Restart=always
 RestartSec=5
+# cage blockiert SIGTERM fuer sich (signalfd) und vererbt die Sperre an das Kiosk-Skript; nach SIGTERM wartet
+# cage, bis das Skript endet - ohne das bis zum harten Abbruch nach 90 s. Also zuerst das Skript beenden.
+ExecStop=-/usr/bin/pkill -KILL -x -u klangstation ks-tv-kiosk
+TimeoutStopSec=10
 
 [Install]
 # multi-user: Systeme ohne Desktop starten graphical.target gar nicht

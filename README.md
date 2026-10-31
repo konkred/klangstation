@@ -199,6 +199,8 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 
 ## Bedienung
 
+Eine Kurzanleitung zu allen Funktionen steht in der Oberfläche unter *Optionen › Hilfe*.
+
 ### Ausgabe
 
 *Optionen › Ausgabe* listet alle Tonausgänge. Hinter HDMI-/DP-Ausgängen steht, ob ein Monitor oder Fernseher

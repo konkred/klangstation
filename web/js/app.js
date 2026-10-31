@@ -858,6 +858,9 @@ const KIND_TXT = { usb: "USB", hdmi: "HDMI", analog: "Analog", i2s: "DAC", other
 
 segTabs($("#set-tabs"), (tab) => {
   $$("#settings-form fieldset").forEach((f) => { f.hidden = f.dataset.pane !== tab; });
+  // Hilfe und Info haben nichts zu uebernehmen
+  $("#settings-form .dlg-buttons").hidden = tab === "help" || tab === "about";
+  if (tab === "help" && S) $$(".help-name").forEach((el) => { el.textContent = "„" + S.device_name + "“"; });
 });
 
 async function loadSettings(silent = false) {

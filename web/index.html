@@ -183,6 +183,7 @@
             <button data-tab="tv">Fernseher</button>
             <button data-tab="shares">Freigaben</button>
             <button data-tab="access">Zugang</button>
+            <button data-tab="help">Hilfe</button>
             <button data-tab="about">Info</button>
           </div>
           <form class="dlg-body" id="settings-form" autocomplete="off">
@@ -289,6 +290,127 @@
                 <button type="button" class="btn" id="auth-logout">Abmelden</button>
               </div>
               <p class="hint">Die Verbindung ist unverschlüsseltes HTTP. Das Passwort schützt vor Mitbewohnern und Gästen im WLAN, nicht vor jemandem, der den Netzwerkverkehr mitschneidet. Vergessen? Am Pi: <code>sudo /opt/klangstation/system/ks-reset-password</code></p>
+            </fieldset>
+            <fieldset data-pane="help" class="help" hidden>
+              <legend>Hilfe</legend>
+              <p class="hint">Tippe auf ein Thema, um es aufzuklappen.</p>
+              <details>
+                <summary>Erste Schritte</summary>
+                <ul>
+                  <li>Klangstation spielt die Musik auf dem Gerät, an dem die Lautsprecher hängen, nicht im Handy oder PC. Handy und PC sind nur die Fernbedienung, beliebig viele gleichzeitig.</li>
+                  <li>Unter <b>Optionen › Ausgabe</b> wählst du, wo der Ton herauskommt (Klinke, HDMI, USB-DAC …).</li>
+                  <li>Musik kommt aus der <b>Bibliothek</b> (USB-Sticks, Netzwerkfreigaben, gerippte CDs), aus dem <b>Radio</b>, von einer <b>CD</b> oder vom Handy über AirPlay, Spotify, UPnP oder Bluetooth.</li>
+                  <li>Die Lämpchen oben rechts zeigen, welche Dienste laufen; das leuchtende spielt gerade.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Wiedergabe und Wiedergabeliste</summary>
+                <ul>
+                  <li><b>Wiedergabe</b> zeigt Cover, Titel und die aktuelle Wiedergabeliste. Ein Tipp auf einen Eintrag spielt ihn, das ✕ entfernt ihn.</li>
+                  <li>Die Knöpfe über der Liste: <b>Zufall</b>, <b>Wiederholen</b>, <b>Speichern</b> (als eigene Wiedergabeliste, findest du in der Bibliothek) und <b>Leeren</b>.</li>
+                  <li>Unten: Zurück, Wiedergabe/Pause, Weiter, Mond (Schlummer-Timer und Wecker) und die Lautstärke. Über den Balken darüber spulst du.</li>
+                  <li>Am Desktop schaltet der Knopf oben rechts im Bild die Visualisierung um. Sie ist nur Stimmung, keine echte Analyse – der Ton läuft ja auf dem Gerät.</li>
+                  <li>AirPlay und Spotify steuerst du in der App auf dem Handy, dort auch die Lautstärke. Bei Bluetooth gehen Pause und Weiter auch hier.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Bibliothek</summary>
+                <ul>
+                  <li><b>Alben</b> zeigt alles nach Cover, <b>Ordner</b> die Laufwerke und Freigaben so, wie sie gespeichert sind, <b>Wiedergabelisten</b> deine gespeicherten Listen.</li>
+                  <li>Neben jedem Titel: ▶ spielt ab hier, <b>+</b> hängt an die laufende Liste an, das Listen-Symbol legt ihn in eine gespeicherte Wiedergabeliste.</li>
+                  <li>Die Suche findet Titel, Interpreten und Alben.</li>
+                  <li>USB-Sticks und -Platten werden beim Einstecken automatisch eingelesen (nur lesend). „Aktualisieren“ liest alles neu ein, falls etwas fehlt.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Radio</summary>
+                <ul>
+                  <li><b>Beliebt</b> und <b>Genres</b> listen Sender aus radio-browser.info, die Suche findet Sender nach Namen, das Feld daneben grenzt auf ein Land ein.</li>
+                  <li>Der Stern macht einen Sender zum <b>Favoriten</b>. Favoriten funktionieren auch, wenn der Senderdienst gestört ist, und dienen als Wecker-Sender.</li>
+                  <li>Bricht das Internet weg, verbindet Klangstation von selbst neu, sobald es zurück ist.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>CD abspielen und rippen</summary>
+                <ul>
+                  <li>Lege die CD ins Laufwerk. Titel und Cover kommen von MusicBrainz (wenn Online-Metadaten an sind). Ist MusicBrainz gerade nicht erreichbar, fragt Klangstation immer wieder nach, solange die CD drin ist.</li>
+                  <li><b>CD abspielen</b> startet beim ersten Titel, ein Tipp auf einen Titel spielt ab dort. Auf Wunsch spielt jede CD beim Einlegen von selbst.</li>
+                  <li><b>Rippen</b> speichert die CD verlustfrei als FLAC mit Titeln und Cover, im internen Speicher oder auf einem USB-Stick. Danach steht sie in der Bibliothek. Ist der Stick voll oder abgezogen, landet das Album im internen Speicher.</li>
+                  <li>„Abbrechen“ verwirft das angefangene Album. Private Kopien eigener CDs sind erlaubt, solange kein Kopierschutz umgangen wird.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Vom Handy streamen: AirPlay, Spotify, UPnP, Bluetooth</summary>
+                <ul>
+                  <li><b>AirPlay</b> (iPhone, iPad, Mac): im Kontrollzentrum oder in der App auf das AirPlay-Symbol tippen und <span class="help-name">Klangstation</span> wählen.</li>
+                  <li><b>Spotify</b> (Premium): in der Spotify-App unten auf das Gerätesymbol tippen und <span class="help-name">Klangstation</span> wählen. Keine Anmeldung hier nötig.</li>
+                  <li><b>UPnP/DLNA</b>: in Apps wie BubbleUPnP, mconnect oder Hi-Fi Cast bzw. unter Windows mit „Wiedergeben auf“ das Gerät als Ziel wählen.</li>
+                  <li><b>Bluetooth</b>: unter <b>Optionen › Dienste</b> „Neues Gerät koppeln“ drücken, dann innerhalb von zwei Minuten am Handy in den Bluetooth-Einstellungen <span class="help-name">Klangstation</span> wählen. Danach verbindet sich das Handy einfach wieder.</li>
+                  <li>Wer zuletzt Play drückt, übernimmt – die vorherige Quelle hält an. Ein bloß verbundenes, pausiertes Handy unterbricht nichts.</li>
+                  <li>Den Namen, unter dem Klangstation überall erscheint, änderst du unter <b>Optionen › Dienste</b>; dort lassen sich die Dienste auch einzeln abschalten.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Schlummer-Timer und Wecker</summary>
+                <ul>
+                  <li>Der <b>Mond</b> in der Leiste unten öffnet beides.</li>
+                  <li><b>Schlummer-Timer</b>: 15 bis 90 Minuten oder bis zum Ende des Titels. Die letzten 30 Sekunden werden leiser, dann hält die Musik an. Die Restzeit steht unten und auf dem Fernseher.</li>
+                  <li><b>Wecker</b>: Uhrzeit, Wochentage (keine = nur einmal), was spielen soll (Radio-Favorit, Wiedergabeliste oder Bibliothek im Zufall) und wie laut. Er beginnt leise und wird über zwei Minuten lauter; drehst du an der Lautstärke, hört er damit auf.</li>
+                  <li>Spielt der Sender nicht, kommt Musik aus der Bibliothek. Läuft schon Musik, bleibt der Wecker still. „Test“ löst ihn sofort aus.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Fernseher: „Läuft gerade“</summary>
+                <ul>
+                  <li>Am HDMI-Ausgang zeigt Klangstation Cover, Titel und Fortschritt im Vollbild, auf Wunsch mit mitlaufendem Liedtext. Ohne Musik erscheinen Uhr, Datum, nächster Wecker, Wetter und die zuletzt gehörten Cover.</li>
+                  <li>Einstellungen und eigenes Erscheinungsbild dafür unter <b>Optionen › Fernseher</b>. Dieselbe Anzeige gibt es in jedem Browser unter <a href="/tv" target="_blank" rel="noopener">/tv</a>, etwa für ein Tablet an der Wand.</li>
+                  <li><b>HDMI-CEC</b>: Klangstation schaltet den Fernseher beim Abspielen ein, die TV-Fernbedienung steuert die Wiedergabe, und nach einer Weile Stille geht er wieder aus. Am Fernseher muss CEC eingeschaltet sein (Samsung „Anynet+“, LG „SimpLink“, Sony „Bravia Sync“, Philips „EasyLink“).</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Klang: Ausgabe, Lautstärke angleichen, Überblenden</summary>
+                <ul>
+                  <li><b>Ausgabe</b>: Hinter HDMI-Ausgängen steht, ob dort ein Gerät hängt. Ohne Auswahl nimmt Klangstation zuerst einen USB-DAC, dann HDMI mit Fernseher, dann die Klinke. Beim Wechsel spielt die Musik nach wenigen Sekunden weiter.</li>
+                  <li><b>Bit-perfekt</b> gibt die Dateien unverändert an den DAC weiter; die Lautstärke regelst du dann am Verstärker.</li>
+                  <li><b>Lautstärke angleichen</b>: „ReplayGain“ nutzt in den Dateien gespeicherte Werte und verändert den Klang nicht; „Dynamisch“ regelt laufend nach, auch ohne diese Werte.</li>
+                  <li><b>Überblenden</b> lässt Titel 2 bis 10 Sekunden ineinander laufen; „Aus“ spielt lückenlos.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Handy: als App und im Sperrbildschirm</summary>
+                <ul>
+                  <li><b>Als App</b>: in Safari „Teilen › Zum Home-Bildschirm“, in Chrome „Zum Startbildschirm hinzufügen“. Klangstation öffnet sich dann ohne Browserleisten.</li>
+                  <li><b>Sperrbildschirm</b>: unter <b>Optionen › Ausgabe › Auf diesem Gerät</b> einschalten. Dann siehst du Titel, Cover und Tasten im Sperrbildschirm, solange Bibliothek, Radio oder CD spielen.</li>
+                  <li>Das <b>Erscheinungsbild</b> stellst du dort ebenfalls ein, für jedes Handy und jeden PC getrennt. „Automatisch“ wird dunkel, wenn das Handy dunkel eingestellt ist.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Netzwerkfreigaben (NAS, PC)</summary>
+                <ul>
+                  <li>Unter <b>Optionen › Freigaben</b> Server (Name oder IP-Adresse), Freigabe und bei Bedarf Benutzer und Passwort eintragen. Bei Synology und Windows ist das „SMB“.</li>
+                  <li>Klangstation hängt die Freigabe nur lesend ein und liest sie ein; der Fortschritt steht als Balken in der Liste. Danach findest du sie in der Bibliothek unter „Ordner“.</li>
+                  <li>Ist der Server kurz weg, hält die Musik an und spielt danach an derselben Stelle weiter.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Zugangsschutz</summary>
+                <ul>
+                  <li>Unter <b>Optionen › Zugang</b> legst du ein Passwort fest – nur für die Optionen oder für die ganze Oberfläche.</li>
+                  <li>Der Fernseher am Gerät selbst braucht nie ein Passwort.</li>
+                  <li>Passwort vergessen? Am Gerät <code>sudo /opt/klangstation/system/ks-reset-password</code> ausführen.</li>
+                </ul>
+              </details>
+              <details>
+                <summary>Wenn etwas nicht klappt</summary>
+                <ul>
+                  <li><b>Kein Ton</b>: unter <b>Optionen › Ausgabe</b> den richtigen Ausgang wählen und die Lautstärke prüfen. HDMI-Monitore am Raspberry Pi müssen beim Einschalten schon angeschlossen sein.</li>
+                  <li><b>Gerät taucht am Handy nicht auf</b> (AirPlay, Spotify): Handy und Klangstation müssen im selben WLAN sein; unter <b>Optionen › Dienste</b> prüfen, ob der Dienst läuft.</li>
+                  <li><b>Radio-Suche geht nicht</b>: Der Senderdienst ist manchmal gestört. Favoriten spielen trotzdem.</li>
+                  <li><b>CD wird nicht erkannt oder lässt sich nicht auswerfen</b>: Manche USB-Laufwerke brauchen mehr Strom (Y-Kabel oder Hub mit Netzteil).</li>
+                  <li><b>Freigabe lässt sich nicht einbinden</b>: Die Meldung in der Liste nennt den Grund (Server weg, Zugangsdaten falsch, Freigabe unbekannt).</li>
+                  <li>Weitere Hinweise stehen in der README des Projekts.</li>
+                </ul>
+              </details>
             </fieldset>
             <fieldset data-pane="about" hidden>
               <legend>Über Klangstation</legend>

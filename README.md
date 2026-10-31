@@ -34,19 +34,52 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 
 ## Unterstützte Systeme
 
-Debian, Ubuntu und Raspberry Pi OS sowie RHEL, AlmaLinux, Rocky und Fedora, jeweils auf x86_64, aarch64 und
-armv7. Mit Desktop oder ohne (dann zeigt `--tv-headless` den „Läuft gerade“-Bildschirm am Fernseher).
+Betriebssystem und Hardware sind unabhängig voneinander: Jedes unterstützte Betriebssystem läuft auf jeder
+unterstützten Architektur, mit Desktop oder ohne (dann zeigt `--tv-headless` den „Läuft gerade“-Bildschirm am
+Fernseher).
 
-### Getestet auf
+### Betriebssysteme
 
-| System | Ergebnis |
-|---|---|
-| Raspberry Pi 4, Raspberry Pi OS (Debian 13 „trixie“), aarch64, mit Desktop | alle Quellen, CD-Wiedergabe und Rippen (USB-Laufwerk), Synology per SMB (auch Serverausfall), Webradio bei Netzausfall, CEC, HDMI-Ton und Klinke, Bluetooth mit iPhone, Update und Neustart |
-| Raspberry Pi 4, Raspberry Pi OS Lite (Debian 13), aarch64, ohne Desktop | Installation von null mit `--tv-headless`, alle Dienste, „Läuft gerade“ am Fernseher, AirPlay ↔ Spotify, NFS-Freigabe (auch Serverausfall), Update und Neustart |
-| PC, AlmaLinux 10.2, x86_64, ohne Desktop (SELinux aktiv) | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (USB-Stick RTL8761BU, iPhone, Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks mit FAT32 und NTFS (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe (internes SATA-Laufwerk) und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Lautstärke angleichen und Überblenden, Sperrbildschirm und Home-Bildschirm-App (iPhone), Wecker, beide Erscheinungsbilder, Update und Neustart |
-| PC (Celeron ohne AVX), AlmaLinux 10.2 x86_64_v2, mit GNOME (SELinux aktiv) | Installation auf frischem System (ffmpeg aus EPEL statt RPM Fusion), „Läuft gerade“ per Firefox nach dem Anmelden, AirPlay ↔ Spotify, UPnP (mconnect), Bluetooth mit iPhone, NFS-Freigabe (auch Serverausfall), CD über USB-Laufwerk (MusicBrainz-Neuversuch, Rippen auf USB-Stick, Rückfall in den internen Speicher), Neustart |
+Der Installer erkennt das System an `/etc/os-release` und ordnet es einer Familie zu. Alles, was sich als
+Debian oder RHEL ausweist (`ID` bzw. `ID_LIKE`), wird wie diese Familie behandelt.
 
-Noch nicht geprüft: CEC unter RHEL-Systemen (braucht einen USB-CEC-Adapter).
+| Familie | System | Stand | Hinweise |
+|---|---|---|---|
+| Debian | Raspberry Pi OS (Debian 13 „trixie“), mit Desktop und Lite | getestet | alle Dienste aus den Paketquellen, librespot (Spotify) aus dem Raspotify-Paketarchiv |
+| Debian | Debian 13, Ubuntu | unterstützt, nicht getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
+| RHEL | AlmaLinux 10.2, ohne Desktop und mit GNOME, SELinux aktiv | getestet | was in den Paketquellen fehlt (mpd, shairport-sync, gmediarender, bluez-alsa), baut der Installer aus dem Quellcode, librespot immer; ffmpeg aus RPM Fusion, auf CPUs ohne x86-64-v3 aus EPEL |
+| RHEL | RHEL, Rocky Linux, CentOS Stream, Fedora | unterstützt, nicht getestet | wie AlmaLinux |
+
+Andere Systeme (z. B. Arch, openSUSE, Alpine) lehnt der Installer ab.
+
+### Hardware
+
+| Architektur | Geräte | Stand |
+|---|---|---|
+| aarch64 | Raspberry Pi 4 (4 GB) | getestet |
+| x86_64 | PC mit Intel-HDA-Sound (CPU mit x86-64-v3) | getestet |
+| x86_64 | Dell OptiPlex 3060 (Celeron G4900T ohne AVX, x86-64-v2) | getestet |
+| aarch64 | Raspberry Pi 5 und andere 64-Bit-ARM-Rechner | unterstützt, nicht getestet |
+| armv7 | Raspberry Pi 2/3 mit 32-Bit-System | unterstützt, nicht getestet |
+
+Getestetes Zubehör:
+
+| Zubehör | Getestet mit | Hinweise |
+|---|---|---|
+| Tonausgang | Klinke (Pi), HDMI (Pi, OptiPlex), DisplayPort und PC-Lautsprecher (Intel-HDA) | USB-DACs und I²S-HATs werden erkannt und bevorzugt, sind aber nicht getestet |
+| Fernseher/Monitor | Fernseher mit CEC am Pi, Philips-TV ohne CEC, DP-Monitor | CEC geht am Pi direkt; PCs brauchen dafür einen USB-CEC-Adapter (nicht getestet) |
+| CD-Laufwerk | internes SATA-Laufwerk, USB-Laufwerk Samsung SE-218GN | das USB-Laufwerk braucht am Pi ein Y-Kabel oder einen aktiven Hub |
+| Bluetooth | eingebautes Bluetooth des Pi, USB-Stick RTL8761BU | |
+| USB-Speicher | Sticks mit FAT32 und NTFS | |
+
+### Getestete Kombinationen
+
+| Betriebssystem | Hardware | Ergebnis |
+|---|---|---|
+| Raspberry Pi OS mit Desktop | Raspberry Pi 4 | alle Quellen, CD-Wiedergabe und Rippen (USB-Laufwerk), Synology per SMB (auch Serverausfall), Webradio bei Netzausfall, CEC, HDMI-Ton und Klinke, Bluetooth mit iPhone, Update und Neustart |
+| Raspberry Pi OS Lite | Raspberry Pi 4 | Installation von null mit `--tv-headless`, alle Dienste, „Läuft gerade“ am Fernseher, AirPlay ↔ Spotify, NFS-Freigabe (auch Serverausfall), Update und Neustart |
+| AlmaLinux 10.2 ohne Desktop | PC mit Intel-HDA | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Lautstärke angleichen und Überblenden, Sperrbildschirm und Home-Bildschirm-App (iPhone), Wecker, Erscheinungsbilder, Update und Neustart |
+| AlmaLinux 10.2 mit GNOME | Dell OptiPlex 3060 | Installation auf frischem System (ffmpeg aus EPEL statt RPM Fusion), „Läuft gerade“ per Firefox nach dem Anmelden, AirPlay ↔ Spotify, UPnP (mconnect), Bluetooth mit iPhone, NFS-Freigabe (auch Serverausfall), CD über USB-Laufwerk (MusicBrainz-Neuversuch, Rippen auf USB-Stick, Rückfall in den internen Speicher), Schlummer-Timer und Wecker, Neustart |
 
 ## Installation
 

@@ -33,6 +33,8 @@ KNOWN_PORTS = {
     ("tcp", 6600): "Player (MPD)",
     ("tcp", 9090): "Cockpit (Systemverwaltung)",
     ("tcp", 631): "Drucker (CUPS)",
+    ("tcp", 111): "RPC (für NFS-Freigaben)",
+    ("udp", 111): "RPC (für NFS-Freigaben)",
     ("tcp", 3389): "Remotedesktop",
     ("tcp", 5900): "VNC",
 }

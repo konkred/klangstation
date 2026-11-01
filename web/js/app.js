@@ -1327,20 +1327,32 @@ $("#net-wifi").addEventListener("click", async (ev) => {
     const n = net.wifi.networks[+b.closest("[data-i]").dataset.i];
     const s = net.wifi.saved.find((x) => x.ssid === n.ssid && x.device);
     if (!s) return;
-    if (!confirm(`Vom WLAN „${n.ssid}“ trennen?` + (location.hostname && net.adapters.some((a) => a.type === "wifi" && a.ipv4.some((ip) => ip.startsWith(location.hostname + "/")))
-      ? "\n\nDu bist gerade über dieses WLAN verbunden – die Seite ist danach nicht mehr erreichbar." : ""))) return;
+    if (!confirm(`Vom WLAN „${n.ssid}“ trennen?` + WIFI_CUT())) return;
     await netDo("wifi_down", { uuid: s.uuid });
     return;
   }
   const row = b.closest("[data-uuid]");
   if (act === "up") { b.disabled = true; b.textContent = "Verbindet …"; await netDo("wifi_up", { uuid: row.dataset.uuid }); return; }
   if (act === "forget") {
-    if (!confirm("Dieses WLAN vergessen? Das Passwort muss danach neu eingegeben werden.")) return;
+    const active = (net.wifi.saved.find((x) => x.uuid === row.dataset.uuid) || {}).device;
+    if (!confirm("Dieses WLAN vergessen? Das Passwort muss danach neu eingegeben werden." + (active ? WIFI_CUT() : ""))) return;
     await netDo("wifi_forget", { uuid: row.dataset.uuid }, "WLAN vergessen.");
   }
 });
+// Haengt die Seite am WLAN? Per IP erkennbar; ueber den Namen aufgerufen: wenn kein Kabel eine Adresse hat
+function WIFI_CUT() {
+  const wifi = net.adapters.filter((a) => a.type === "wifi" && a.ipv4.length);
+  if (!wifi.length) return "";
+  const byIp = wifi.some((a) => a.ipv4.some((ip) => ip.startsWith(location.hostname + "/")));
+  const wired = net.adapters.some((a) => a.type !== "wifi" && a.ipv4.length);
+  if (!wired) return "\n\nKlangstation hängt nur an diesem WLAN – danach ist es nicht mehr erreichbar, bis ein Kabel steckt oder das WLAN am Gerät wieder eingeschaltet wird.";
+  return byIp ? "\n\nDu bist gerade über dieses WLAN verbunden – die Seite ist danach nur noch über die Kabel-Adresse erreichbar." : "";
+}
 $("#net-wifi").addEventListener("change", async (ev) => {
-  if (ev.target.id === "net-radio") await netDo("wifi_radio", { on: ev.target.checked });
+  if (ev.target.id === "net-radio") {
+    if (!ev.target.checked && !confirm("WLAN ausschalten?" + WIFI_CUT())) { ev.target.checked = true; return; }
+    await netDo("wifi_radio", { on: ev.target.checked });
+  }
   if (ev.target.matches("[data-w='security']")) $("#net-wifi .net-pw").hidden = ev.target.value === "none";
 });
 $("#net-wifi").addEventListener("keydown", (ev) => {

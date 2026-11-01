@@ -114,7 +114,8 @@ def max_channels(device_id: str) -> Optional[int]:
     """Hoechste Kanalzahl des Geraets (per aplay, ohne Daten). Belegt = unbekannt, wird spaeter erneut versucht."""
     if device_id in _channels:
         return _channels[device_id]
-    if not device_id.startswith("hw:") or device_id.startswith("hw:CARD=vc4hdmi"):
+    # Pi-Klinke (bcm2835) meldet 8 Kanaele, die Buchse ist aber Stereo
+    if not device_id.startswith("hw:") or device_id.startswith(("hw:CARD=vc4hdmi", "hw:CARD=Headphones,")):
         return None
     try:
         res = subprocess.run(["aplay", "-t", "raw", "-D", device_id, "--dump-hw-params", "/dev/null"],

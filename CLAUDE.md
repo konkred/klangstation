@@ -93,6 +93,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   HDMI-Schalter per `amixer -c 0 sset IEC958,<n> off` stumm schalten und danach wieder `on`.
   `disableoutput` taugt nicht – dann spielt MPD gar nicht („All audio outputs are disabled“).
 * **USB abziehen:** `echo 0 > /sys/bus/usb/devices/<port>/authorized` (wieder 1 = anstecken).
+* **Oberfläche testen:** Nie Schalter oder Knöpfe betätigen, die Netz, WLAN, SSH oder Port abschalten – auch nicht mit
+  abgefangenem `confirm`. Am 01.11. lief nach `navigate` auf dieselbe URL (nur `#` anders) noch das alte Skript ohne
+  Rückfrage → WLAN am Pi aus, Pi nur noch per Kabel erreichbar. Neue Logik direkt aufrufen (Funktion im Konsolen-
+  Kontext), Seite vorher mit geänderter Query (`?r=…`) neu laden.
 * Beobachtungsskripte mit `setsid nohup` starten und per PID beenden. `pgrep -f`/`pkill -f` treffen sonst die
   eigene SSH-Shell – stattdessen `ps -eo pid,comm,args | awk '$2=="python3"'`.
 
@@ -223,9 +227,8 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **WLAN am Pi** (eingebautes WLAN, rfkill/Land) ungetestet; am Alma mit USB-Sticks bestanden (01.11.).
-* **Pi zu Hause** hat noch den Stand vom 26.10. (ohne Liedtexte, Timer/Wecker, Wetter, Themes, Sperrbildschirm).
-  Update nur nach Rückfrage; danach Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher testen.
+* **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
+  WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
 * **5.1/7.1 mit echter Karte** (USB, CM6206): Kanalreihenfolge an den Buchsen; der Nutzer hört.
@@ -362,6 +365,16 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
   („Unknown chip“), auch per `new_id` → unter Linux nicht nutzbar.
 * Ein Stick ohne Kennung: meldet sich vorne und hinten nicht an (-71, „not accepting address“) → defekt.
 
+**Pi zu Hause, 01.11.2026 – Update vom Stand 26.10.**
+
+* Erreichbar unter 10.0.0.142 (WLAN) bzw. per Kabel; Host-Key per `-o HostKeyAlias=raspberrypi` geprüft.
+* `install.sh` (Desktop, ohne `--tv-headless`): 3 min 32 s, EXIT 0, `ks-netadmin.socket` neu, alle Dienste laufen.
+  apt hob dabei die vorhandenen Firmware-Pakete (auch `firmware-brcm80211`) auf 20260519 (bpo13+rpt1) → Installer
+  installiert seitdem nur fehlende Firmware. Neue Firmware greift erst nach einem Neustart (noch nicht gemacht).
+* Optionen › Info: Pi 4 Rev 1.5, Cortex-A72 4 Kerne 1,8 GHz, 4 GB, SD64G 59,5 GB ext4, Raspberry Pi OS 13.5, 64 Bit.
+* Netzwerk-Reiter unter Pi OS: Adapter, WLAN-Liste (2,4 + 5 GHz), gespeichertes WLAN, SSH (`ssh`), Ports.
+* Pi-Klinke meldete 8 Kanäle (bcm2835) → von 5.1/7.1 ausgenommen.
+
 **Alma, 01.11.2026 – Lautsprecher 5.1/7.1 (stumm über snd-aloop)**
 
 * Kanalzahl per aplay: Analog 2, DP 2/8, Loopback 32; belegtes Gerät = unbekannt, später erneut.
@@ -408,3 +421,8 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 * Wecker-Dialog auf dem iPhone: „Schließen“ nicht erreichbar, Zeitfeld ragte heraus (siehe Lehren).
 * Sperrbildschirm sprang nach dem Spulen auf 0:00 → Tonspur in Titellänge (siehe Lehren).
 * Knopfreihe auf schmalen Handys 22 px zu breit → Lautstärkeregler flexibel, Zufall/Wiederholen erst unter 360 px weg.
+
+**01.11.2026**
+
+* „Vergessen“ des aktiven WLANs und „WLAN ausschalten“ ohne Warnung, obwohl das Gerät dann nicht mehr erreichbar
+  ist (am Pi passiert, siehe Testtechniken) → Rückfrage mit Hinweis, auch bei Aufruf über den Namen (kein Kabel).

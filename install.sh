@@ -228,7 +228,9 @@ install_debian() {
         # Firmware fuer gaengige USB-WLAN-Sticks (Realtek, MediaTek, Atheros) und Intel-Karten, soweit vorhanden
         # (braucht die Komponente non-free-firmware, die Raspberry Pi OS und Debian ab 12 mitbringen)
         local fw="" p
+        # nur fehlende Pakete: vorhandene Firmware (am Pi auch die des eingebauten WLAN) nicht nebenbei aktualisieren
         for p in firmware-realtek firmware-mediatek firmware-atheros firmware-iwlwifi; do
+            dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" && continue
             apt-cache show "$p" >/dev/null 2>&1 && fw="$fw $p"
         done
         # shellcheck disable=SC2086

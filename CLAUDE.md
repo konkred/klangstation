@@ -190,6 +190,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 
 ### Netzwerk und systemd
 
+* **USB-WLAN-Sticks mit Treiber-CD** (ZeroCD, z. B. AVM) melden sich als CD-Laufwerk; `usb_modeswitch` gibt es für
+  EL10 nicht → `eject /dev/sr<n>` schaltet um.
+* **Ein WLAN, mehrere Zugangspunkte/Bänder:** `nmcli dev wifi list` liefert je BSSID eine Zeile → Liste nach SSID
+  zusammenfassen, Bänder sammeln („2,4 + 5 GHz“).
+
 * **`nmcli -g a,b,c`** gibt jedes Feld in einer eigenen Zeile aus, leere Felder als Leerzeile → nur den letzten
   Zeilenumbruch abschneiden, nicht `rstrip("\n")`.
 * **`ip -j addr`** enthält die DHCP-Restlaufzeiten → als Änderungs-Signatur nur Name, Zustand und Adressen nehmen,
@@ -211,8 +216,8 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **WLAN in Optionen › Netzwerk** ungetestet: mit USB-WLAN-Stick am Alma/OptiPlex (Einstecken im Betrieb, Suchen,
-  Verbinden – das Passwort gibt der Nutzer ein –, Vergessen) und mit dem eingebauten WLAN am Pi (rfkill/Land).
+* **WLAN am Pi** (eingebautes WLAN, rfkill/Land) ungetestet; am Alma mit USB-Sticks bestanden (01.11.).
+* **AVM FRITZ!WLAN USB Stick N v2** an einem hinteren USB-Port des Alma noch einmal probieren (vorne trennte er sich).
 * **Pi zu Hause** hat noch den Stand vom 26.10. (ohne Liedtexte, Timer/Wecker, Wetter, Themes, Sperrbildschirm).
   Update nur nach Rückfrage; danach Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher testen.
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
@@ -333,6 +338,19 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 * SSH aus (neue Verbindung abgelehnt, laufende Sitzung bleibt) und wieder an.
 * Oberfläche (Reiter Netzwerk) bei 390 px im Klassisch- und Nacht-Theme ohne Überlauf.
 * WLAN noch nicht getestet (kein Adapter am Alma).
+
+**Alma, 01.11.2026 – fünf USB-WLAN-Sticks**
+
+* Edimax N150 (7392:b811, RTL8188EU, rtl8xxxu, 2,4 GHz): sofort erkannt, Suche, Verbinden in der Oberfläche
+  (Nutzer), DHCP, Weboberfläche bei getrenntem Kabel über die WLAN-MAC erreichbar, „Vergessen“ löscht Profil und
+  Datei, Abziehen erkennt die Oberfläche („Kein WLAN-Adapter gefunden“).
+* Netgear WNDA3100v3 (0846:9014, MT7632U, mt76x2u): nach 2 s erkannt (dreimal „MCU resp evt:9“ beim Laden,
+  folgenlos), verbunden auf 5 GHz mit 300 Mbit/s, ohne Kabel Weboberfläche (4,8 MB in 0,4 s) und Internet.
+* AVM FRITZ!WLAN USB Stick N v2 (057c:62ff → nach `eject` 057c:8501, RT5572, rt2800usb): findet Netze, trennt sich
+  ~6 s nach der ersten Suche (-71) und kommt im CD-Modus zurück, auch ohne NetworkManager (Port 1-10 vorne).
+* Sharp „Remote Download Wireless Adapter“ (04dd:941f, BCM43236 rev 2): brcmfmac kennt nur rev 3
+  („Unknown chip“), auch per `new_id` → unter Linux nicht nutzbar.
+* Ein Stick ohne Kennung: meldet sich vorne und hinten nicht an (-71, „not accepting address“) → defekt.
 
 ### Behobene Fehler
 

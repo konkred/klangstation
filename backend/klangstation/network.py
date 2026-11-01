@@ -249,17 +249,22 @@ class Network:
         code, out = await _run("nmcli", "-t", "-e", "yes", "-f", "IN-USE,SSID,SIGNAL,SECURITY,FREQ,DEVICE",
                                "device", "wifi", "list", "--rescan", "no")
         best: Dict[str, Dict[str, Any]] = {}
+        bands: Dict[str, set] = {}
         for line in out.splitlines():
             parts = _split_terse(line)
             if len(parts) < 6 or not parts[1]:
                 continue
             in_use, ssid, signal, sec, freq, dev = parts[:6]
+            band = "5" if freq.startswith(("5", "6")) else "2,4"
+            bands.setdefault(ssid, set()).add(band)
             entry = {"ssid": ssid, "signal": int(signal) if signal.isdigit() else 0, "security": _security(sec),
-                     "secured": sec not in ("", "--"), "band": "5 GHz" if freq.startswith(("5", "6")) else "2,4 GHz",
-                     "active": in_use == "*", "device": dev}
+                     "secured": sec not in ("", "--"), "active": in_use == "*", "device": dev}
             old = best.get(ssid)
             if not old or entry["active"] or (entry["signal"] > old["signal"] and not old["active"]):
                 best[ssid] = entry
+        # Ein Netz mit mehreren Zugangspunkten/Baendern nur einmal zeigen, aber alle Baender nennen
+        for ssid, entry in best.items():
+            entry["band"] = " + ".join(b for b in ("2,4", "5") if b in bands[ssid]) + " GHz"
         return sorted(best.values(), key=lambda e: (not e["active"], -e["signal"], e["ssid"].lower()))[:40]
 
     async def _saved_wifi(self, adapters: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

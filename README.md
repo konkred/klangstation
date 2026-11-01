@@ -71,6 +71,7 @@ Getestetes Zubehör:
 | Fernseher/Monitor | Fernseher mit CEC am Pi, Philips-TV ohne CEC, DP-Monitor | CEC geht am Pi direkt; PCs brauchen dafür einen USB-CEC-Adapter (nicht getestet) |
 | CD-Laufwerk | internes SATA-Laufwerk, USB-Laufwerk Samsung SE-218GN | das USB-Laufwerk braucht am Pi ein Y-Kabel oder einen aktiven Hub |
 | Bluetooth | eingebautes Bluetooth des Pi, USB-Stick RTL8761BU | |
+| WLAN-Stick | Edimax N150 (RTL8188EU, 2,4 GHz), Netgear WNDA3100v3 (MT7632U, 2,4 + 5 GHz) unter AlmaLinux | nicht nutzbar: Sticks mit Broadcom BCM43236 rev 2 (keine Firmware unter Linux); AVM FRITZ!WLAN N v2 trennt sich unter AlmaLinux kurz nach der ersten Suche |
 | USB-Speicher | Sticks mit FAT32 und NTFS | |
 
 ### Getestete Kombinationen
@@ -317,7 +318,8 @@ bestehende Kabelverbindung in Ruhe).
 * **WLAN-Stick:** Hat das Gerät kein WLAN (viele PCs), genügt ein USB-WLAN-Stick. Er wird im laufenden Betrieb
   erkannt und erscheint nach wenigen Sekunden. Der Installer bringt Firmware für gängige Realtek-, MediaTek-
   und Atheros-Chips mit. Unter RHEL fehlen im Kernel einige Realtek-Treiber (z. B. RTL8821CU); Sticks mit
-  MediaTek MT7601U/MT7610U/MT7612U oder Realtek RTL8812BU/RTL8822BU laufen dort ohne Zusatztreiber.
+  MediaTek MT7601U/MT7610U/MT7612U/MT7632U oder Realtek RTL8188EU/RTL8812BU/RTL8822BU laufen dort ohne
+  Zusatztreiber.
 * **SSH:** schaltet den SSH-Server ein oder aus (`ssh`/`sshd`). Laufende Sitzungen bleiben beim Ausschalten bestehen.
 * **Ports:** Liste der offenen Ports mit Dienst und ob sie im Netzwerk oder nur am Gerät erreichbar sind. Den Port
   der Weboberfläche kann man ändern (80 oder 1024–65535); Dienst, Kiosk-Bildschirm und Firewall werden angepasst,
@@ -347,7 +349,8 @@ systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
 * **Nicht mehr erreichbar nach IP-Änderung:** 2 Minuten warten – dann gilt wieder die alte Einstellung.
   Danach unter `http://<hostname>.local:8080` (bzw. dem eigenen Port) neu laden.
 * **WLAN-Stick erscheint nicht:** `ip link` zeigt, ob der Kernel ihn erkennt; `dmesg | tail` nennt fehlende
-  Firmware. Unter RHEL fehlen manche Realtek-Treiber (siehe Netzwerk).
+  Firmware. Unter RHEL fehlen manche Realtek-Treiber (siehe Netzwerk). Meldet sich der Stick als CD-Laufwerk
+  (Treiber-CD, z. B. AVM), schaltet ihn `eject /dev/sr<n>` in den WLAN-Modus; `usb_modeswitch` fehlt unter RHEL 10.
 * **Kein Ton:** Unter *Optionen › Ausgabe* den richtigen Ausgang wählen. Hinter HDMI-/DP-Ausgängen steht,
   ob ein Monitor angeschlossen ist. Ob ALSA selbst Ton ausgibt: `speaker-test -D plughw:CARD=<Karte>,DEV=<n> -c 2 -l 1`.
 * **Kein Ton über HDMI am Pi:** Monitor muss beim Booten angeschlossen sein. Klangstation verwendet für `vc4hdmi`

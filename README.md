@@ -31,6 +31,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Handy | als App auf den Homescreen legen; auf Wunsch Titel, Cover und Tasten im Sperrbildschirm (Bibliothek, Radio, CD) |
 | Erscheinungsbild | Klassisch (Media Player der 2000er), Frutiger Aero, Nacht, Winamp Classic, Aqua (Mac OS X), Hi-Fi-Anlage mit VU-Metern, Luna (Windows XP): Oberfläche pro Gerät (auch automatisch nach Systemeinstellung), „Läuft gerade“ in den Optionen |
 | Netzwerk | Adapter mit IPv4/IPv6, Gateway, DNS und MAC; DHCP oder feste Adresse (mit automatischer Rücknahme, wenn nicht bestätigt); WLAN suchen und verbinden, auch mit USB-WLAN-Stick im laufenden Betrieb; SSH ein/aus; offene Ports und Port der Weboberfläche |
+| Info | Erkanntes Board, Prozessor (Kerne, Takt, x86-64-Stufe), Arbeitsspeicher, Bootlaufwerk mit freiem Platz, Betriebssystem mit Version, Bit-Zahl und Kernel |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 
 ## Unterstützte Systeme

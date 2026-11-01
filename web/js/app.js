@@ -877,6 +877,23 @@ async function loadSettings(silent = false) {
 }
 let settingsRes = null;
 
+function renderSysInfo(sy) {
+  const row = (label, main, ...sub) => main ? `<dt>${label}</dt><dd>${esc(main)}${sub.filter(Boolean).length
+    ? `<small>${sub.filter(Boolean).map(esc).join(" · ")}</small>` : ""}</dd>` : "";
+  const b = sy.board || {}, c = sy.cpu || {}, r = sy.ram || {}, d = sy.disk || {}, o = sy.os || {};
+  $("#sys-info").innerHTML = !sy.os ? "<dd>Nicht ermittelbar</dd>" : [
+    row("Board", b.name, b.detail),
+    row("Prozessor", c.name, c.detail),
+    row("Arbeitsspeicher", r.name, r.detail),
+    row("Bootlaufwerk", d.name, d.detail, d.device, d.fstype, d.usage),
+    row("Betriebssystem", o.name, o.boot ? `Start per ${o.boot}` : ""),
+    row("Version", o.version),
+    row("Architektur", o.bits, o.arch),
+    row("Kernel", o.kernel),
+    row("Gerätename", sy.hostname, sy.uptime ? `läuft seit ${sy.uptime}` : ""),
+  ].join("");
+}
+
 function fillSettings(res) {
   const f = $("#settings-form");
   const s = res.settings;
@@ -898,6 +915,7 @@ function fillSettings(res) {
     const [cls, txt] = !d.available ? ["no", "nicht installiert"] : d.running ? ["ok", "läuft"] : ["off", "aus"];
     return `<div class="svc"><span>${SVC[d.name] || d.name}</span><span class="st ${cls}">${txt}</span></div>`;
   }).join("");
+  renderSysInfo(res.system || {});
   $("#about-text").innerHTML = `Klangstation ${esc(res.version)}<br>Wiedergabe: MPD · AirPlay: shairport-sync · Spotify Connect: librespot<br>
     Metadaten: <a href="https://musicbrainz.org" target="_blank" rel="noopener">MusicBrainz</a> &amp; <a href="https://coverartarchive.org" target="_blank" rel="noopener">Cover Art Archive</a> ·
     Radio: <a href="https://www.radio-browser.info" target="_blank" rel="noopener">radio-browser.info</a>`;

@@ -26,7 +26,7 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
 * `backend/klangstation/` – App. `core.py` ist die Zentrale (Quellen, Ausgabe, CD, Rippen, Freigaben, Wächter),
   `main.py` die HTTP-/WebSocket-Routen, `audio.py` ALSA-Erkennung und Konfigurationen für mpd/shairport/
   librespot/gmediarender/bluealsa-aplay, `network.py` Netzwerk (liest per nmcli/ip/ss), `lyrics.py` Liedtexte (`.lrc`, LRCLIB), `timers.py` Schlummer-Timer und
-  Wecker, `weather.py` Wetter für den Ruhebildschirm (Open-Meteo).
+  Wecker, `weather.py` Wetter für den Ruhebildschirm (Open-Meteo), `sysinfo.py` Hardware und OS für Optionen › Info.
 * `web/` – Oberfläche (`index.html`, `js/app.js`, `css/style.css`) und „Läuft gerade“ unter `/tv` (`tv.html`,
   `js/tv.js`, `css/tv.css`). Themes liegen je in einer eigenen Datei (`css/theme-<name>.css`, `css/tv-<name>.css`) und
   greifen nur unter `html[data-theme=…]`: die Oberfläche merkt sich das Theme pro Browser (localStorage, „auto“ =

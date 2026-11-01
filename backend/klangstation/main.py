@@ -19,7 +19,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from http.cookies import SimpleCookie
 
-from . import audio
+from . import audio, sysinfo
 from .auth import COOKIE, MAX_AGE, check_password, hash_password
 from .config import VERSION, WEB_DIR
 from .core import Core
@@ -348,7 +348,8 @@ async def settings_endpoint(request):
         await core.update_settings(await body(request))
     return ok({"settings": core.settings.public(), "outputs": audio.list_outputs(),
                "active_output": core.output, "services": core.services(), "cec": core.cec.public(),
-               "shares": core.shares_public(), "version": VERSION})
+               "shares": core.shares_public(), "version": VERSION,
+               "system": await asyncio.to_thread(sysinfo.info)})
 
 
 # ---------------------------------------------------------------- Zugangsschutz

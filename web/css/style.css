@@ -409,6 +409,10 @@ input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bord
 .share-scan { grid-column: 2 / -1; }
 .share-scan small { white-space: normal; }
 /* Netzwerk */
+.sys-dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; margin: 0; }
+.sys-dl dt { color: var(--list-dim); }
+.sys-dl dd { margin: 0; overflow-wrap: anywhere; }
+.sys-dl small { display: block; color: var(--list-dim); }
 .net-dl { grid-column: 2 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1px 10px; margin: 0; font-size: 11px; }
 .net-dl dt { color: var(--list-dim); }
 .net-dl dd { margin: 0; overflow-wrap: anywhere; }

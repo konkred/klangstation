@@ -71,7 +71,7 @@ Getestetes Zubehör:
 | Fernseher/Monitor | Fernseher mit CEC am Pi, Philips-TV ohne CEC, DP-Monitor | CEC geht am Pi direkt; PCs brauchen dafür einen USB-CEC-Adapter (nicht getestet) |
 | CD-Laufwerk | internes SATA-Laufwerk, USB-Laufwerk Samsung SE-218GN | das USB-Laufwerk braucht am Pi ein Y-Kabel oder einen aktiven Hub |
 | Bluetooth | eingebautes Bluetooth des Pi, USB-Stick RTL8761BU | |
-| WLAN-Stick | Edimax N150 (RTL8188EU, 2,4 GHz), Netgear WNDA3100v3 (MT7632U, 2,4 + 5 GHz) unter AlmaLinux | nicht nutzbar: Sticks mit Broadcom BCM43236 rev 2 (keine Firmware unter Linux); AVM FRITZ!WLAN N v2 trennt sich unter AlmaLinux kurz nach der ersten Suche |
+| WLAN-Stick | Edimax N150 (RTL8188EU, 2,4 GHz), Netgear WNDA3100v3 (MT7632U, 2,4 + 5 GHz) unter AlmaLinux | nicht nutzbar: Sticks mit Broadcom BCM43236 rev 2 (keine Firmware unter Linux); AVM FRITZ!WLAN USB Stick N v2 trennt sich unter AlmaLinux kurz nach der Suche, der Test-PC startete dabei mehrfach neu |
 | USB-Speicher | Sticks mit FAT32 und NTFS | |
 
 ### Getestete Kombinationen

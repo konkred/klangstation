@@ -217,7 +217,6 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 ### Noch offen
 
 * **WLAN am Pi** (eingebautes WLAN, rfkill/Land) ungetestet; am Alma mit USB-Sticks bestanden (01.11.).
-* **AVM FRITZ!WLAN USB Stick N v2** an einem hinteren USB-Port des Alma noch einmal probieren (vorne trennte er sich).
 * **Pi zu Hause** hat noch den Stand vom 26.10. (ohne Liedtexte, Timer/Wecker, Wetter, Themes, Sperrbildschirm).
   Update nur nach Rückfrage; danach Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher testen.
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
@@ -347,7 +346,10 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 * Netgear WNDA3100v3 (0846:9014, MT7632U, mt76x2u): nach 2 s erkannt (dreimal „MCU resp evt:9“ beim Laden,
   folgenlos), verbunden auf 5 GHz mit 300 Mbit/s, ohne Kabel Weboberfläche (4,8 MB in 0,4 s) und Internet.
 * AVM FRITZ!WLAN USB Stick N v2 (057c:62ff → nach `eject` 057c:8501, RT5572, rt2800usb): findet Netze, trennt sich
-  ~6 s nach der ersten Suche (-71) und kommt im CD-Modus zurück, auch ohne NetworkManager (Port 1-10 vorne).
+  ~6 s nach der Suche (-71) und kommt im CD-Modus zurück, vorne wie hinten, auch ohne NetworkManager und ohne
+  USB-Autosuspend. Während der Tests startete der Alma dreimal ohne Herunterfahren neu (09:15, 09:38, 09:40, kein
+  Überstrom/MCE im Protokoll, Watchdog inaktiv), nach dem Abziehen 10 min stabil → **Stick nicht mehr an
+  Testgeräte stecken.** Journal am Alma seitdem dauerhaft (`/var/log/journal`).
 * Sharp „Remote Download Wireless Adapter“ (04dd:941f, BCM43236 rev 2): brcmfmac kennt nur rev 3
   („Unknown chip“), auch per `new_id` → unter Linux nicht nutzbar.
 * Ein Stick ohne Kennung: meldet sich vorne und hinten nicht an (-71, „not accepting address“) → defekt.

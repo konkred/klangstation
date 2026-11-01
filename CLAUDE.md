@@ -71,6 +71,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `ks-tv-kiosk` enthält `@PORT@` – beim Einzeleinspielen per `sed` ersetzen.
 * **Alma (root):** scp nach `/root/klangstation`, dann `bash install.sh --tv-headless` oder einzelne Dateien
   mit `install -m 0644` nach `/opt/klangstation/...` und `systemctl restart klangstation`.
+* **Vor jedem Neustart von Klangstation** (oder Ausgabewechsel) in einem eigenen Schritt prüfen, ob etwas spielt
+  (`/api/state` → `source`, `now.state`), und bei laufender Musik fragen – nicht im selben Befehl wie den Neustart.
 * Nur Web-Dateien geändert: kein Neustart nötig (`no-cache`), Browser neu laden; den Kiosk (headless) per
   `systemctl restart klangstation-tv` – das unterbricht die Wiedergabe nicht.
 
@@ -118,6 +120,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **Dynamische Lautstärke (`volume_normalization`)** gibt es in MPD nur als Startoption → MPD-Neustart wie beim
   Ausgabewechsel; ReplayGain und Überblenden gehen zur Laufzeit (`replay_gain_mode`, `crossfade`).
 * **MPD `single oneshot`** bleibt nach dem Anhalten stehen → Schlummer-Timer „Titelende“ setzt es danach auf 0.
+* **5.1/7.1 hochmischen:** eigenes ALSA-Gerät `ks_surround` (plug + ttable) in `~/.asoundrc` des Dienstnutzers
+  (HOME = `/var/lib/klangstation`); eine fremde `.asoundrc` (ohne Kopfzeile von Klangstation) wird nicht
+  überschrieben. `aplay`-Meldungen sind lokalisiert → mit `LC_ALL=C` aufrufen. Stumm testen mit `snd-aloop`
+  (bis 32 Kanäle; Aufnahme an `DEV=1` in S24_LE, plug wählt das beste Format); zum Entladen erst `alsa-state`
+  stoppen (alsactl hält die Karte).
 * **Nicht erreichbarer Sender:** `addid`/`play` gelingen, MPD meldet den Fehler erst danach (`state: stop` + `error`)
   → der Wecker prüft das in der Lautstärke-Rampe und weicht auf die Bibliothek aus.
 
@@ -221,6 +228,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
   Update nur nach Rückfrage; danach Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher testen.
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
+* **5.1/7.1 mit echter Karte** (USB, CM6206): Kanalreihenfolge an den Buchsen; der Nutzer hört.
 * **CEC unter RHEL:** braucht einen USB-CEC-Adapter (z. B. Pulse-Eight), die Intel-Grafik kann kein CEC.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
@@ -353,6 +361,14 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 * Sharp „Remote Download Wireless Adapter“ (04dd:941f, BCM43236 rev 2): brcmfmac kennt nur rev 3
   („Unknown chip“), auch per `new_id` → unter Linux nicht nutzbar.
 * Ein Stick ohne Kennung: meldet sich vorne und hinten nicht an (-71, „not accepting address“) → defekt.
+
+**Alma, 01.11.2026 – Lautsprecher 5.1/7.1 (stumm über snd-aloop)**
+
+* Kanalzahl per aplay: Analog 2, DP 2/8, Loopback 32; belegtes Gerät = unbekannt, später erneut.
+* Links-only-Rauschen über MPD: 5.1 → FL/RL voll, FC/LFE halb, rechts 0; 7.1 zusätzlich SL voll, SR 0. MPD gibt
+  44100:16:2 aus, shairport-sync nutzt `ks_surround`, `ks-spotify-sink` öffnet es. Zurück auf Stereo entfernt
+  `.asoundrc`. Oberfläche: Auswahl nur bei ≥ 6 Kanälen, bei Bit-perfekt gesperrt.
+* Noch offen: USB-Kanalreihenfolge mit echter Karte (CM6206) und Lautsprechern.
 
 ### Behobene Fehler
 

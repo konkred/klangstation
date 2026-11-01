@@ -60,6 +60,7 @@ DEFAULTS: Dict[str, Any] = {
     "device_name": _default_name(),
     "output": None,              # ALSA-Geraet, None = automatisch waehlen
     "bitperfect": False,         # hw: statt plughw:, kein Software-Mixer in MPD
+    "speakers": 2,               # 2 = Stereo, 6 = 5.1, 8 = 7.1 (Stereo auf alle Lautsprecher hochmischen)
     "loudness": "off",           # Lautstaerke angleichen: "off", "replaygain" (Tags) oder "dynamic" (MPD-Normalisierung)
     "crossfade": 0,              # Ueberblenden zwischen Titeln in Sekunden
     "airplay_enabled": True,
@@ -97,6 +98,7 @@ _VALIDATORS = {
     "device_name": lambda v: isinstance(v, str) and 0 < len(v.strip()) <= 40,
     "output": lambda v: v is None or (isinstance(v, str) and len(v) < 200),
     "bitperfect": lambda v: isinstance(v, bool),
+    "speakers": lambda v: v in (2, 6, 8),
     "loudness": lambda v: v in ("off", "replaygain", "dynamic"),
     "crossfade": lambda v: v in (0, 2, 5, 10),
     "airplay_enabled": lambda v: isinstance(v, bool),

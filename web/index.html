@@ -195,6 +195,12 @@
               <p class="hint">Wähle, wo der Ton herauskommen soll. Alle Quellen (Bibliothek, Radio, CD, AirPlay, Spotify) verwenden dieses Gerät.</p>
               <div id="out-list" class="out-list"></div>
               <label class="check"><input type="checkbox" name="bitperfect"> Bit-perfekt (keine Umrechnung, Lautstärke nur am Verstärker)</label>
+              <div id="speakers-box" hidden>
+                <label class="field">Lautsprecher
+                  <select name="speakers"><option value="2">Stereo (nur vorne links und rechts)</option><option value="6">5.1 – Stereo auf alle Lautsprecher verteilen</option><option value="8">7.1 – Stereo auf alle Lautsprecher verteilen</option></select>
+                </label>
+                <p class="hint"><b id="speakers-note"></b>Fast alle Musik ist Stereo. Bei 5.1/7.1 spielen die hinteren und seitlichen Lautsprecher dasselbe wie vorne, Center und Subwoofer bekommen die Mitte aus beiden Seiten. Das ist kein echter Raumklang, sondern Musik überall im Raum. Gilt für alle Quellen; 5.1-Dateien werden dabei erst zu Stereo zusammengemischt.</p>
+              </div>
               <h4 class="subhead">Wiedergabe (Bibliothek, Radio, CD)</h4>
               <label class="field">Lautstärke angleichen
                 <select name="loudness"><option value="off">Aus</option><option value="replaygain">Nach ReplayGain-Werten der Dateien</option><option value="dynamic">Dynamisch (auch ohne ReplayGain)</option></select>
@@ -393,6 +399,7 @@
                 <ul>
                   <li><b>Ausgabe</b>: Hinter HDMI-Ausgängen steht, ob dort ein Gerät hängt. Ohne Auswahl nimmt Klangstation zuerst einen USB-DAC, dann HDMI mit Fernseher, dann die Klinke. Beim Wechsel spielt die Musik nach wenigen Sekunden weiter.</li>
                   <li><b>Bit-perfekt</b> gibt die Dateien unverändert an den DAC weiter; die Lautstärke regelst du dann am Verstärker.</li>
+                  <li><b>Lautsprecher 5.1/7.1</b>: erscheint nur bei Geräten mit so vielen Kanälen (z. B. USB-Soundkarte mit 7.1). Dann spielt Stereo-Musik auf allen Lautsprechern, Center und Subwoofer bekommen die Mitte. Spielt ein Lautsprecher an der falschen Stelle, die Kabel an den Buchsen tauschen.</li>
                   <li><b>Lautstärke angleichen</b>: „ReplayGain“ nutzt in den Dateien gespeicherte Werte und verändert den Klang nicht; „Dynamisch“ regelt laufend nach, auch ohne diese Werte.</li>
                   <li><b>Überblenden</b> lässt Titel 2 bis 10 Sekunden ineinander laufen; „Aus“ spielt lückenlos.</li>
                 </ul>

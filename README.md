@@ -21,7 +21,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Audio-CD (USB-Laufwerk) | Erkennung per ioctl, Titelliste über MusicBrainz, Wiedergabe per MPD, optional Autoplay |
 | CD rippen | `cdparanoia` (Fehlerkorrektur) + `flac`, mit Tags und Cover, in den internen Speicher oder auf USB |
 | Metadaten & Cover | MusicBrainz + Cover Art Archive, gedrosselt und dauerhaft gecacht |
-| Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), automatische Wahl, wahlweise bit-perfekt |
+| Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), automatische Wahl, wahlweise bit-perfekt; 5.1/7.1-Karten: Stereo auf alle Lautsprecher verteilen |
 | Wiedergabelisten | speichern, laden, ab Eintrag abspielen, umbenennen, Einträge entfernen; auch Radiosender |
 | HDMI-CEC | TV beim Abspielen einschalten und Eingang wählen, TV-Fernbedienung, Pause bei TV aus, optional Standby |
 | „Läuft gerade“ | Vollbild unter `/tv` (Cover, Titel, Fortschritt) am HDMI-Ausgang oder in jedem Browser; im Ruhezustand wandernde Uhr mit Datum, nächstem Wecker, Wetter ([Open-Meteo](https://open-meteo.com), optional) und einem Band der zuletzt gehörten Cover |
@@ -213,6 +213,14 @@ angeschlossen ist. Solange dort nichts von Hand gewählt ist, nimmt Klangstation
 USB-DAC oder I²S-HAT, dann HDMI/DP mit erkanntem Gerät, dann die Klinke. Ein HDMI-Ausgang ohne
 angeschlossenes Gerät wird nie automatisch gewählt. Beim Wechsel spielt laufende Musik nach wenigen Sekunden
 am neuen Ausgang weiter.
+
+**Lautsprecher (5.1/7.1):** Hat das gewählte Gerät mindestens 6 Kanäle (z. B. eine USB-Soundkarte mit CM6206 oder
+ein PC mit Surround-Buchsen), erscheint die Auswahl *Lautsprecher*. Bei 5.1 bzw. 7.1 spielen hintere und seitliche
+Lautsprecher dasselbe wie vorne, Center und Subwoofer bekommen die Mitte aus links und rechts – kein echter
+Raumklang, sondern Musik im ganzen Raum, für alle Quellen. Mehrkanal-Dateien werden dabei erst zu Stereo
+zusammengemischt. Bei *Bit-perfekt* ist das aus. Welche Buchse welcher Kanal ist, richtet sich nach der üblichen
+Reihenfolge (USB-Karten: vorne, Center/Subwoofer, hinten, Seite; Onboard-Sound: vorne, hinten, Center/Subwoofer,
+Seite).
 
 Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
 
@@ -410,6 +418,9 @@ Browser ──HTTP/WebSocket──► Klangstation (Python, Starlette, Benutzer 
   ALSA-Jacks, am Raspberry Pi aus DRM (`/sys/class/drm`).
 * Ohne „Bit-perfekt“ läuft alles über `plughw` (automatische Format- und Ratenwandlung, Software-Lautstärke).
   Mit „Bit-perfekt“ geht MPD direkt auf `hw`.
+* Für 5.1/7.1 schreibt Klangstation ein ALSA-Gerät `ks_surround` (Typ `plug` mit Verteiltabelle `ttable`) in
+  `/var/lib/klangstation/.asoundrc`; alle Dienste nutzen dann dieses statt `plughw`. MPD gibt dabei Stereo aus
+  (`format "*:*:2"`). Die Kanalzahl des Geräts liest Klangstation mit `aplay --dump-hw-params`.
 * Python-Abhängigkeiten sind ausschließlich reine Python-Pakete. Auf ARM muss also nichts kompiliert werden.
 
 ### Netzwerkfreigaben und `ks-netmount`

@@ -93,6 +93,7 @@ class Core:
         self.clients: Set["asyncio.Queue[dict]"] = set()
         self.source = "idle"
         self.output: Dict[str, str] = {}
+        self.surround = 2
         self.spotify: Dict[str, Any] = {}
         self.airplay_active = False
         self.airplay = MetadataReader(RUN_DIR / "shairport-metadata", self._on_airplay_meta)
@@ -167,7 +168,9 @@ class Core:
         self.output = audio.resolve(s.get("output"))
         dev = self.output["id"]
         name = s.get("device_name")
-        log.info("Ausgabe: %s (%s)", self.output["label"], dev)
+        self.surround = await asyncio.to_thread(audio.configure_surround, dev, s.get("speakers"), s.get("bitperfect"))
+        log.info("Ausgabe: %s (%s)%s", self.output["label"], dev,
+                 f", hochgemischt auf {self.surround} Kanaele" if self.surround > 2 else "")
         fixed = await asyncio.to_thread(audio.prepare_mixer, dev)
         if fixed:
             log.info("Mixer: %s", ", ".join(fixed))
@@ -1477,7 +1480,7 @@ class Core:
         changed = set(self.settings.update(changes))
         # Die dynamische Angleichung kennt MPD nur als Startoption -> Neustart wie beim Geraetewechsel
         restart_mpd = "loudness" in changed and "dynamic" in (old_loudness, self.settings.get("loudness"))
-        if changed & {"output", "bitperfect"} or restart_mpd:
+        if changed & {"output", "bitperfect", "speakers"} or restart_mpd:
             # MPD startet fuer das neue Geraet neu und stellt sich dann pausiert wieder her
             resume = self.source in ("mpd", "idle") and await self._is_playing()
             try:
@@ -1487,7 +1490,7 @@ class Core:
                     await self.mpd.run("stop")
             except (ConnectionError, MPDError):
                 pass
-            if changed & {"output", "bitperfect"}:
+            if changed & {"output", "bitperfect", "speakers"}:
                 await self.apply_audio()
             else:
                 await self.apply_audio(("mpd",))

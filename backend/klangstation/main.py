@@ -347,7 +347,7 @@ async def settings_endpoint(request):
     if request.method == "POST":
         await core.update_settings(await body(request))
     return ok({"settings": core.settings.public(), "outputs": audio.list_outputs(),
-               "active_output": core.output, "services": core.services(), "cec": core.cec.public(),
+               "active_output": core.output, "surround": core.surround, "services": core.services(), "cec": core.cec.public(),
                "shares": core.shares_public(), "version": VERSION,
                "system": await asyncio.to_thread(sysinfo.info)})
 

@@ -18,6 +18,19 @@ _CARD_RE = re.compile(r"^\s*(\d+)\s+\[(\S+)\s*\]:\s*(.+?)\s+-\s+(.*)$")
 # Reihenfolge fuer die automatische Auswahl
 _PRIORITY = ["usb", "i2s", "analog", "hdmi", "other"]
 
+# Hochmischen auf 5.1/7.1: ein eigenes ALSA-Geraet (plug mit Verteiltabelle) in ~/.asoundrc des Dienstnutzers,
+# das alle Quellen (MPD, AirPlay, Spotify, UPnP, Bluetooth) statt plughw: nutzen
+SURROUND_PCM = "ks_surround"
+_RC_MARK = "# Automatisch erzeugt von Klangstation"
+# Kanalreihenfolge im Geraet: ALSA/HDA-Standard bzw. USB-Audio-Klasse
+_ORDER_ALSA = ["FL", "FR", "RL", "RR", "FC", "LFE", "SL", "SR"]
+_ORDER_USB = ["FL", "FR", "FC", "LFE", "RL", "RR", "SL", "SR"]
+# Anteil von (links, rechts) je Lautsprecher; Hinten/Seite bekommen die Front, Center und Subwoofer die Mitte
+_UPMIX = {"FL": (1, 0), "FR": (0, 1), "RL": (1, 0), "RR": (0, 1), "SL": (1, 0), "SR": (0, 1),
+          "FC": (0.5, 0.5), "LFE": (0.5, 0.5)}
+_channels: Dict[str, int] = {}
+_surround: Dict[str, Any] = {}
+
 
 def _classify(card_id: str, card_name: str, pcm_name: str, is_usb: bool) -> str:
     text = f"{card_id} {card_name} {pcm_name}".lower()
@@ -97,6 +110,71 @@ def prepare_mixer(device_id: str) -> List[str]:
     return changed
 
 
+def max_channels(device_id: str) -> Optional[int]:
+    """Hoechste Kanalzahl des Geraets (per aplay, ohne Daten). Belegt = unbekannt, wird spaeter erneut versucht."""
+    if device_id in _channels:
+        return _channels[device_id]
+    if not device_id.startswith("hw:") or device_id.startswith("hw:CARD=vc4hdmi"):
+        return None
+    try:
+        res = subprocess.run(["aplay", "-t", "raw", "-D", device_id, "--dump-hw-params", "/dev/null"],
+                             capture_output=True, text=True, timeout=5, env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"})
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    m = re.search(r"^CHANNELS:\s*(?:\[\s*\d+\s+(\d+)\s*\]|(\d+))", res.stdout + res.stderr, re.M)
+    if not m:
+        return None
+    _channels[device_id] = int(m.group(1) or m.group(2))
+    return _channels[device_id]
+
+
+def configure_surround(device_id: str, speakers: int, bitperfect: bool) -> int:
+    """Legt ks_surround fuer das Geraet an (oder entfernt es). Gibt die aktive Kanalzahl zurueck (2 = Stereo)."""
+    _surround.clear()
+    rc = Path.home() / ".asoundrc"
+    try:
+        ours = not rc.exists() or rc.read_text(errors="replace").startswith(_RC_MARK)
+    except OSError:
+        ours = False
+    n = speakers if speakers in (6, 8) else 2
+    if bitperfect or not device_id.startswith("hw:") or device_id.startswith("hw:CARD=vc4hdmi") or not ours:
+        n = 2
+    if n > 2:
+        avail = max_channels(device_id)
+        # unbekannt (gerade belegt): der Einstellung trauen, die Oberflaeche bietet sie nur bei genug Kanaelen an
+        if avail is not None and avail < n:
+            n = 2
+    if n == 2:
+        if ours and rc.exists():
+            rc.unlink()
+        return 2
+    order = (_ORDER_USB if _is_usb(device_id) else _ORDER_ALSA)[:n]
+    table = []
+    for dst, name in enumerate(order):
+        for src, gain in enumerate(_UPMIX[name]):
+            if gain:
+                table.append(f"    ttable.{src}.{dst} {gain:g}")
+    label = {6: "5.1", 8: "7.1"}[n]
+    rc.write_text(f"""{_RC_MARK} (Lautsprecher {label}) - Aenderungen werden ueberschrieben
+pcm.{SURROUND_PCM} {{
+    type plug
+    slave {{
+        pcm "{device_id}"
+        channels {n}
+    }}
+    # Kanaele im Geraet: {" ".join(order)}
+{chr(10).join(table)}
+}}
+""", encoding="utf-8")
+    _surround.update({"device": device_id, "channels": n})
+    return n
+
+
+def _is_usb(device_id: str) -> bool:
+    m = re.match(r"^hw:CARD=([^,]+)", device_id)
+    return bool(m) and (ASOUND / m.group(1) / "usbid").exists()
+
+
 def list_outputs() -> List[Dict[str, Any]]:
     outputs: List[Dict[str, Any]] = []
     cards_file = ASOUND / "cards"
@@ -152,6 +230,7 @@ def list_outputs() -> List[Dict[str, Any]]:
                     "detail": long_name + (" · Bit-perfekt hier nicht möglich" if card_id.startswith("vc4hdmi") else ""),
                     "kind": kind,
                     "connected": connected,
+                    "channels": max_channels(f"hw:CARD={card_id},DEV={dev}"),
                 })
     outputs.append({"id": "default", "label": "ALSA-Standardgerät", "detail": "default", "kind": "other"})
     return outputs
@@ -185,6 +264,8 @@ def alsa_device(device_id: str, bitperfect: bool) -> str:
         # Raspberry Pi (KMS): HDMI braucht IEC958-Rahmen, die nur das ALSA-"default" der Karte liefert
         return "default:CARD=" + device_id.split("CARD=", 1)[1].split(",", 1)[0]
     if device_id.startswith("hw:") and not bitperfect:
+        if _surround.get("device") == device_id:
+            return SURROUND_PCM
         return "plug" + device_id
     return device_id
 
@@ -200,6 +281,9 @@ def mpd_config(*, data_dir: Path, media_root: Path, port: int, device: str, bitp
         output_opts = '    mixer_type     "none"\n    auto_resample  "no"\n    auto_channels  "no"\n    auto_format    "no"\n'
     else:
         output_opts = '    mixer_type     "software"\n'
+        if alsa == SURROUND_PCM:
+            # Mehrkanal-Dateien erst zu Stereo zusammenmischen, sonst fehlen ihre Zusatzkanaele in der Verteilung
+            output_opts += '    format         "*:*:2"\n'
     # Dynamische Angleichung gibt es nur als Startoption; ReplayGain und Ueberblenden setzt core zur Laufzeit
     normalization = "yes" if normalize and not bitperfect else "no"
     return f"""# Automatisch erzeugt von Klangstation - Aenderungen werden ueberschrieben

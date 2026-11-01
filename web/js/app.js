@@ -894,6 +894,27 @@ function renderSysInfo(sy) {
   ].join("");
 }
 
+// Lautsprecher 5.1/7.1 nur anbieten, wenn das gewaehlte Geraet so viele Kanaele hat
+let speakerOutputs = { list: [], active: {}, surround: 2 };
+function updateSpeakers() {
+  const f = $("#settings-form");
+  const id = (f.querySelector("input[name=output]:checked") || {}).value || speakerOutputs.active.id;
+  const out = speakerOutputs.list.find((o) => o.id === id) || {};
+  const ch = out.channels || 0;
+  const sel = f.elements.speakers;
+  const bp = f.elements.bitperfect.checked;
+  $("#speakers-box").hidden = ch < 6;
+  for (const opt of sel.options) opt.disabled = +opt.value > ch;
+  sel.disabled = bp;
+  if (+sel.value > ch) sel.value = "2";
+  const want = +settings.speakers || 2;
+  $("#speakers-note").textContent = bp
+    ? "Bei „Bit-perfekt“ geht der Ton unverändert an das Gerät, darum ohne Hochmischen. "
+    : want > 2 && id === speakerOutputs.active.id && speakerOutputs.surround === 2
+      ? "Hochmischen ist gerade nicht aktiv – das Gerät war beim Start belegt oder hat zu wenige Kanäle. "
+      : "";
+}
+
 function fillSettings(res) {
   const f = $("#settings-form");
   const s = res.settings;
@@ -907,8 +928,10 @@ function fillSettings(res) {
   $("#out-list").innerHTML = outs.map((o) => `
     <label class="out"><input type="radio" name="output" value="${esc(o.id)}" ${(s.output || "") === o.id ? "checked" : ""}>
       <span class="kind ${o.kind}">${o.id ? KIND_TXT[o.kind] || "ALSA" : "AUTO"}</span>
-      <span>${esc(o.label)} ${o.id && o.id === active.id ? '<span class="cur">· aktiv</span>' : ""}<small>${esc(o.detail)}${o.id ? " · " + esc(o.id) : ""}</small></span>
+      <span>${esc(o.label)} ${o.id && o.id === active.id ? '<span class="cur">· aktiv</span>' : ""}<small>${esc(o.detail)}${o.channels > 2 ? ` · ${o.channels > 8 ? "bis " + o.channels : o.channels} Kanäle` : ""}${o.id ? " · " + esc(o.id) : ""}</small></span>
     </label>`).join("");
+  speakerOutputs = { list: res.outputs, active, surround: res.surround || 2 };
+  updateSpeakers();
   const SVC = { mpd: "Player (MPD)", airplay: "AirPlay (shairport-sync)", spotify: "Spotify Connect (librespot)",
     upnp: "UPnP/DLNA (gmediarender)", bluetooth: "Bluetooth (bluez-alsa)" };
   $("#svc-list").innerHTML = res.services.map((d) => {
@@ -1367,6 +1390,9 @@ function renderNetConfirm(p) {
 $("#net-keep").onclick = async () => { await post("/api/network/ipv4_confirm"); toast("Netzwerkeinstellung behalten."); };
 $("#net-revert").onclick = async () => { await post("/api/network/ipv4_revert").catch(() => {}); toast("Alte Einstellung wird wiederhergestellt …"); };
 
+$("#settings-form").addEventListener("change", (ev) => {
+  if (ev.target.name === "output" || ev.target.name === "bitperfect") updateSpeakers();
+});
 $("#settings-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const f = ev.target;
@@ -1376,7 +1402,7 @@ $("#settings-form").addEventListener("submit", async (ev) => {
     if (!el.name || (el.name !== "output" && !(el.name in settings))) continue;
     if (el.type === "checkbox") data[el.name] = el.checked;
     else if (el.type === "radio") { if (el.checked) data.output = el.value || null; }
-    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade"].includes(el.name)) data[el.name] = +el.value;
+    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade", "speakers"].includes(el.name)) data[el.name] = +el.value;
     else data[el.name] = el.value;
   }
   $("#save-msg").textContent = "Wird übernommen…";

@@ -240,6 +240,35 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 * Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst am Pi „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Alma.
 
+### Testplan weitere Geräte (mit dem Nutzer abgestimmt am 01.11.2026, noch nicht begonnen)
+
+| Gerät | System | Deckt ab |
+|---|---|---|
+| ASUS-Laptop, Ryzen 5 5500U | Ubuntu 24.04 LTS Desktop | AMD-Sound/-Grafik, eingebaute Lautsprecher und Display, eingebautes WLAN, Ubuntu-Desktop mit PipeWire |
+| Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
+| Wincor Nixdorf Beetle, Core 2 Quad | Ubuntu Server 24.04 | netplan/systemd-networkd statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
+| OptiPlex 3060 (Celeron) | später Rocky/AlmaLinux 9 | EL9: ältere Pakete, Quellcode-Builds (Python 3.9) |
+| HP i7 (`KlangStationAlma`) | bleibt AlmaLinux 10 | Referenz; 5.1 mit CM6206 + Soundbird |
+| Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
+
+Reihenfolge: zuerst ASUS (Ubuntu Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
+
+Vorher bzw. dabei bedenken:
+
+* **Laptop-Deckel:** logind versetzt beim Zuklappen in den Ruhezustand → Installer soll `HandleLidSwitch=ignore`
+  (eigene Datei unter `/etc/systemd/logind.conf.d/`) setzen. Vor dem ASUS-Test einbauen.
+* **Laptop-Display:** Kiosk bei offenem Deckel auf dem eingebauten Display; bei geschlossenem Deckel auf den
+  Fernseher wechseln oder aus.
+* **Lautsprecher/Kopfhörer:** Der Codec schaltet beim Einstecken selbst um – unter Optionen › Ausgabe nicht als zwei
+  verwirrende Geräte zeigen.
+* **SOF (Dell, evtl. ASUS):** Debian braucht `firmware-sof-signed`, bringt der Installer bisher nicht mit → wahrscheinlich
+  kein Ton ohne; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
+* **PipeWire auf Ubuntu Desktop** belegt die Karte im Betrieb (gibt sie nach ~5 s Leerlauf frei) – prüfen, ob MPD
+  `hw:` bekommt, wie am Pi-Desktop und OptiPlex/GNOME.
+* **Beetle:** vorher RAM und Tonausgang klären (Kassensysteme haben teils nur Lautsprecher- oder keinen Ausgang);
+  Chromium-Kiosk auf alter Intel-Grafik evtl. langsam.
+* Optional: Akkustand auf der Info-Seite.
+
 ### Bestanden
 
 **Pi zu Hause (Desktop), 26.10.2026**

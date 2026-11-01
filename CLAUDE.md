@@ -370,7 +370,9 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 * Erreichbar unter 10.0.0.142 (WLAN) bzw. per Kabel; Host-Key per `-o HostKeyAlias=raspberrypi` geprüft.
 * `install.sh` (Desktop, ohne `--tv-headless`): 3 min 32 s, EXIT 0, `ks-netadmin.socket` neu, alle Dienste laufen.
   apt hob dabei die vorhandenen Firmware-Pakete (auch `firmware-brcm80211`) auf 20260519 (bpo13+rpt1) → Installer
-  installiert seitdem nur fehlende Firmware. Neue Firmware greift erst nach einem Neustart (noch nicht gemacht).
+  installiert seitdem nur fehlende Firmware. Neustart danach: SSH nach 38 s, Web nach 41 s, WLAN-Firmware des Pi
+  unverändert (7.45.265, kommt über `/etc/alternatives`, nicht aus dem angehobenen Paket), WLAN auf 5 GHz verbunden,
+  alle Dienste laufen, kein ungefragtes Weiterspielen.
 * Optionen › Info: Pi 4 Rev 1.5, Cortex-A72 4 Kerne 1,8 GHz, 4 GB, SD64G 59,5 GB ext4, Raspberry Pi OS 13.5, 64 Bit.
 * Netzwerk-Reiter unter Pi OS: Adapter, WLAN-Liste (2,4 + 5 GHz), gespeichertes WLAN, SSH (`ssh`), Ports.
 * Pi-Klinke meldete 8 Kanäle (bcm2835) → von 5.1/7.1 ausgenommen.

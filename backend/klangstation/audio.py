@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 ASOUND = Path("/proc/asound")
 _CARD_RE = re.compile(r"^\s*(\d+)\s+\[(\S+)\s*\]:\s*(.+?)\s+-\s+(.*)$")
@@ -108,6 +108,19 @@ def prepare_mixer(device_id: str) -> List[str]:
             _amixer("-c", card, "-q", "sset", name, "80%")
             changed.append(f"{name} auf 80 %")
     return changed
+
+
+def wireplumber_pids() -> Set[int]:
+    """Laufende WirePlumber-Prozesse (Desktop-Sitzungen). Ein neuer setzt die Regler der Karte auf stumm/0 %."""
+    pids: Set[int] = set()
+    for entry in Path("/proc").iterdir():
+        if entry.name.isdigit():
+            try:
+                if (entry / "comm").read_text().strip() == "wireplumber":
+                    pids.add(int(entry.name))
+            except OSError:
+                continue
+    return pids
 
 
 def max_channels(device_id: str) -> Optional[int]:

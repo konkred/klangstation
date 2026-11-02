@@ -110,6 +110,8 @@ class Core:
         self._stream_retry: Optional[Dict[str, Any]] = None
         # Titel von einer Freigabe wegen Serverausfall angehalten: {"uri", "share"}
         self._share_hold: Optional[Dict[str, Any]] = None
+        # Ausgabe von anderem Programm belegt (MPD konnte nicht starten): Zeitpunkt, bis zu dem neu versucht wird
+        self._output_busy: Optional[float] = None
 
     # ------------------------------------------------------------ Lebenszyklus
     async def start(self) -> None:
@@ -123,6 +125,8 @@ class Core:
             asyncio.create_task(self._guarded("CEC-Steuerung", self._cec_loop)),
             asyncio.create_task(self._guarded("Webradio-Waechter", self._stream_loop)),
             asyncio.create_task(self._guarded("Freigabe-Waechter", self._share_loop)),
+            asyncio.create_task(self._guarded("Ausgabe-Waechter", self._busy_loop)),
+            asyncio.create_task(self._guarded("Regler-Waechter", self._mixer_loop)),
             asyncio.create_task(self._guarded("Schlummer-Timer und Wecker", self.timers.loop)),
             asyncio.create_task(self._guarded("Wetter", self._weather_loop)),
             asyncio.create_task(self._guarded("Netzwerk-Ueberwachung", self._net_loop)),
@@ -652,6 +656,8 @@ class Core:
             now["art"] = self.cd.get("art")
             if not self.cd.get("present"):
                 now["state"] = "stop"  # MPD meldet nach dem Auswerfen noch eine Weile "play"
+        if self._output_busy is not None:
+            now["extra"] = " · ".join(p for p in (now["extra"], "Ausgabe gerade belegt – neuer Versuch …") if p)
         return now
 
     # ------------------------------------------------------------ Wiedergabe
@@ -679,6 +685,13 @@ class Core:
         # AirPlay/Spotify werden vom Handy gesteuert; Play oder Stopp hier beendet die Fremdsitzung
         if self.source in ("airplay", "spotify") and action in ("play", "toggle", "stop"):
             await self.take_over("mpd")
+        if self._output_busy is not None and action in ("pause", "stop", "toggle"):
+            # Nutzer will nicht mehr warten: Wiederholung beenden, sonst startet es spaeter ungefragt
+            self._output_busy = None
+            await self.mpd.run("clearerror")
+            self.push()
+            if action == "toggle":
+                return
         cmds = {"play": "play", "pause": "pause 1", "stop": "stop", "next": "next", "prev": "previous"}
         if action == "toggle":
             status = await self.mpd.dict("status")
@@ -735,6 +748,8 @@ class Core:
     STREAM_STALL = 20        # s ohne Fortschritt bei "play" -> neu verbinden
     STREAM_RETRY_EVERY = 15  # s zwischen zwei Versuchen, wenn MPD mit Fehler angehalten hat
     STREAM_GIVE_UP = 1800    # s, danach bleibt der Sender aus
+    OUTPUT_BUSY_GIVE_UP = 120  # s, danach bleibt die Wiedergabe angehalten (sonst startet sie irgendwann ungefragt)
+    MIXER_FIX_WINDOW = 30    # s nach dem Start von WirePlumber, in denen die Regler zurueckgeholt werden
 
     async def _stream_loop(self) -> None:
         """Haelt Webradio nach einem Netzausfall am Laufen.
@@ -791,6 +806,67 @@ class Core:
             elif retry and state == "stop" and now - still_since >= self.STREAM_RETRY_EVERY:
                 await self._stream_restart(status)
                 still_since = now
+
+    async def _busy_loop(self) -> None:
+        """Startet MPD neu, wenn die Ausgabe belegt war (Desktop-Ton ueber PipeWire auf derselben Karte).
+
+        MPD bleibt dann mit "Device or resource busy" auf Pause und versucht es nicht wieder. PipeWire gibt die Karte
+        ~5 s nach dem letzten Ton frei.
+        """
+        while True:
+            await asyncio.sleep(3)
+            try:
+                status = await asyncio.wait_for(self.mpd.dict("status"), 2)
+                error = status.get("error", "").lower()
+                if "busy" not in error and "belegt" not in error:
+                    if self._output_busy is not None:
+                        self._output_busy = None
+                        self.push()
+                    continue
+                now = time.monotonic()
+                if self.source not in ("mpd", "idle") or status.get("state") == "stop":
+                    give_up = True
+                elif self._output_busy is None:
+                    log.warning("Ausgabe belegt, versuche es weiter: %s", status.get("error"))
+                    self._output_busy = now + self.OUTPUT_BUSY_GIVE_UP
+                    self.push()
+                    give_up = False
+                else:
+                    give_up = now > self._output_busy
+                if give_up:
+                    if self._output_busy is not None:
+                        log.warning("Ausgabe weiter belegt, Wiedergabe bleibt angehalten")
+                    self._output_busy = None
+                    await self.mpd.run("clearerror")
+                    self.push()
+                    continue
+                song = await asyncio.wait_for(self.mpd.dict("currentsong"), 2)
+                elapsed = float(status.get("elapsed", 0) or 0)
+                if elapsed > 1 and _media_kind(song.get("file", "")) != "radio":
+                    await self.mpd.run("seek", status.get("song", "0"), elapsed)
+                else:
+                    await self.mpd.run("play", status.get("song", "0"))
+            except (ConnectionError, MPDError, asyncio.TimeoutError):
+                continue
+
+    async def _mixer_loop(self) -> None:
+        """Stellt die Regler wieder her, wenn WirePlumber startet (z. B. bei jeder Anmeldung am Desktop).
+
+        WirePlumber setzt dabei HDMI und Kopfhoerer auf stumm/0 %, MPD spielt dann lautlos weiter. Nur in diesem Fall
+        eingreifen: Wer die Regler sonst von Hand stumm schaltet, meint das so.
+        """
+        known = await asyncio.to_thread(audio.wireplumber_pids)
+        fix_until = time.monotonic() + self.MIXER_FIX_WINDOW  # kann gerade eben erst gestartet sein
+        while True:
+            await asyncio.sleep(3)
+            pids = await asyncio.to_thread(audio.wireplumber_pids)
+            if pids - known:
+                fix_until = time.monotonic() + self.MIXER_FIX_WINDOW
+            known = pids
+            if time.monotonic() < fix_until:
+                fixed = await asyncio.to_thread(audio.prepare_mixer, self.output.get("id", ""))
+                if fixed:
+                    log.info("Mixer nach Start von WirePlumber: %s", ", ".join(fixed))
 
     async def _stream_restart(self, status: Dict[str, str]) -> None:
         try:

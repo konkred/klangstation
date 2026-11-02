@@ -226,6 +226,12 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   → `~/snap/firefox/common/`. `/usr/bin/firefox` ist nur ein Starter. Snap-Prozesse laufen im eigenen Scope:
   `systemctl --user stop` beendet sie nicht, `kill <pid>` aus `ks-tv-kiosk` schon.
 * **`/etc/debian_version`** enthält unter Ubuntu `forky/sid` → nur verwenden, wenn es mit einer Ziffer beginnt.
+* **WirePlumber setzt bei jedem Start** (Anmeldung, Neustart von PipeWire) HDMI und Kopfhörer auf stumm/0 %, MPD spielt
+  dann lautlos → `_mixer_loop` holt die Regler 30 s lang zurück, wenn ein neuer wireplumber-Prozess auftaucht. Nur dann,
+  damit Stummschalten von Hand (auch die Testtechnik `IEC958 off`) bestehen bleibt.
+* **PipeWire spielt auf demselben Ausgang:** MPD bleibt mit „Device or resource busy“ auf Pause und versucht es nicht
+  wieder → `_busy_loop` zeigt den Hinweis und versucht es alle 3 s, höchstens 2 min. Pause/Stopp beenden das Warten
+  (samt `clearerror`), sonst startet die Wiedergabe später ungefragt.
 
 ### Python
 
@@ -238,9 +244,9 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **HP mit Ubuntu 26.04:** Autostart von „Läuft gerade“ nach echter Anmeldung; Bild am Monitor (Nutzer); Wiedergabe mit
-  Ton, AirPlay, Spotify, CD, Bluetooth; Verhalten, wenn PipeWire gerade dieselbe Karte nutzt. `--tv-headless` scheitert
-  unter Ubuntu am fehlenden Paket `chromium`.
+* **HP mit Ubuntu 26.04:** AirPlay mit iPhone (Gerätename), CD, Bluetooth, Neustart. `--tv-headless` scheitert unter Ubuntu
+  am fehlenden Paket `chromium`. Belegter Ausgang: Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt
+  der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
@@ -437,6 +443,18 @@ Vorher bzw. dabei bedenken:
 * Snap-Firefox als Kiosk per `ks-tv-kiosk` (von Hand in der Sitzung gestartet): lädt `/tv`, keine AppArmor-Sperren;
   `tv_enabled` aus schließt das Fenster, an öffnet es wieder.
 * Optionen › Info: HP ProDesk 400 G5 MT, i7-8700 6 Kerne/12 Threads, x86-64-v3, 32 GB, NVMe 238 GB, Ubuntu 26.04.
+* Stumm über `snd-aloop` (Unterbrechungen durch PipeWire beim Entladen beachten: erst wireplumber/pipewire stoppen):
+  Bibliothek mit Umlauten und „&“, Warteschlange, Wiedergabeliste, Überblenden, ReplayGain, „Dynamisch“ (MPD-Neustart,
+  spielt an derselben Stelle weiter), Ausgabewechsel beim Spielen, Schlummer-Timer und Titelende, Wecker-Rampe, kaputter
+  Sender → Bibliothek + 60-min-Timer, 5.1/7.1-Verteilung wie am Alma, UPnP per SOAP (Titel, Umlaute, Pause; Spulen nicht
+  geprüft, der Testserver kann kein Range).
+* Webradio-Netzausfall 60 s: Sender läuft hier über IPv6, also v4 **und** v6 sperren (`ip -6 route add blackhole`). Nach
+  25 s „Verbindung unterbrochen“, 19 s nach Rückkehr spielt er wieder.
+* Spotify (`getInfo` auf Port 4070) und AirPlay (RTSP auf Port 5000) antworten, beide per mDNS gefunden (vom HP aus geprüft).
+* MPD und PipeWire auf getrennten Ausgängen nebeneinander; PipeWire gibt die Karte ~5 s nach Ende frei.
+* Abmelden und Anmelden (Protokoll, laut Nutzer alles richtig): Der Anmeldebildschirm (gdm-greeter) startet schon ein
+  eigenes WirePlumber → HDMI/Kopfhörer stumm, 1 s später vom Regler-Wächter zurückgeholt; bei der Anmeldung erneut. „Läuft
+  gerade“ startet 1 s nach dem WirePlumber der Sitzung von selbst, keine AppArmor-Sperren. Spotify vom Handy mit Ton über HDMI.
 
 ### Behobene Fehler
 
@@ -487,3 +505,7 @@ Vorher bzw. dabei bedenken:
 * Jede Erstinstallation brach seit be2f422 (31.10.) sofort und ohne Meldung ab (Port aus fehlender Unit lesen, siehe Lehren).
 * Unter Ubuntu: Warnung wegen Firmware-Paketen ohne Kandidat, Kiosk mit Snap-Firefox zeigte nichts, Info zeigte
   „forky/sid“ als Version (siehe Lehren).
+* Unter PipeWire: stumme Regler nach WirePlumber-Start, keine Meldung bei belegtem Ausgang (siehe Lehren).
+  `avahi-utils`/`avahi-tools` fehlten im Installer (`avahi-resolve` für den AirPlay-Gerätenamen).
+  Getestet (stumm): Regler nach WirePlumber-Neustart wieder an, von Hand stumm bleibt stumm; belegt → Hinweis, 7 s nach
+  Ende des Desktop-Tons spielt MPD von selbst; Pause, Umschalten und Stopp beenden das Warten; nach 2 min bleibt es aus.

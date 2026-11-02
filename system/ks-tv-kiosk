@@ -7,9 +7,6 @@ URL="http://127.0.0.1:@PORT@"
 BROWSER="$(command -v chromium || command -v chromium-browser || command -v firefox || true)"
 [ -n "$BROWSER" ] || { echo "Kein Browser (chromium/firefox) gefunden" >&2; exit 0; }
 PROFILE="${XDG_RUNTIME_DIR:-/tmp}/klangstation-tv-$(id -u)"
-# Snap-Browser (Ubuntu) duerfen per AppArmor nur in ihr eigenes Verzeichnis schreiben, /usr/bin/firefox ist dort nur ein Starter
-SNAP_NAME="$(basename "$BROWSER")"; SNAP_NAME="${SNAP_NAME%-browser}"
-[ -x "/snap/bin/$SNAP_NAME" ] && PROFILE="$HOME/snap/$SNAP_NAME/common/klangstation-tv"
 
 start_browser() {
     if [[ "$BROWSER" == *firefox* ]]; then

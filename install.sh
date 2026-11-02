@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Klangstation Installer
-# Debian / Ubuntu / Raspberry Pi OS  sowie  RHEL / AlmaLinux / Rocky / Fedora
+# Debian / Raspberry Pi OS  sowie  RHEL / AlmaLinux / Rocky / Fedora
 # Architekturen: x86_64, aarch64, armv7l
 # Optionen: siehe usage() bzw. ./install.sh --help
 set -euo pipefail
@@ -102,7 +102,9 @@ done
 [ -r /etc/os-release ] || die "/etc/os-release fehlt - Distribution unbekannt."
 . /etc/os-release
 case " ${ID:-} ${ID_LIKE:-} " in
-    *" debian "*|*" ubuntu "*|*" raspbian "*) FAMILY=debian ;;
+    # vor debian pruefen: Ubuntu und Ableger (Mint, Pop!_OS ...) melden auch ID_LIKE=debian
+    *" ubuntu "*) die "Ubuntu und davon abgeleitete Systeme werden nicht unterstuetzt (Browser nur als Snap). Bitte Debian, Raspberry Pi OS oder AlmaLinux verwenden." ;;
+    *" debian "*|*" raspbian "*) FAMILY=debian ;;
     *" rhel "*|*" fedora "*|*" centos "*) FAMILY=rhel ;;
     *) die "Nicht unterstuetzte Distribution: ${PRETTY_NAME:-$ID}" ;;
 esac
@@ -223,8 +225,8 @@ install_debian() {
         apt-get install -y --no-install-recommends bluez bluez-alsa-utils
     fi
     if [ "$WITH_WIFI" = 1 ]; then
-        # WLAN ueber NetworkManager. Unter Debian/Ubuntu laesst NetworkManager Adapter, die ifupdown bzw.
-        # netplan schon verwalten, in Ruhe - die Kabelverbindung aendert sich durch die Installation nicht.
+        # WLAN ueber NetworkManager. Unter Debian laesst NetworkManager Adapter, die ifupdown schon verwaltet,
+        # in Ruhe - die Kabelverbindung aendert sich durch die Installation nicht.
         apt-get install -y --no-install-recommends network-manager wpasupplicant iw rfkill
         # Firmware fuer gaengige USB-WLAN-Sticks (Realtek, MediaTek, Atheros) und Intel-Karten, soweit vorhanden
         # (braucht die Komponente non-free-firmware, die Raspberry Pi OS und Debian ab 12 mitbringen)
@@ -232,7 +234,7 @@ install_debian() {
         # nur fehlende Pakete: vorhandene Firmware (am Pi auch die des eingebauten WLAN) nicht nebenbei aktualisieren
         for p in firmware-realtek firmware-mediatek firmware-atheros firmware-iwlwifi; do
             dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" && continue
-            # Ubuntu: nur noch ein Eintrag ohne Kandidat, die Firmware steckt dort in linux-firmware
+            # apt-cache show findet auch Namen ohne installierbares Paket, darum den Kandidaten pruefen
             LC_ALL=C apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [^(]' && fw="$fw $p"
         done
         # shellcheck disable=SC2086

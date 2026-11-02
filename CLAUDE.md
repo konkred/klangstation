@@ -54,7 +54,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 |---|---|---|
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
-| HP ProDesk 400 G5 (Hostname `HP-KlangStation`, i7-8700), Ubuntu 26.04.1 Desktop, x86_64 (seit 02.11., vorher AlmaLinux 10.2 als `KlangStationAlma`) | `ssh ubuntu@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
+| HP ProDesk 400 G5 (Hostname `HP-KlangStation`, i7-8700), Ubuntu 26.04.1 Desktop, x86_64 (seit 02.11., vorher AlmaLinux 10.2 als `KlangStationAlma`; soll neu aufgesetzt werden, `install.sh` lehnt Ubuntu jetzt ab) | `ssh ubuntu@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
 | Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
 | NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben von Claude nach den Tests gelöscht, Freigabe ist leer |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
@@ -216,16 +216,15 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   auf das Skript → `klangstation-tv` hing beim Stoppen 90 s. Abhilfe: `ExecStop=-pkill -KILL -x ks-tv-kiosk`.
 * **Port-Probe** vor dem Wechsel mit `SO_REUSEADDR` (wie uvicorn), sonst gilt der alte Port wegen TIME_WAIT als belegt.
 
-### Installer und Ubuntu
+### Installer und PipeWire
 
+* **Ubuntu nicht unterstützen** (Entscheidung des Nutzers, 02.11.): Der Installer lehnt Ubuntu und Ableger ab. Browser gibt
+  es nur als Snap: AppArmor sperrt Profile außerhalb von `~/snap/`, `chromium`/`--tv-headless` geht nicht, dazu andere
+  Firmware-Pakete. Der Test vom 02.11. (siehe Bestanden) lief mit Snap-Sonderfall in `ks-tv-kiosk` (b575f4b, wieder entfernt).
 * **`set -euo pipefail`:** Ein Befehl, der in einer Pipe in `$(...)` scheitert darf (z. B. `sed` auf eine noch fehlende
   Datei, Code 2), beendet das Skript still → `|| true`. Fällt bei Updates nicht auf, nur auf frischen Systemen.
-* **Firmware-Pakete unter Ubuntu:** `apt-cache show` findet `firmware-realtek` usw., obwohl es keinen Kandidaten gibt →
-  `apt-cache policy` prüfen. Die Firmware steckt dort in `linux-firmware`.
-* **Snap-Firefox (Ubuntu):** AppArmor erlaubt das Profil nicht unter `$XDG_RUNTIME_DIR` (Firefox läuft, zeigt aber nichts)
-  → `~/snap/firefox/common/`. `/usr/bin/firefox` ist nur ein Starter. Snap-Prozesse laufen im eigenen Scope:
-  `systemctl --user stop` beendet sie nicht, `kill <pid>` aus `ks-tv-kiosk` schon.
-* **`/etc/debian_version`** enthält unter Ubuntu `forky/sid` → nur verwenden, wenn es mit einer Ziffer beginnt.
+* **`apt-cache show`** findet auch Paketnamen ohne Kandidat → `apt-cache policy` prüfen.
+* **`/etc/debian_version`** kann `forky/sid` enthalten → nur verwenden, wenn es mit einer Ziffer beginnt.
 * **WirePlumber setzt bei jedem Start** (Anmeldung, Neustart von PipeWire) HDMI und Kopfhörer auf stumm/0 %, MPD spielt
   dann lautlos → `_mixer_loop` holt die Regler 30 s lang zurück, wenn ein neuer wireplumber-Prozess auftaucht. Nur dann,
   damit Stummschalten von Hand (auch die Testtechnik `IEC958 off`) bestehen bleibt.
@@ -244,8 +243,8 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **HP mit Ubuntu 26.04:** `--tv-headless` scheitert unter Ubuntu am fehlenden Paket `chromium`. Belegter Ausgang: Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt
-  der Wächter nicht ab.
+* **Debian 13 pur:** noch nie getestet, nur das darauf aufbauende Pi OS (siehe Testplan).
+* **Belegter Ausgang:** Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
@@ -259,18 +258,18 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 * Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst am Pi „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Alma.
 
-### Testplan weitere Geräte (mit dem Nutzer abgestimmt am 01.11.2026, noch nicht begonnen)
+### Testplan weitere Geräte (mit dem Nutzer abgestimmt am 01.11.2026, am 02.11. auf Debian/AlmaLinux umgestellt)
 
 | Gerät | System | Deckt ab |
 |---|---|---|
-| ASUS-Laptop, Ryzen 5 5500U | Ubuntu 24.04 LTS Desktop | AMD-Sound/-Grafik, eingebaute Lautsprecher und Display, eingebautes WLAN, Ubuntu-Desktop mit PipeWire |
+| ASUS-Laptop, Ryzen 5 5500U | Debian 13 mit Desktop | AMD-Sound/-Grafik, eingebaute Lautsprecher und Display, eingebautes WLAN, Desktop mit PipeWire |
 | Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
-| Wincor Nixdorf Beetle, Core 2 Quad | Ubuntu Server 24.04 | netplan/systemd-networkd statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
+| Wincor Nixdorf Beetle, Core 2 Quad | Debian 13 ohne Desktop | ifupdown statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
 | OptiPlex 3060 (Celeron) | später Rocky/AlmaLinux 9 | EL9: ältere Pakete, Quellcode-Builds (Python 3.9) |
-| HP i7 (`HP-KlangStation`) | Ubuntu 26.04 Desktop (seit 02.11., statt AlmaLinux 10) | Python 3.14, Snap-Firefox, PipeWire; 5.1 mit CM6206 + Soundbird |
+| HP i7 (`HP-KlangStation`) | offen: läuft noch mit Ubuntu, neu aufsetzen mit Debian 13 oder AlmaLinux 10 (Nutzer entscheidet) | 5.1 mit CM6206 + Soundbird |
 | Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
 
-Reihenfolge: zuerst ASUS (Ubuntu Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
+Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
 
 Vorher bzw. dabei bedenken:
 
@@ -282,8 +281,8 @@ Vorher bzw. dabei bedenken:
   verwirrende Geräte zeigen.
 * **SOF (Dell, evtl. ASUS):** Debian braucht `firmware-sof-signed`, bringt der Installer bisher nicht mit → wahrscheinlich
   kein Ton ohne; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
-* **PipeWire auf Ubuntu Desktop** belegt die Karte im Betrieb (gibt sie nach ~5 s Leerlauf frei) – prüfen, ob MPD
-  `hw:` bekommt, wie am Pi-Desktop und OptiPlex/GNOME.
+* **PipeWire auf Debian Desktop** belegt die Karte im Betrieb (gibt sie nach ~5 s Leerlauf frei) – prüfen, ob MPD
+  `hw:` bekommt und Regler- und Ausgabe-Wächter greifen (unter Ubuntu getestet, siehe Bestanden).
 * **Beetle:** vorher RAM und Tonausgang klären (Kassensysteme haben teils nur Lautsprecher- oder keinen Ausgang);
   Chromium-Kiosk auf alter Intel-Grafik evtl. langsam.
 * Optional: Akkustand auf der Info-Seite.
@@ -433,7 +432,7 @@ Vorher bzw. dabei bedenken:
   `.asoundrc`. Oberfläche: Auswahl nur bei ≥ 6 Kanälen, bei Bit-perfekt gesperrt.
 * Noch offen: USB-Kanalreihenfolge mit echter Karte (CM6206) und Lautsprechern.
 
-**HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton**
+**HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton** (Ubuntu seitdem nicht mehr unterstützt, gilt nur als Beleg für PipeWire und Python 3.14)
 
 * `install.sh` von null: 126 s, EXIT 0 (erst nach Korrektur, siehe Behobene Fehler), danach Update in 11 s. Alle Dienste
   laufen, Pakete aus Ubuntu, raspotify und die Paketdienste bleiben aus; Weboberfläche vom Laptop erreichbar.

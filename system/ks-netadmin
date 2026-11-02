@@ -307,7 +307,7 @@ def do_ssh(req):
     if req.get("enable"):
         code, out = run(["systemctl", "enable", "--now", service])
     else:
-        # Socket-Aktivierung (z. B. Ubuntu) wuerde sshd sonst beim naechsten Zugriff wieder starten.
+        # Socket-Aktivierung wuerde sshd sonst beim naechsten Zugriff wieder starten.
         # Laufende Sitzungen bleiben bestehen.
         units = [u for u in (sock, service) if u]
         code, out = run(["systemctl", "disable", "--now"] + units)

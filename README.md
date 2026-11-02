@@ -48,12 +48,11 @@ Debian oder RHEL ausweist (`ID` bzw. `ID_LIKE`), wird wie diese Familie behandel
 | Familie | System | Stand | Hinweise |
 |---|---|---|---|
 | Debian | Raspberry Pi OS (Debian 13 „trixie“), mit Desktop und Lite | getestet | alle Dienste aus den Paketquellen, librespot (Spotify) aus dem Raspotify-Paketarchiv |
-| Debian | Ubuntu 26.04 LTS mit GNOME | getestet | Python 3.14; Firefox als Snap für „Läuft gerade“; PipeWire läuft neben Klangstation, belegt aber den Ausgang, solange der Desktop darüber spielt; `--tv-headless` geht noch nicht (kein Paket `chromium`) |
-| Debian | Debian 13, ältere Ubuntu-Versionen | unterstützt, nicht getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
+| Debian | Debian 13 | unterstützt, nicht getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
 | RHEL | AlmaLinux 10.2, ohne Desktop und mit GNOME, SELinux aktiv | getestet | was in den Paketquellen fehlt (mpd, shairport-sync, gmediarender, bluez-alsa), baut der Installer aus dem Quellcode, librespot immer; ffmpeg aus RPM Fusion, auf CPUs ohne x86-64-v3 aus EPEL |
 | RHEL | RHEL, Rocky Linux, CentOS Stream, Fedora | unterstützt, nicht getestet | wie AlmaLinux |
 
-Andere Systeme (z. B. Arch, openSUSE, Alpine) lehnt der Installer ab.
+Andere Systeme (z. B. Arch, openSUSE, Alpine) lehnt der Installer ab, ebenso Ubuntu und davon abgeleitete Systeme wie Linux Mint: Browser gibt es dort nur als Snap, das passt nicht zum Betrieb als Dienst ohne Desktop.
 
 ### Hardware
 
@@ -84,7 +83,6 @@ Getestetes Zubehör:
 | Raspberry Pi OS Lite | Raspberry Pi 4 | Installation von null mit `--tv-headless`, alle Dienste, „Läuft gerade“ am Fernseher, AirPlay ↔ Spotify, NFS-Freigabe (auch Serverausfall), Update und Neustart |
 | AlmaLinux 10.2 ohne Desktop | PC mit Intel-HDA | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Lautstärke angleichen und Überblenden, Sperrbildschirm und Home-Bildschirm-App (iPhone), Wecker, Erscheinungsbilder, Update und Neustart |
 | AlmaLinux 10.2 mit GNOME | Dell OptiPlex 3060 | Installation auf frischem System (ffmpeg aus EPEL statt RPM Fusion), „Läuft gerade“ per Firefox nach dem Anmelden, AirPlay ↔ Spotify, UPnP (mconnect), Bluetooth mit iPhone, NFS-Freigabe (auch Serverausfall), CD über USB-Laufwerk (MusicBrainz-Neuversuch, Rippen auf USB-Stick, Rückfall in den internen Speicher), Schlummer-Timer und Wecker, Neustart |
-| Ubuntu 26.04 LTS mit GNOME | PC mit Intel-HDA | Installation von null und Update, „Läuft gerade“ per Snap-Firefox nach dem Anmelden, Ton über HDMI, Spotify, AirPlay mit Gerätenamen, Bluetooth mit iPhone, CD-Wiedergabe mit Autoplay und Rippen in den internen Speicher, Radio (auch bei Netzausfall), Schlummer-Timer und Wecker, Abmelden/Anmelden und Neustart |
 
 ## Installation
 
@@ -317,7 +315,7 @@ Private Kopien eigener CDs sind in Deutschland erlaubt, solange kein Kopierschut
 
 *Optionen › Netzwerk* zeigt alle Netzwerkadapter mit Zustand, IPv4- und IPv6-Adressen, Gateway, DNS-Servern und
 MAC-Adresse. Geändert wird über NetworkManager (Raspberry Pi OS, AlmaLinux und die meisten Desktops nutzen ihn
-ohnehin; unter Debian/Ubuntu ohne NetworkManager installiert ihn der Installer für WLAN und lässt die
+ohnehin; unter Debian ohne NetworkManager installiert ihn der Installer für WLAN und lässt die
 bestehende Kabelverbindung in Ruhe).
 
 * **IP-Einstellungen:** pro LAN-/WLAN-Verbindung DHCP oder feste Adresse mit Präfix, Gateway und DNS. Danach

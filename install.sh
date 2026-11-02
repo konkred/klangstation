@@ -109,7 +109,8 @@ esac
 ARCH="$(uname -m)"
 # Update ohne --port: bisherigen Port behalten (laesst sich auch unter Optionen > Netzwerk aendern)
 if [ -z "$PORT" ]; then
-    PORT="$(sed -n 's/^Environment=KS_PORT=\([0-9]\+\)$/\1/p' /etc/systemd/system/klangstation.service 2>/dev/null | head -n1)"
+    # || true: bei Erstinstallation fehlt die Unit, sed endet mit 2 (set -e + pipefail wuerde still abbrechen)
+    PORT="$(sed -n 's/^Environment=KS_PORT=\([0-9]\+\)$/\1/p' /etc/systemd/system/klangstation.service 2>/dev/null | head -n1 || true)"
     PORT="${PORT:-8080}"
 fi
 PY=python3
@@ -231,7 +232,8 @@ install_debian() {
         # nur fehlende Pakete: vorhandene Firmware (am Pi auch die des eingebauten WLAN) nicht nebenbei aktualisieren
         for p in firmware-realtek firmware-mediatek firmware-atheros firmware-iwlwifi; do
             dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" && continue
-            apt-cache show "$p" >/dev/null 2>&1 && fw="$fw $p"
+            # Ubuntu: nur noch ein Eintrag ohne Kandidat, die Firmware steckt dort in linux-firmware
+            LC_ALL=C apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [^(]' && fw="$fw $p"
         done
         # shellcheck disable=SC2086
         [ -z "$fw" ] || apt-get install -y --no-install-recommends $fw || warn "WLAN-Firmware liess sich nicht installieren"

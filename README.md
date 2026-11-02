@@ -48,7 +48,8 @@ Debian oder RHEL ausweist (`ID` bzw. `ID_LIKE`), wird wie diese Familie behandel
 | Familie | System | Stand | Hinweise |
 |---|---|---|---|
 | Debian | Raspberry Pi OS (Debian 13 „trixie“), mit Desktop und Lite | getestet | alle Dienste aus den Paketquellen, librespot (Spotify) aus dem Raspotify-Paketarchiv |
-| Debian | Debian 13, Ubuntu | unterstützt, nicht getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
+| Debian | Ubuntu 26.04 LTS mit GNOME | Installation und Dienste getestet, Wiedergabe mit Ton noch nicht | Python 3.14; Firefox als Snap für „Läuft gerade“; `--tv-headless` geht noch nicht (kein Paket `chromium`) |
+| Debian | Debian 13, ältere Ubuntu-Versionen | unterstützt, nicht getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
 | RHEL | AlmaLinux 10.2, ohne Desktop und mit GNOME, SELinux aktiv | getestet | was in den Paketquellen fehlt (mpd, shairport-sync, gmediarender, bluez-alsa), baut der Installer aus dem Quellcode, librespot immer; ffmpeg aus RPM Fusion, auf CPUs ohne x86-64-v3 aus EPEL |
 | RHEL | RHEL, Rocky Linux, CentOS Stream, Fedora | unterstützt, nicht getestet | wie AlmaLinux |
 

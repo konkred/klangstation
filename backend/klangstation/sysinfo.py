@@ -178,7 +178,8 @@ def _os() -> Dict[str, str]:
     name = rel.get("PRETTY_NAME") or rel.get("NAME") or platform.system()
     version = rel.get("VERSION_ID", "")
     if rel.get("ID") == "debian" or "debian" in rel.get("ID_LIKE", ""):
-        version = _read("/etc/debian_version") or version   # z. B. 13.1 statt 13
+        deb = _read("/etc/debian_version")                  # z. B. 13.1 statt 13; Ubuntu: "forky/sid"
+        version = deb if deb[:1].isdigit() else version
     if Path("/etc/rpi-issue").exists() and "raspberry" not in name.lower():
         name = f"Raspberry Pi OS ({name})"
     user_bits = 64 if platform.architecture()[0] == "64bit" else 32

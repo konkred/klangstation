@@ -54,7 +54,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 |---|---|---|
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
-| PC (Hostname `KlangStationAlma`), AlmaLinux 10.2, x86_64, ohne Desktop, SELinux enforcing | `ssh root@10.0.0.162` (SSH-Key, zu Hause) | Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
+| HP ProDesk 400 G5 (Hostname `HP-KlangStation`, i7-8700), Ubuntu 26.04.1 Desktop, x86_64 (seit 02.11., vorher AlmaLinux 10.2 als `KlangStationAlma`) | `ssh ubuntu@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
 | Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
 | NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben von Claude nach den Tests gelöscht, Freigabe ist leer |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
@@ -216,6 +216,17 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   auf das Skript → `klangstation-tv` hing beim Stoppen 90 s. Abhilfe: `ExecStop=-pkill -KILL -x ks-tv-kiosk`.
 * **Port-Probe** vor dem Wechsel mit `SO_REUSEADDR` (wie uvicorn), sonst gilt der alte Port wegen TIME_WAIT als belegt.
 
+### Installer und Ubuntu
+
+* **`set -euo pipefail`:** Ein Befehl, der in einer Pipe in `$(...)` scheitert darf (z. B. `sed` auf eine noch fehlende
+  Datei, Code 2), beendet das Skript still → `|| true`. Fällt bei Updates nicht auf, nur auf frischen Systemen.
+* **Firmware-Pakete unter Ubuntu:** `apt-cache show` findet `firmware-realtek` usw., obwohl es keinen Kandidaten gibt →
+  `apt-cache policy` prüfen. Die Firmware steckt dort in `linux-firmware`.
+* **Snap-Firefox (Ubuntu):** AppArmor erlaubt das Profil nicht unter `$XDG_RUNTIME_DIR` (Firefox läuft, zeigt aber nichts)
+  → `~/snap/firefox/common/`. `/usr/bin/firefox` ist nur ein Starter. Snap-Prozesse laufen im eigenen Scope:
+  `systemctl --user stop` beendet sie nicht, `kill <pid>` aus `ks-tv-kiosk` schon.
+* **`/etc/debian_version`** enthält unter Ubuntu `forky/sid` → nur verwenden, wenn es mit einer Ziffer beginnt.
+
 ### Python
 
 * **asyncio hält Aufgaben nur schwach** → ohne Referenz räumt der Garbage Collector sie mitten im Lauf weg
@@ -227,6 +238,9 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
+* **HP mit Ubuntu 26.04:** Autostart von „Läuft gerade“ nach echter Anmeldung; Bild am Monitor (Nutzer); Wiedergabe mit
+  Ton, AirPlay, Spotify, CD, Bluetooth; Verhalten, wenn PipeWire gerade dieselbe Karte nutzt. `--tv-headless` scheitert
+  unter Ubuntu am fehlenden Paket `chromium`.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
@@ -248,7 +262,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 | Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
 | Wincor Nixdorf Beetle, Core 2 Quad | Ubuntu Server 24.04 | netplan/systemd-networkd statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
 | OptiPlex 3060 (Celeron) | später Rocky/AlmaLinux 9 | EL9: ältere Pakete, Quellcode-Builds (Python 3.9) |
-| HP i7 (`KlangStationAlma`) | bleibt AlmaLinux 10 | Referenz; 5.1 mit CM6206 + Soundbird |
+| HP i7 (`HP-KlangStation`) | Ubuntu 26.04 Desktop (seit 02.11., statt AlmaLinux 10) | Python 3.14, Snap-Firefox, PipeWire; 5.1 mit CM6206 + Soundbird |
 | Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
 
 Reihenfolge: zuerst ASUS (Ubuntu Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
@@ -414,6 +428,16 @@ Vorher bzw. dabei bedenken:
   `.asoundrc`. Oberfläche: Auswahl nur bei ≥ 6 Kanälen, bei Bit-perfekt gesperrt.
 * Noch offen: USB-Kanalreihenfolge mit echter Karte (CM6206) und Lautsprechern.
 
+**HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton**
+
+* `install.sh` von null: 126 s, EXIT 0 (erst nach Korrektur, siehe Behobene Fehler), danach Update in 11 s. Alle Dienste
+  laufen, Pakete aus Ubuntu, raspotify und die Paketdienste bleiben aus; Weboberfläche vom Laptop erreichbar.
+* Python 3.14.4 mit den festen Versionen (starlette 0.41.3, uvicorn 0.32.1, websockets 13.1): Start ohne Warnungen.
+* MPD neben aktivem PipeWire (Lautstärke 0): bekommt `hw:` für HDMI 0 und Analog direkt, Regler bleiben an.
+* Snap-Firefox als Kiosk per `ks-tv-kiosk` (von Hand in der Sitzung gestartet): lädt `/tv`, keine AppArmor-Sperren;
+  `tv_enabled` aus schließt das Fenster, an öffnet es wieder.
+* Optionen › Info: HP ProDesk 400 G5 MT, i7-8700 6 Kerne/12 Threads, x86-64-v3, 32 GB, NVMe 238 GB, Ubuntu 26.04.
+
 ### Behobene Fehler
 
 **26.10.2026**
@@ -457,3 +481,9 @@ Vorher bzw. dabei bedenken:
 
 * „Vergessen“ des aktiven WLANs und „WLAN ausschalten“ ohne Warnung, obwohl das Gerät dann nicht mehr erreichbar
   ist (am Pi passiert, siehe Testtechniken) → Rückfrage mit Hinweis, auch bei Aufruf über den Namen (kein Kabel).
+
+**02.11.2026**
+
+* Jede Erstinstallation brach seit be2f422 (31.10.) sofort und ohne Meldung ab (Port aus fehlender Unit lesen, siehe Lehren).
+* Unter Ubuntu: Warnung wegen Firmware-Paketen ohne Kandidat, Kiosk mit Snap-Firefox zeigte nichts, Info zeigte
+  „forky/sid“ als Version (siehe Lehren).

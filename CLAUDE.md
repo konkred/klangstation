@@ -244,7 +244,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **HP mit Ubuntu 26.04:** AirPlay mit iPhone (Gerätename), CD, Bluetooth, Neustart. `--tv-headless` scheitert unter Ubuntu
+* **HP mit Ubuntu 26.04:** CD. `--tv-headless` scheitert unter Ubuntu
   am fehlenden Paket `chromium`. Belegter Ausgang: Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt
   der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
@@ -455,6 +455,13 @@ Vorher bzw. dabei bedenken:
 * Abmelden und Anmelden (Protokoll, laut Nutzer alles richtig): Der Anmeldebildschirm (gdm-greeter) startet schon ein
   eigenes WirePlumber → HDMI/Kopfhörer stumm, 1 s später vom Regler-Wächter zurückgeholt; bei der Anmeldung erneut. „Läuft
   gerade“ startet 1 s nach dem WirePlumber der Sitzung von selbst, keine AppArmor-Sperren. Spotify vom Handy mit Ton über HDMI.
+* Neustart während Spotify: Start 53 s (davon 39 s Firmware), alle Dienste da, Sitzung meldet sich selbst an, Kiosk läuft,
+  Regler an, kein ungefragtes Weiterspielen.
+* AirPlay mit iPhone (laut Nutzer alles gut): Titel, Interpret, Album, Cover nach ~2 s, Gerätename `konnis-iPhone-16` per
+  `avahi-resolve` über link-/ULA-IPv6, Pause/Weiter, Trennen → Leerlauf ohne ungefragtes Weiterspielen.
+* Bluetooth (RTL8761BU, 0bda:8771, im Betrieb eingesteckt, Firmware aus `linux-firmware`) mit iPhone (laut Nutzer wie
+  erwartet): sofort erkannt, Klasse Lautsprecher, gekoppelt, Kopplungsfenster schließt, Play übernimmt nach 3 s, Titel,
+  Interpret, Pause/Weiter/Titelsprung, Trennen → Leerlauf. PipeWire/GNOME greift nicht ein (WirePlumber-Bluetooth aus).
 
 ### Behobene Fehler
 

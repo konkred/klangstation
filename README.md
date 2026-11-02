@@ -48,7 +48,7 @@ Debian oder RHEL ausweist (`ID` bzw. `ID_LIKE`), wird wie diese Familie behandel
 | Familie | System | Stand | Hinweise |
 |---|---|---|---|
 | Debian | Raspberry Pi OS (Debian 13 „trixie“), mit Desktop und Lite | getestet | alle Dienste aus den Paketquellen, librespot (Spotify) aus dem Raspotify-Paketarchiv |
-| Debian | Ubuntu 26.04 LTS mit GNOME | Installation und Dienste getestet, Wiedergabe mit Ton noch nicht | Python 3.14; Firefox als Snap für „Läuft gerade“; `--tv-headless` geht noch nicht (kein Paket `chromium`) |
+| Debian | Ubuntu 26.04 LTS mit GNOME | getestet | Python 3.14; Firefox als Snap für „Läuft gerade“; PipeWire läuft neben Klangstation, belegt aber den Ausgang, solange der Desktop darüber spielt; `--tv-headless` geht noch nicht (kein Paket `chromium`) |
 | Debian | Debian 13, ältere Ubuntu-Versionen | unterstützt, nicht getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
 | RHEL | AlmaLinux 10.2, ohne Desktop und mit GNOME, SELinux aktiv | getestet | was in den Paketquellen fehlt (mpd, shairport-sync, gmediarender, bluez-alsa), baut der Installer aus dem Quellcode, librespot immer; ffmpeg aus RPM Fusion, auf CPUs ohne x86-64-v3 aus EPEL |
 | RHEL | RHEL, Rocky Linux, CentOS Stream, Fedora | unterstützt, nicht getestet | wie AlmaLinux |
@@ -84,6 +84,7 @@ Getestetes Zubehör:
 | Raspberry Pi OS Lite | Raspberry Pi 4 | Installation von null mit `--tv-headless`, alle Dienste, „Läuft gerade“ am Fernseher, AirPlay ↔ Spotify, NFS-Freigabe (auch Serverausfall), Update und Neustart |
 | AlmaLinux 10.2 ohne Desktop | PC mit Intel-HDA | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Lautstärke angleichen und Überblenden, Sperrbildschirm und Home-Bildschirm-App (iPhone), Wecker, Erscheinungsbilder, Update und Neustart |
 | AlmaLinux 10.2 mit GNOME | Dell OptiPlex 3060 | Installation auf frischem System (ffmpeg aus EPEL statt RPM Fusion), „Läuft gerade“ per Firefox nach dem Anmelden, AirPlay ↔ Spotify, UPnP (mconnect), Bluetooth mit iPhone, NFS-Freigabe (auch Serverausfall), CD über USB-Laufwerk (MusicBrainz-Neuversuch, Rippen auf USB-Stick, Rückfall in den internen Speicher), Schlummer-Timer und Wecker, Neustart |
+| Ubuntu 26.04 LTS mit GNOME | PC mit Intel-HDA | Installation von null und Update, „Läuft gerade“ per Snap-Firefox nach dem Anmelden, Ton über HDMI, Spotify, AirPlay mit Gerätenamen, Bluetooth mit iPhone, CD-Wiedergabe mit Autoplay und Rippen in den internen Speicher, Radio (auch bei Netzausfall), Schlummer-Timer und Wecker, Abmelden/Anmelden und Neustart |
 
 ## Installation
 

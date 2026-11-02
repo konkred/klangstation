@@ -244,8 +244,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **HP mit Ubuntu 26.04:** CD. `--tv-headless` scheitert unter Ubuntu
-  am fehlenden Paket `chromium`. Belegter Ausgang: Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt
+* **HP mit Ubuntu 26.04:** `--tv-headless` scheitert unter Ubuntu am fehlenden Paket `chromium`. Belegter Ausgang: Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt
   der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
@@ -462,6 +461,9 @@ Vorher bzw. dabei bedenken:
 * Bluetooth (RTL8761BU, 0bda:8771, im Betrieb eingesteckt, Firmware aus `linux-firmware`) mit iPhone (laut Nutzer wie
   erwartet): sofort erkannt, Klasse Lautsprecher, gekoppelt, Kopplungsfenster schließt, Play übernimmt nach 3 s, Titel,
   Interpret, Pause/Weiter/Titelsprung, Trennen → Leerlauf. PipeWire/GNOME greift nicht ein (WirePlumber-Bluetooth aus).
+* CD (internes HP-Laufwerk GUD1N, laut Nutzer alles gut): 4 Titel, MusicBrainz 18 s nach dem Einlegen, kein GNOME-Dialog,
+  Autoplay spielt (Titelnamen und Cover kommen nach). Rippen in den internen Speicher: 8 min 8 s für 18 min Musik, FLAC
+  und `cover.jpg`, Auswurf danach, sofort in der Bibliothek, abspielbar.
 
 ### Behobene Fehler
 

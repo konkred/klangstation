@@ -61,7 +61,6 @@ DEFAULTS: Dict[str, Any] = {
     "output": None,              # ALSA-Geraet, None = automatisch waehlen
     "bitperfect": False,         # hw: statt plughw:, kein Software-Mixer in MPD
     "speakers": 2,               # 2 = Stereo, 6 = 5.1, 8 = 7.1 (Stereo auf alle Lautsprecher hochmischen)
-    "mixer_level": 0,            # Hardware-Regler der Karte in %, 0 = nicht festlegen (nur Regler auf 0 % auf 80 %)
     "loudness": "off",           # Lautstaerke angleichen: "off", "replaygain" (Tags) oder "dynamic" (MPD-Normalisierung)
     "crossfade": 0,              # Ueberblenden zwischen Titeln in Sekunden
     "airplay_enabled": True,
@@ -100,7 +99,6 @@ _VALIDATORS = {
     "output": lambda v: v is None or (isinstance(v, str) and len(v) < 200),
     "bitperfect": lambda v: isinstance(v, bool),
     "speakers": lambda v: v in (2, 6, 8),
-    "mixer_level": lambda v: v in (0, 50, 60, 70, 80, 90, 100),
     "loudness": lambda v: v in ("off", "replaygain", "dynamic"),
     "crossfade": lambda v: v in (0, 2, 5, 10),
     "airplay_enabled": lambda v: isinstance(v, bool),

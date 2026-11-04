@@ -82,12 +82,10 @@ def _vc4_connected(port: str) -> Optional[bool]:
 _MIXER_CONTROLS = ("Master", "PCM", "Speaker", "Headphone", "Line Out", "Front", "IEC958")
 
 
-def prepare_mixer(device_id: str, level: int = 0) -> List[str]:
-    """Schaltet stummgeschaltete Regler der Karte ein und setzt ihren Pegel.
+def prepare_mixer(device_id: str) -> List[str]:
+    """Schaltet stummgeschaltete Regler der Karte ein und stellt sie auf 100 %.
 
-    level > 0 (Einstellung "mixer_level"): alle Regler auf diesen Wert. Sonst nur Regler auf 0 % auf 80 %,
-    Lautstaerken, die jemand bewusst eingestellt hat (alles ueber 0 %), bleiben unangetastet.
-    Klangstation regelt die Lautstaerke selbst (Software-Mixer)."""
+    Die Karte laeuft immer voll, geregelt wird nur in den Quellen (Software-Mixer, Spotify, AirPlay)."""
     m = re.match(r"^hw:CARD=([^,]+)", device_id)
     if not m:
         return []
@@ -104,14 +102,10 @@ def prepare_mixer(device_id: str, level: int = 0) -> List[str]:
         if any("[off]" in ln for ln in playback):
             _amixer("-c", card, "-q", "sset", name, "unmute")
             changed.append(f"{name} eingeschaltet")
-        levels = [int(p) for ln in playback for p in re.findall(r"\[(\d+)%\]", ln)]
-        if level:
-            if levels and any(p != level for p in levels):
-                _amixer("-c", card, "-q", "sset", name, f"{level}%")
-                changed.append(f"{name} auf {level} %")
-        elif levels and max(levels) == 0:
-            _amixer("-c", card, "-q", "sset", name, "80%")
-            changed.append(f"{name} auf 80 %")
+        levels = [int(p) for ln in playback for p in re.findall(r"Playback \d+ \[(\d+)%\]", ln)]
+        if levels and any(p != 100 for p in levels):
+            _amixer("-c", card, "-q", "sset", name, "100%")
+            changed.append(f"{name} auf 100 %")
     return changed
 
 
@@ -361,6 +355,7 @@ def shairport_config(*, name: str, device: str, hook: Path, pipe: Path) -> str:
 general = {{
     name = "{_q(name)}";
     output_backend = "alsa";
+    default_airplay_volume = 0.0;  // Vorschlag ans Handy, wenn es selbst keinen Wert mitbringt: volle Lautstaerke
 }};
 
 sessioncontrol = {{
@@ -412,7 +407,7 @@ def librespot_args(*, name: str, device: str, bitrate: int, hook: Path, sink: Pa
         "--format", "S16",
         "--device", f"{sink} {alsa_device(device, False)}",
         "--bitrate", str(bitrate),
-        "--initial-volume", "70",
+        "--initial-volume", "100",
         "--volume-ctrl", "log",
         "--enable-volume-normalisation",
         "--cache", str(cache),

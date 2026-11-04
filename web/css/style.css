@@ -292,10 +292,12 @@ table.grid .ico img, table.grid .ico svg { width: 22px; height: 22px; object-fit
 
 /* ---------------------------------------------------------- Optionen (Dialog) */
 #view-settings { background: #dfe8f4; overflow: auto; }
-.dialog { max-width: 720px; margin: 18px auto; padding: 0 12px; width: 100%; }
+/* Breite und Reiter wachsen mit dem Fenster: Reiter in einer Reihe, umbrechen erst, wenn der Platz auch eng nicht reicht */
+.dialog { max-width: min(1100px, max(860px, 62vw)); margin: 18px auto; padding: 0 12px; width: 100%; container-type: inline-size; }
 .dlg-tabs { display: flex; gap: 2px; flex-wrap: wrap; }
 .dlg-tabs button {
-  padding: 5px 14px; border: 1px solid #8ea6c8; border-bottom: 0; border-radius: 4px 4px 0 0; cursor: pointer;
+  flex: 1 1 auto; white-space: nowrap;
+  padding: 5px 14px; padding-inline: clamp(4px, 2cqw - 8px, 14px); border: 1px solid #8ea6c8; border-bottom: 0; border-radius: 4px 4px 0 0; cursor: pointer;
   background: linear-gradient(180deg, #f8fbff, #d9e4f3); color: var(--list-ink); position: relative; top: 1px;
 }
 .dlg-tabs button.on { background: #fbfcfe; font-weight: bold; }
@@ -590,7 +592,7 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
   .dialog { margin: 0; padding: 0; }
   .dlg-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 8px 8px 0; }
   .dlg-tabs::-webkit-scrollbar { display: none; }
-  .dlg-tabs button { flex: none; }
+  .dlg-tabs button { flex: none; padding-inline: 14px; }
   .dlg-body { border-radius: 0; border-left: 0; border-right: 0; padding: 10px; box-shadow: none; }
   fieldset { padding: 8px 10px 12px; }
   .field input, .field select { max-width: none; }

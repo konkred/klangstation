@@ -1414,7 +1414,7 @@ $("#settings-form").addEventListener("submit", async (ev) => {
     if (!el.name || (el.name !== "output" && !(el.name in settings))) continue;
     if (el.type === "checkbox") data[el.name] = el.checked;
     else if (el.type === "radio") { if (el.checked) data.output = el.value || null; }
-    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade", "speakers", "mixer_level"].includes(el.name)) data[el.name] = +el.value;
+    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade", "speakers"].includes(el.name)) data[el.name] = +el.value;
     else data[el.name] = el.value;
   }
   $("#save-msg").textContent = "Wird übernommen…";

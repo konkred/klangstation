@@ -119,7 +119,7 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **RPM Fusion baut für EL10 nur x86-64-v3** (AVX2) → auf CPUs ohne AVX (AlmaLinux x86_64_v2) stürzen mpd und
   shairport-sync beim Laden von `libx265` mit SIGILL ab (Code -4) → Installer bindet RPM Fusion dort nicht ein,
   ffmpeg-free aus EPEL (MP3/AAC/WMA/APE/WV/DSF gehen).
-* **Headless-Mixer:** Regler stehen auf frischen Systemen stumm/0 % → `audio.prepare_mixer`.
+* **Headless-Mixer:** Regler stehen auf frischen Systemen stumm/0 % → `audio.prepare_mixer` schaltet sie ein und setzt sie auf 100 %.
 * **vc4hdmi (Pi)** hat keinen Jack-Regler → Anschlussstatus aus `/sys/class/drm/card*-HDMI-A-<n+1>/status`.
 * **Dynamische Lautstärke (`volume_normalization`)** gibt es in MPD nur als Startoption → MPD-Neustart wie beim
   Ausgabewechsel; ReplayGain und Überblenden gehen zur Laufzeit (`replay_gain_mode`, `crossfade`).
@@ -436,8 +436,10 @@ Vorher bzw. dabei bedenken:
   Lautsprechern (laut Nutzer).
 * Kanalreihenfolge: Alle 8 Kanäle einzeln mit `speaker-test -t wav -s <n>` direkt auf `hw:`, jede Ansage kam laut Nutzer aus
   dem passenden Lautsprecher. Die Kanalkarte der Karte (FL FR FC LFE RL RR SL SR) stimmt mit der Tabelle in `ks_surround` überein.
-* Pegel der Soundkarte (`mixer_level`, stumm im Leerlauf): 90 und 100 % wirken sofort am Regler, ein Neustart holt 90 % von Hand zurück auf 100 %, ungültige Werte → HTTP 400,
-  die Auswahl erscheint unter Optionen › Ausgabe mit dem gespeicherten Wert. Vorgabe 0 lässt das alte Verhalten unverändert.
+* Lautstärke (Wunsch des Nutzers: Karte immer 100 %, geregelt wird in den Quellen): Karte von Hand auf 90 % und MPD auf 40 → nach
+  Neustart beide 100; Player von Hand auf 60 bleibt, Karte bleibt 100; librespot mit `--initial-volume 100`, dazu `default_airplay_volume`.
+  Spotify und AirPlay mit iPhone: Laut Nutzer alles in Ordnung; bei AirPlay meldet der Zustand Lautstärke 100, Karte 100 %.
+* Reiter unter Optionen in allen Themes: 1920, 1280 und 900 px eine Reihe, darunter Umbruch, am Handy wie bisher wischbar.
 
 **HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton** (Ubuntu seitdem nicht mehr unterstützt, gilt nur als Beleg für PipeWire und Python 3.14)
 

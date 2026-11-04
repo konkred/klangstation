@@ -222,10 +222,9 @@ zusammengemischt. Bei *Bit-perfekt* ist das aus. Welche Buchse welcher Kanal ist
 Reihenfolge (USB-Karten: vorne, Center/Subwoofer, hinten, Seite; Onboard-Sound: vorne, hinten, Center/Subwoofer,
 Seite).
 
-**Pegel der Soundkarte:** Stumme Hardware-Regler hebt Klangstation von sich aus auf 80 %, andere Werte lässt es in
-Ruhe. Wer einen festen Pegel braucht (etwa 100 %, wenn Aktivboxen oder ein Verstärker die Lautstärke regeln), wählt ihn
-hier: Er wird sofort gesetzt und danach bei jedem Start und Gerätewechsel. Der Lautstärkeregler im Player bleibt davon
-unabhängig.
+**Lautstärke:** Die Regler der Soundkarte stehen immer auf 100 %, geregelt wird nur in den Quellen. Der Regler im Player
+steht nach jedem Start von Klangstation auf 100 %, Spotify beginnt ebenfalls mit 100 %, und AirPlay bekommt 100 % als
+Vorschlag (das Handy kann seinen eigenen Wert mitbringen). Die Lautstärke des Raums bestimmt also der Verstärker.
 
 Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
 

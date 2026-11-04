@@ -116,6 +116,7 @@ class Core:
     # ------------------------------------------------------------ Lebenszyklus
     async def start(self) -> None:
         await self.apply_audio()
+        self._spawn(self._apply_player_level())
         self._tasks = [
             asyncio.create_task(self.mpd.idle_loop(self._on_mpd_change)),
             asyncio.create_task(self._guarded("CD-Ueberwachung", self._cd_loop)),
@@ -175,7 +176,7 @@ class Core:
         self.surround = await asyncio.to_thread(audio.configure_surround, dev, s.get("speakers"), s.get("bitperfect"))
         log.info("Ausgabe: %s (%s)%s", self.output["label"], dev,
                  f", hochgemischt auf {self.surround} Kanaele" if self.surround > 2 else "")
-        fixed = await asyncio.to_thread(audio.prepare_mixer, dev, s.get("mixer_level"))
+        fixed = await asyncio.to_thread(audio.prepare_mixer, dev)
         if fixed:
             log.info("Mixer: %s", ", ".join(fixed))
         if "mpd" in which:
@@ -864,8 +865,7 @@ class Core:
                 fix_until = time.monotonic() + self.MIXER_FIX_WINDOW
             known = pids
             if time.monotonic() < fix_until:
-                fixed = await asyncio.to_thread(audio.prepare_mixer, self.output.get("id", ""),
-                                                self.settings.get("mixer_level"))
+                fixed = await asyncio.to_thread(audio.prepare_mixer, self.output.get("id", ""))
                 if fixed:
                     log.info("Mixer nach Start von WirePlumber: %s", ", ".join(fixed))
 
@@ -983,6 +983,23 @@ class Core:
             except (ConnectionError, MPDError):
                 continue
         log.info("ReplayGain/Ueberblenden nicht gesetzt: MPD nicht erreichbar")
+
+    async def _apply_player_level(self, tries: int = 15) -> None:
+        """Stellt den Player-Regler beim Start auf 100 %, danach bleibt er frei verschiebbar.
+
+        Bei Bit-perfekt hat MPD keinen Regler.
+        """
+        if self.settings.get("bitperfect"):
+            return
+        for attempt in range(tries):
+            if attempt:
+                await asyncio.sleep(1)
+            try:
+                await self.mpd.run("setvol", 100)
+                return
+            except (ConnectionError, MPDError):
+                continue
+        log.info("Player-Regler nicht gesetzt: MPD nicht erreichbar")
 
     async def _is_playing(self) -> bool:
         if self.source == "airplay":
@@ -1586,11 +1603,6 @@ class Core:
                 await self.apply_audio(("cec",))
             if changed & {"loudness", "crossfade"}:
                 await self._apply_playback(tries=1)
-        if "mixer_level" in changed:
-            fixed = await asyncio.to_thread(audio.prepare_mixer, self.output.get("id", ""),
-                                            self.settings.get("mixer_level"))
-            if fixed:
-                log.info("Mixer: %s", ", ".join(fixed))
         if changed & {"weather_place", "metadata_online"}:
             self._spawn(self._weather_now())
         if "tv_enabled" in changed and self.settings.get("tv_enabled"):

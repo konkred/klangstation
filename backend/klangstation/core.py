@@ -175,7 +175,7 @@ class Core:
         self.surround = await asyncio.to_thread(audio.configure_surround, dev, s.get("speakers"), s.get("bitperfect"))
         log.info("Ausgabe: %s (%s)%s", self.output["label"], dev,
                  f", hochgemischt auf {self.surround} Kanaele" if self.surround > 2 else "")
-        fixed = await asyncio.to_thread(audio.prepare_mixer, dev)
+        fixed = await asyncio.to_thread(audio.prepare_mixer, dev, s.get("mixer_level"))
         if fixed:
             log.info("Mixer: %s", ", ".join(fixed))
         if "mpd" in which:
@@ -864,7 +864,8 @@ class Core:
                 fix_until = time.monotonic() + self.MIXER_FIX_WINDOW
             known = pids
             if time.monotonic() < fix_until:
-                fixed = await asyncio.to_thread(audio.prepare_mixer, self.output.get("id", ""))
+                fixed = await asyncio.to_thread(audio.prepare_mixer, self.output.get("id", ""),
+                                                self.settings.get("mixer_level"))
                 if fixed:
                     log.info("Mixer nach Start von WirePlumber: %s", ", ".join(fixed))
 
@@ -1585,6 +1586,11 @@ class Core:
                 await self.apply_audio(("cec",))
             if changed & {"loudness", "crossfade"}:
                 await self._apply_playback(tries=1)
+        if "mixer_level" in changed:
+            fixed = await asyncio.to_thread(audio.prepare_mixer, self.output.get("id", ""),
+                                            self.settings.get("mixer_level"))
+            if fixed:
+                log.info("Mixer: %s", ", ".join(fixed))
         if changed & {"weather_place", "metadata_online"}:
             self._spawn(self._weather_now())
         if "tv_enabled" in changed and self.settings.get("tv_enabled"):

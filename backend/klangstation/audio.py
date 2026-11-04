@@ -82,9 +82,10 @@ def _vc4_connected(port: str) -> Optional[bool]:
 _MIXER_CONTROLS = ("Master", "PCM", "Speaker", "Headphone", "Line Out", "Front", "IEC958")
 
 
-def prepare_mixer(device_id: str) -> List[str]:
-    """Schaltet stummgeschaltete Regler der Karte ein und hebt Regler auf 0 % auf 80 %.
+def prepare_mixer(device_id: str, level: int = 0) -> List[str]:
+    """Schaltet stummgeschaltete Regler der Karte ein und setzt ihren Pegel.
 
+    level > 0 (Einstellung "mixer_level"): alle Regler auf diesen Wert. Sonst nur Regler auf 0 % auf 80 %,
     Lautstaerken, die jemand bewusst eingestellt hat (alles ueber 0 %), bleiben unangetastet.
     Klangstation regelt die Lautstaerke selbst (Software-Mixer)."""
     m = re.match(r"^hw:CARD=([^,]+)", device_id)
@@ -104,7 +105,11 @@ def prepare_mixer(device_id: str) -> List[str]:
             _amixer("-c", card, "-q", "sset", name, "unmute")
             changed.append(f"{name} eingeschaltet")
         levels = [int(p) for ln in playback for p in re.findall(r"\[(\d+)%\]", ln)]
-        if levels and max(levels) == 0:
+        if level:
+            if levels and any(p != level for p in levels):
+                _amixer("-c", card, "-q", "sset", name, f"{level}%")
+                changed.append(f"{name} auf {level} %")
+        elif levels and max(levels) == 0:
             _amixer("-c", card, "-q", "sset", name, "80%")
             changed.append(f"{name} auf 80 %")
     return changed

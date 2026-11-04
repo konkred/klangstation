@@ -222,6 +222,11 @@ zusammengemischt. Bei *Bit-perfekt* ist das aus. Welche Buchse welcher Kanal ist
 Reihenfolge (USB-Karten: vorne, Center/Subwoofer, hinten, Seite; Onboard-Sound: vorne, hinten, Center/Subwoofer,
 Seite).
 
+**Pegel der Soundkarte:** Stumme Hardware-Regler hebt Klangstation von sich aus auf 80 %, andere Werte lässt es in
+Ruhe. Wer einen festen Pegel braucht (etwa 100 %, wenn Aktivboxen oder ein Verstärker die Lautstärke regeln), wählt ihn
+hier: Er wird sofort gesetzt und danach bei jedem Start und Gerätewechsel. Der Lautstärkeregler im Player bleibt davon
+unabhängig.
+
 Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
 
 * **Lautstärke angleichen:** „Nach ReplayGain-Werten“ nutzt die in den Dateien gespeicherten Werte (Album-Wert

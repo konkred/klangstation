@@ -436,6 +436,8 @@ Vorher bzw. dabei bedenken:
   Lautsprechern (laut Nutzer).
 * Kanalreihenfolge: Alle 8 Kanäle einzeln mit `speaker-test -t wav -s <n>` direkt auf `hw:`, jede Ansage kam laut Nutzer aus
   dem passenden Lautsprecher. Die Kanalkarte der Karte (FL FR FC LFE RL RR SL SR) stimmt mit der Tabelle in `ks_surround` überein.
+* Pegel der Soundkarte (`mixer_level`, stumm im Leerlauf): 90 und 100 % wirken sofort am Regler, ein Neustart holt 90 % von Hand zurück auf 100 %, ungültige Werte → HTTP 400,
+  die Auswahl erscheint unter Optionen › Ausgabe mit dem gespeicherten Wert. Vorgabe 0 lässt das alte Verhalten unverändert.
 
 **HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton** (Ubuntu seitdem nicht mehr unterstützt, gilt nur als Beleg für PipeWire und Python 3.14)
 

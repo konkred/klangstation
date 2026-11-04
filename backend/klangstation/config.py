@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 _ROOT = Path(__file__).resolve().parents[2]
 

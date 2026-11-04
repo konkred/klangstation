@@ -55,7 +55,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 |---|---|---|
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
-| HP ProDesk 400 G5 (Hostname `HP-KlangStation`, i7-8700), Ubuntu 26.04.1 Desktop, x86_64 (seit 02.11., vorher AlmaLinux 10.2 als `KlangStationAlma`; soll neu aufgesetzt werden, `install.sh` lehnt Ubuntu jetzt ab) | `ssh ubuntu@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk |
+| HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 ohne Desktop, x86_64 (seit 04.11., vorher Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.172` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
 | Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
 | NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben von Claude nach den Tests gelöscht, Freigabe ist leer |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
@@ -100,6 +100,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   Kontext), Seite vorher mit geänderter Query (`?r=…`) neu laden.
 * Beobachtungsskripte mit `setsid nohup` starten und per PID beenden. `pgrep -f`/`pkill -f` treffen sonst die
   eigene SSH-Shell – stattdessen `ps -eo pid,comm,args | awk '$2=="python3"'`.
+* **`ss -K`** nur mit genauem Ziel (`dst <IP> dport = :<Port>`): `dst any` trennt auch die eigene SSH-Sitzung, gesetzte
+  Sperrrouten bleiben dann stehen. Sperrrouten immer per `trap … EXIT` entfernen.
+* **Kanäle prüfen:** `S24_LE` belegt 4 Byte je Wert → mit `S32_LE` aufnehmen und als `array('i')` auswerten. Prüfdatei
+  nur links: Der rechte Kanal muss 0 sein, sonst taugt die Messung nicht.
 
 ## Lehren aus der Fehlersuche (nicht wieder einbauen)
 
@@ -130,6 +134,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   überschrieben. `aplay`-Meldungen sind lokalisiert → mit `LC_ALL=C` aufrufen. Stumm testen mit `snd-aloop`
   (bis 32 Kanäle; Aufnahme an `DEV=1` in S24_LE, plug wählt das beste Format); zum Entladen erst `alsa-state`
   stoppen (alsactl hält die Karte).
+* **Verbindung reißt ab, Sender nicht erreichbar:** MPD behandelt das wie ein Titelende: `stop` ohne `error` und ohne
+  aktuellen Titel, der Sender steht noch in der Warteschlange → daran erkennt es `_stream_lost`. Der Nutzer-Stopp behält den
+  aktuellen Titel, aber MPD behält auch `error` → Stopp und Pause beenden den Neuversuch in `player` (samt `clearerror`).
 * **Nicht erreichbarer Sender:** `addid`/`play` gelingen, MPD meldet den Fehler erst danach (`state: stop` + `error`)
   → der Wecker prüft das in der Lautstärke-Rampe und weicht auf die Bibliothek aus.
 
@@ -244,7 +251,8 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **Debian 13 pur:** noch nie getestet, nur das darauf aufbauende Pi OS (siehe Testplan).
+* **Debian 13 pur:** ohne Desktop stumm bestanden (siehe unten); mit dem Nutzer noch Ton, Kiosk am Monitor, Spotify,
+  AirPlay, Bluetooth, CD und ein Neustart. Danach mit Desktop.
 * **Belegter Ausgang:** Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
@@ -266,7 +274,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 | Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
 | Wincor Nixdorf Beetle, Core 2 Quad | Debian 13 ohne Desktop | ifupdown statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
 | OptiPlex 3060 (Celeron) | später Rocky/AlmaLinux 9 | EL9: ältere Pakete, Quellcode-Builds (Python 3.9) |
-| HP i7 (`HP-KlangStation`) | offen: läuft noch mit Ubuntu, neu aufsetzen mit Debian 13 oder AlmaLinux 10 (Nutzer entscheidet) | 5.1/7.1 unter Debian wiederholen (unter Ubuntu bestanden, siehe unten) |
+| HP i7 (`KlangStationDebian`) | Debian 13, erst ohne, dann mit Desktop | 5.1/7.1 mit echten Lautsprechern unter Debian wiederholen (unter Ubuntu bestanden, siehe unten) |
 | Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
 
 Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
@@ -485,6 +493,22 @@ Vorher bzw. dabei bedenken:
   Autoplay spielt (Titelnamen und Cover kommen nach). Rippen in den internen Speicher: 8 min 8 s für 18 min Musik, FLAC
   und `cover.jpg`, Auswurf danach, sofort in der Bibliothek, abspielbar.
 
+**HP, Debian 13.7 ohne Desktop frisch, 04.11.2026 – ohne Ton**
+
+* `install.sh --tv-headless` von null: 212 s, EXIT 0. Python 3.13.5, MPD 0.24.4, shairport-sync 4.3.7, librespot 0.8.0,
+  gmediarender 0.3, Chromium 156, cage 0.2.0, bluez-alsa 4.3.1. Alle Dienste und der Kiosk laufen, keine fehlgeschlagenen
+  Units, kein PipeWire, Paketdienste (mpd, shairport-sync, raspotify) aus. Spotify `getInfo` und mDNS antworten.
+* Automatische Ausgabe wählt die USB-Karte, Regler 100 %. Info und Update-Hinweis (0.2.1) stimmen.
+* Kabel bleibt unter ifupdown („nicht von NetworkManager verwaltet“, dhcpcd), wie in der README beschrieben.
+* Hochladen vom Laptop mit Umlauten, „&“ und Ordnern; stumm über `snd-aloop` spielen WAV, FLAC, MP3, OGG, Opus, M4A, WMA.
+* Nur-links-Rauschen, Werte je Kanal: Stereo 1886/0; 5.1 FL 1886, FR 0, RL 1886, RR 0, FC 943, LFE 943; 7.1 zusätzlich SL 1880,
+  SR 0. Zurück auf Stereo entfernt `.asoundrc`.
+* Webradio-Netzausfall 60 s (v4 und v6 gesperrt): nach 28 s Hinweis „Verbindung unterbrochen“, 10 s nach Rückkehr spielt er
+  wieder. Reiner Verbindungsabbruch: spielt nach wenigen Sekunden weiter.
+* Abbruch bei gesperrtem Sender (Sperrroute plus `ss -K` auf die Stream-Verbindung, siehe Behobene Fehler): nach ~10 s Hinweis,
+  11 s nach Rückkehr spielt er wieder. Stopp und Pause-Taste beenden den Neuversuch, normaler Stopp, Warteschlange leeren und
+  kaputter Sender starten keinen.
+
 ### Behobene Fehler
 
 **26.10.2026**
@@ -538,3 +562,8 @@ Vorher bzw. dabei bedenken:
   `avahi-utils`/`avahi-tools` fehlten im Installer (`avahi-resolve` für den AirPlay-Gerätenamen).
   Getestet (stumm): Regler nach WirePlumber-Neustart wieder an, von Hand stumm bleibt stumm; belegt → Hinweis, 7 s nach
   Ende des Desktop-Tons spielt MPD von selbst; Pause, Umschalten und Stopp beenden das Warten; nach 2 min bleibt es aus.
+
+**04.11.2026**
+
+* Webradio blieb dauerhaft aus, wenn die Verbindung abriss und der Sender dabei nicht erreichbar war → Wächter verbindet neu
+  (siehe Lehren). Stopp während des Neuversuchs startete den Sender später ungefragt wieder → beendet ihn jetzt (0.2.2).

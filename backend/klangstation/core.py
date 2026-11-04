@@ -109,6 +109,7 @@ class Core:
         self._last_mpd: "tuple[Dict[str, str], Dict[str, str]]" = ({}, {})
         # Webradio nach Verbindungsabbruch: {"uri", "until", "next"} solange neu verbunden wird
         self._stream_retry: Optional[Dict[str, Any]] = None
+        self._stream_heard: Optional[Dict[str, str]] = None  # zuletzt wirklich laufender Sender (kaputte zaehlen nicht)
         # Titel von einer Freigabe wegen Serverausfall angehalten: {"uri", "share"}
         self._share_hold: Optional[Dict[str, Any]] = None
         # Ausgabe von anderem Programm belegt (MPD konnte nicht starten): Zeitpunkt, bis zu dem neu versucht wird
@@ -690,13 +691,15 @@ class Core:
         # AirPlay/Spotify werden vom Handy gesteuert; Play oder Stopp hier beendet die Fremdsitzung
         if self.source in ("airplay", "spotify") and action in ("play", "toggle", "stop"):
             await self.take_over("mpd")
-        if self._output_busy is not None and action in ("pause", "stop", "toggle"):
-            # Nutzer will nicht mehr warten: Wiederholung beenden, sonst startet es spaeter ungefragt
-            self._output_busy = None
-            await self.mpd.run("clearerror")
-            self.push()
-            if action == "toggle":
-                return
+        if action in ("pause", "stop", "toggle"):
+            self._stream_heard = None
+            if self._output_busy is not None or self._stream_retry:
+                # Nutzer will nicht mehr warten: Wiederholung beenden, sonst startet es spaeter ungefragt
+                self._output_busy = self._stream_retry = None
+                await self.mpd.run("clearerror")
+                self.push()
+                if action == "toggle" and (await self.mpd.dict("status")).get("state") != "play":
+                    return
         cmds = {"play": "play", "pause": "pause 1", "stop": "stop", "next": "next", "prev": "previous"}
         if action == "toggle":
             status = await self.mpd.dict("status")
@@ -795,23 +798,36 @@ class Core:
         Bricht die Verbindung ohne Fehler ab (Router weg, WLAN weg), bleibt MPD auf "play" stehen und
         verbindet nie neu - auch nicht, wenn das Netz zurueckkommt. Steht elapsed still, startet der
         Waechter den Sender neu und wiederholt das, bis er wieder spielt oder der Nutzer etwas anderes macht.
+
+        Reisst die Verbindung dagegen ab und der Sender ist nicht erreichbar, behandelt MPD das wie ein Titelende:
+        "stop" ohne Fehler und ohne aktuellen Titel, der Sender steht aber noch in der Warteschlange.
+        Ein Stopp durch den Nutzer behaelt den aktuellen Titel, Leeren nimmt den Sender aus der Warteschlange.
         """
         last: "tuple[str, float]" = ("", -1.0)
         still_since = 0.0
         while True:
             await asyncio.sleep(5)
             now = time.monotonic()
-            retry = self._stream_retry
             try:
                 status = await asyncio.wait_for(self.mpd.dict("status"), 3)
                 song = await asyncio.wait_for(self.mpd.dict("currentsong"), 3)
             except (ConnectionError, MPDError, asyncio.TimeoutError):
                 continue
+            retry = self._stream_retry
             uri, state = song.get("file", ""), status.get("state")
             elapsed = float(status.get("elapsed", 0) or 0)
             playing_radio = self.source == "mpd" and state == "play" and _media_kind(uri) == "radio"
+            if playing_radio and elapsed > 2:
+                self._stream_heard = {"uri": uri, "song": status.get("song", "0")}
+            lost = await self._stream_lost(retry or self._stream_heard, state, uri, status)
+            if lost and not retry:
+                log.warning("Webradio abgebrochen, verbinde neu: %s", self._stream_heard["uri"])
+                self._stream_retry = retry = {**self._stream_heard, "until": now + self.STREAM_GIVE_UP}
+                await self._stream_restart(retry["song"])
+                still_since = now
+                continue
             if not playing_radio and not retry:
-                last = ("", -1.0)  # nach Pause/Stopp neu anfangen zu zaehlen
+                last, self._stream_heard = ("", -1.0), None  # nach Pause/Stopp neu anfangen zu zaehlen
                 continue
             if playing_radio and (status.get("songid", ""), elapsed) != last:
                 last, still_since = (status.get("songid", ""), elapsed), now
@@ -823,13 +839,12 @@ class Core:
 
             if retry:
                 # Nutzer hat gestoppt, pausiert, etwas anderes gewaehlt oder die Quelle gewechselt
-                stopped_by_error = state == "stop" and status.get("error")
-                if self.source != "mpd" or uri != retry["uri"] or not (playing_radio or stopped_by_error):
+                if not lost and not (playing_radio and uri == retry["uri"]):
                     self._stream_retry = None
                     self.push()
                     continue
                 if now > retry["until"]:
-                    log.warning("Webradio nach %d min nicht erreichbar, gebe auf: %s", self.STREAM_GIVE_UP // 60, uri)
+                    log.warning("Webradio nach %d min nicht erreichbar, gebe auf: %s", self.STREAM_GIVE_UP // 60, retry["uri"])
                     self._stream_retry = None
                     await self.mpd.run("stop")
                     self.push()
@@ -838,11 +853,11 @@ class Core:
             if playing_radio and now - still_since >= self.STREAM_STALL:
                 if not retry:
                     log.warning("Webradio haengt seit %d s, verbinde neu: %s", self.STREAM_STALL, uri)
-                    self._stream_retry = retry = {"uri": uri, "until": now + self.STREAM_GIVE_UP}
-                await self._stream_restart(status)
+                    self._stream_retry = retry = {"uri": uri, "song": status.get("song", "0"), "until": now + self.STREAM_GIVE_UP}
+                await self._stream_restart(retry["song"])
                 still_since = now
             elif retry and state == "stop" and now - still_since >= self.STREAM_RETRY_EVERY:
-                await self._stream_restart(status)
+                await self._stream_restart(retry["song"])
                 still_since = now
 
     async def _busy_loop(self) -> None:
@@ -906,10 +921,21 @@ class Core:
                 if fixed:
                     log.info("Mixer nach Start von WirePlumber: %s", ", ".join(fixed))
 
-    async def _stream_restart(self, status: Dict[str, str]) -> None:
+    async def _stream_lost(self, target: Optional[Dict[str, Any]], state: Optional[str], uri: str, status: Dict[str, str]) -> bool:
+        """Hat MPD den Sender selbst angehalten (Fehler oder Verbindung weg), statt der Nutzer?"""
+        if not target or self.source != "mpd" or state != "stop":
+            return False
+        if uri:
+            return uri == target["uri"] and bool(status.get("error"))
+        try:
+            return (await self.mpd.dict("playlistinfo", target["song"])).get("file") == target["uri"]
+        except (ConnectionError, MPDError, asyncio.TimeoutError):
+            return False
+
+    async def _stream_restart(self, song: str) -> None:
         try:
             await self.mpd.run("stop")
-            await self.mpd.run("play", status.get("song", "0"))
+            await self.mpd.run("play", song)
         except (ConnectionError, MPDError) as exc:
             log.info("Neuverbindung fehlgeschlagen: %s", exc)
         self.push()

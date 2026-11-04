@@ -876,6 +876,11 @@ class Core:
                         self._output_busy = None
                         self.push()
                     continue
+                if status.get("state") == "play":  # Ausgabe wieder frei, "pause 0" loescht den Fehler aber nicht
+                    self._output_busy = None
+                    await self.mpd.run("clearerror")
+                    self.push()
+                    continue
                 now = time.monotonic()
                 if self.source not in ("mpd", "idle") or status.get("state") == "stop":
                     give_up = True
@@ -896,7 +901,7 @@ class Core:
                 song = await asyncio.wait_for(self.mpd.dict("currentsong"), 2)
                 elapsed = float(status.get("elapsed", 0) or 0)
                 if elapsed > 1 and _media_kind(song.get("file", "")) != "radio":
-                    await self.mpd.run("seek", status.get("song", "0"), elapsed)
+                    await self.mpd.run("pause", "0")  # bleibt an der Stelle; ein "seek" loescht nur den Fehler und MPD bleibt auf Pause
                 else:
                     await self.mpd.run("play", status.get("song", "0"))
             except (ConnectionError, MPDError, asyncio.TimeoutError):

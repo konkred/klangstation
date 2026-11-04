@@ -93,6 +93,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **Mit Lautstärke, aber ohne Ton** (z. B. Ausblenden prüfen): MPD hat einen Software-Mixer, also die
   HDMI-Schalter per `amixer -c 0 sset IEC958,<n> off` stumm schalten und danach wieder `on`.
   `disableoutput` taugt nicht – dann spielt MPD gar nicht („All audio outputs are disabled“).
+* **Belegter Ausgang (stumm):** MPD per `setvol 0`, dann `pw-cat -p --target <node.name> --volume 0 <wav>`. Eine Zahl als Ziel ignoriert
+  pw-cat und nimmt den Standardausgang → per `/proc/asound/card<n>/pcm0p/sub0/status` prüfen, wer das Gerät hält.
 * **USB abziehen:** `echo 0 > /sys/bus/usb/devices/<port>/authorized` (wieder 1 = anstecken).
 * **Oberfläche testen:** Nie Schalter oder Knöpfe betätigen, die Netz, WLAN, SSH oder Port abschalten – auch nicht mit
   abgefangenem `confirm`. Am 01.11. lief nach `navigate` auf dieselbe URL (nur `#` anders) noch das alte Skript ohne
@@ -238,7 +240,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   damit Stummschalten von Hand (auch die Testtechnik `IEC958 off`) bestehen bleibt.
 * **PipeWire spielt auf demselben Ausgang:** MPD bleibt mit „Device or resource busy“ auf Pause und versucht es nicht
   wieder → `_busy_loop` zeigt den Hinweis und versucht es alle 3 s, höchstens 2 min. Pause/Stopp beenden das Warten
-  (samt `clearerror`), sonst startet die Wiedergabe später ungefragt.
+  (samt `clearerror`), sonst startet die Wiedergabe später ungefragt. Aus einer Pause heraus nur `pause 0`: `seek` löscht den Fehler
+  und MPD bleibt ohne Hinweis pausiert. `pause 0` lässt den Fehler nach dem Erfolg stehen → bei `state: play` `clearerror`.
 
 * **GNOME schläft ein:** Standard sind Bereitschaft nach 15 min ohne Eingabe, Bildschirm dunkel und Sperre nach 5 min; nach dem
   Aufwecken steht trotz automatischer Anmeldung die Passwortabfrage da → Installer sperrt die Sleep-Ziele (`systemctl mask`),
@@ -257,11 +260,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **Debian 13 mit GNOME, belegter Ausgang:** ließ sich mit `pw-cat --volume 0` nicht nachstellen (MPD bekam den Ausgang trotzdem);
-  unter Ubuntu bestanden. Echte Prüfung: Ton aus einem Desktop-Programm auf demselben Ausgang.
-* **Bildschirm ohne Eingabe und ohne Ton über 15 min:** Einstellungen gesetzt, Bereitschaft gesperrt, aber nicht in voller Länge
-  beobachtet (in den 30 min Test lief fast immer Ton).
-* **Belegter Ausgang:** Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt der Wächter nicht ab.
+* **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
@@ -505,7 +504,8 @@ Vorher bzw. dabei bedenken:
 
 * `install.sh` von null: 67 s, EXIT 0, danach Update in 12 s. Alle Dienste laufen, Paketdienste aus, PipeWire und WirePlumber laufen mit.
 * GNOME schlief nach 15 min ein und sperrte (siehe Lehren und Behobene Fehler) → Sleep-Ziele gesperrt, `CanSuspend` = no; nach der
-  Korrektur 30 min wach und ungesperrt, Kiosk direkt nach der Installation da.
+  Korrektur 30 min wach und ungesperrt, Kiosk direkt nach der Installation da. Bildschirm ohne Eingabe und ohne Ton über 15 min: bleibt an
+  (laut Nutzer).
 * Neustart: Start 82 s (davon 42 s Firmware), Web nach 73 s, automatische Anmeldung, „Läuft gerade“ (Firefox-ESR) 2 s nach WirePlumber, HDMI an,
   kein ungefragtes Weiterspielen.
 * WirePlumber-Neustart: HDMI und Master stumm/69 %, nach 1–3 s zurück.
@@ -514,6 +514,9 @@ Vorher bzw. dabei bedenken:
 * Laut Nutzer alles gut: Monitor und Ton darüber, Radio, Spotify und AirPlay mit Wechsel (librespot stürzt nicht ab), Bluetooth-Stick im Betrieb
   (Klasse Lautsprecher, gekoppelt, Play übernimmt, Trennen → Leerlauf; GNOME greift nicht ein).
 * CD ohne GNOME-Dialog und ohne Einhängen, Autoplay hier aus. Rippen in den internen Speicher: 7 min 28 s für 18 min 32 s Musik.
+* Belegter Ausgang (stumm, PipeWire auf dem analogen Ausgang, Gerätebesitzer geprüft): Hinweis, PipeWire gibt die Karte ~6 s nach dem Ende frei,
+  MPD spielt innerhalb von 2 s. Aus dem Stopp von vorn, aus der Pause an derselben Stelle (~3 s zurück, MPD setzt auf den letzten Sprung zurück).
+  Pause beendet das Warten, danach bleibt es still.
 
 **HP, Debian 13.7 ohne Desktop frisch, 04.11.2026**
 
@@ -599,3 +602,4 @@ Vorher bzw. dabei bedenken:
 * Webradio blieb dauerhaft aus, wenn die Verbindung abriss und der Sender dabei nicht erreichbar war → Wächter verbindet neu
   (siehe Lehren). Stopp während des Neuversuchs startete den Sender später ungefragt wieder → beendet ihn jetzt (0.2.2).
 * Unter GNOME: Rechner ging nach 15 min in Bereitschaft, danach Anmeldeseite; „Läuft gerade“ erst nach der nächsten Anmeldung (siehe Lehren, 0.2.3).
+* Belegter Ausgang: Play aus einer Pause blieb still stehen, ohne Hinweis und ohne neuen Versuch (siehe Lehren, 0.2.4).

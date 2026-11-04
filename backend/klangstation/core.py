@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from urllib.parse import quote as urlquote
 
-from . import audio, cdrom, ripper as ripper_mod, shares as shares_mod
+from . import audio, cdrom, extras, ripper as ripper_mod, shares as shares_mod
 from .airplay import MetadataReader
 from .auth import Auth
 from .bluetooth import Bluetooth
@@ -28,7 +28,7 @@ from .mpd import MPD, MPDError, build, to_objects
 from .network import Network
 from .musicbrainz import MusicBrainz, Unavailable
 from .radio import RadioBrowser
-from .timers import Timers
+from .timers import VOLUME_SOURCES, Timers, clean_alarm
 from .upnp import PORT as UPNP_PORT
 from .upnp import UpnpRenderer
 from .weather import Weather
@@ -65,6 +65,7 @@ class Core:
         self.lyrics = Lyrics(self.settings, self.cache, MEDIA_ROOT)
         self.weather = Weather(self.settings, self.cache)
         self.timers = Timers(self)
+        self.update_check = extras.UpdateCheck()
         # Zuletzt gehoert (fuer den Ruhebildschirm): je Album bzw. Sender ein Eintrag, neueste zuerst
         self.history: List[Dict[str, Any]] = self._load_history()
         self.radio = RadioBrowser()
@@ -128,6 +129,8 @@ class Core:
             asyncio.create_task(self._guarded("Freigabe-Waechter", self._share_loop)),
             asyncio.create_task(self._guarded("Ausgabe-Waechter", self._busy_loop)),
             asyncio.create_task(self._guarded("Regler-Waechter", self._mixer_loop)),
+            asyncio.create_task(self._guarded("Nachtmodus", self._night_loop)),
+            asyncio.create_task(self._guarded("Update-Hinweis", self._update_loop)),
             asyncio.create_task(self._guarded("Schlummer-Timer und Wecker", self.timers.loop)),
             asyncio.create_task(self._guarded("Wetter", self._weather_loop)),
             asyncio.create_task(self._guarded("Netzwerk-Ueberwachung", self._net_loop)),
@@ -485,6 +488,7 @@ class Core:
             "timers": self.timers.public(),
             "history": self.history if self.settings.get("tv_history") else [],
             "weather": self.weather.public(),
+            "update": self.update_check.public(),
             "web_build": WEB_BUILD,
             "ts": time.time(),
         }
@@ -710,8 +714,41 @@ class Core:
         else:
             await self.mpd.run("seekcur", position)
 
+    def night_limit(self) -> Optional[int]:
+        """Hoechste Lautstaerke, solange der Nachtmodus gerade gilt, sonst None."""
+        s = self.settings
+        if s.get("night_enabled") and extras.in_window(s.get("night_from"), s.get("night_to")):
+            return s.get("night_limit")
+        return None
+
+    async def _night_loop(self) -> None:
+        """Holt die Lautstaerke auf die Grenze zurueck. Der Wecker bleibt davon ausgenommen, Spotify und AirPlay
+        lassen sich nur am Handy regeln."""
+        while True:
+            await asyncio.sleep(5)
+            limit = self.night_limit()
+            if limit is None or self.timers.ringing or self.source not in VOLUME_SOURCES:
+                continue
+            if (await self.state()).get("volume", -1) > limit:
+                try:
+                    await self.set_volume(limit)
+                    log.info("Nachtmodus: Lautstaerke auf %s %%", limit)
+                except (ValueError, ConnectionError, MPDError):
+                    pass
+
+    async def _update_loop(self) -> None:
+        await asyncio.sleep(60)  # nach dem Start ist das Netz oft noch nicht da
+        while True:
+            if self.settings.get("update_check"):
+                await self.update_check.check()
+                self.push()
+            await asyncio.sleep(extras.UPDATE_EVERY)
+
     async def set_volume(self, volume: int) -> None:
         volume = max(0, min(100, volume))
+        limit = self.night_limit()
+        if limit is not None and not self.timers.ringing:
+            volume = min(volume, limit)
         if self.source == "upnp":
             await self.upnp.set_volume(volume)
         elif self.source == "bluetooth":
@@ -995,7 +1032,7 @@ class Core:
             if attempt:
                 await asyncio.sleep(1)
             try:
-                await self.mpd.run("setvol", 100)
+                await self.mpd.run("setvol", self.night_limit() or 100)
                 return
             except (ConnectionError, MPDError):
                 continue
@@ -1611,6 +1648,53 @@ class Core:
             self.broadcast({"type": "settings"})
         self.push()
         return self.settings.public()
+
+    def backup(self) -> Dict[str, Any]:
+        return extras.make_backup(self.settings.all(), DATA_DIR / "playlists")
+
+    async def restore_backup(self, data: Any) -> Dict[str, Any]:
+        """Spielt eine Sicherung ein. Unbekannte oder ungueltige Werte werden uebergangen, Listen gleichen Namens ersetzt."""
+        stored, playlists = extras.backup_parts(data)
+        current = self.settings.get("shares")
+        restored_shares: List[Dict[str, Any]] = []
+        for raw in stored.pop("shares", None) or []:
+            try:
+                share = shares_mod.validate(dict(raw), restored_shares)
+                old = next((s for s in current if s["id"] == share["id"]), None)
+                if old and not share["password"]:  # steht nicht in der Sicherung: am Geraet Vorhandenes behalten
+                    share["password"] = old.get("password", "")
+                restored_shares.append(share)
+            except (ValueError, AttributeError):
+                log.warning("Freigabe aus der Sicherung uebergangen")
+        alarms: List[Dict[str, Any]] = []
+        for raw in stored.pop("alarms", None) or []:
+            try:
+                alarms.append(clean_alarm(raw))
+            except (ValueError, TypeError, AttributeError):
+                log.warning("Wecker aus der Sicherung uebergangen")
+        changes = {k: v for k, v in stored.items() if self.settings.valid(k, v)}
+        written = 0
+        for name, text in playlists.items():
+            try:
+                (DATA_DIR / "playlists" / (self._playlist_name(name) + ".m3u")).write_text(text, encoding="utf-8")
+                written += 1
+            except ValueError:
+                log.warning("Wiedergabeliste aus der Sicherung uebergangen")
+        self.settings.update({"shares": restored_shares, "alarms": alarms[:10]})
+        await self.update_settings(changes)
+        self._spawn(self._sync_shares())
+        self.broadcast({"type": "library"})
+        return {"settings": len(changes), "playlists": written, "alarms": len(alarms), "shares": len(restored_shares),
+                "missing_passwords": extras.missing_passwords(restored_shares)}
+
+    async def upload_finished(self) -> None:
+        """Hochgeladenes einlesen: MPD kennt Lokal bei leerer Bibliothek noch nicht, dann alles (siehe CLAUDE.md)."""
+        try:
+            await self.mpd.run("lsinfo", ripper_mod.LOCAL_DIR)
+        except MPDError:
+            await self.mpd.run("update")
+            return
+        await self.mpd.run("update", ripper_mod.LOCAL_DIR)
 
     async def _weather_now(self) -> None:
         if await self.weather.refresh():

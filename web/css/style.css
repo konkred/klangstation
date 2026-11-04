@@ -329,6 +329,12 @@ legend { color: var(--accent); padding: 0 4px; font-weight: bold; }
 .svc-list { margin-top: 12px; display: grid; gap: 4px; }
 .svc { display: flex; justify-content: space-between; padding: 5px 8px; background: #fff; border: 1px solid #d3deee; border-radius: 4px; }
 .svc .st { font-weight: bold; } .svc .st.ok { color: #1f8f3f; } .svc .st.no { color: #b23b3b; } .svc .st.off { color: var(--list-dim); }
+.night-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.night-row input[type=time] { -webkit-appearance: none; appearance: none; display: block; min-width: 0; min-height: 30px; }
+.upload-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+#upload-text { margin: 0 0 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#upload-bar { width: 100%; }
+.nav-badge { display: inline-block; width: 8px; height: 8px; margin-left: 6px; border-radius: 50%; background: #ff9d2e; box-shadow: 0 0 4px #ff9d2e; }
 .dlg-buttons { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 12px; }
 .save-msg { color: var(--list-dim); }
 

@@ -79,7 +79,7 @@
       <a href="#library" data-view="library"><svg><use href="#i-lib"/></svg><span>Bibliothek</span></a>
       <a href="#radio" data-view="radio"><svg><use href="#i-radio"/></svg><span>Radio</span></a>
       <a href="#cd" data-view="cd"><svg><use href="#i-cd"/></svg><span>CD</span></a>
-      <a href="#settings" data-view="settings"><svg><use href="#i-gear"/></svg><span>Optionen</span></a>
+      <a href="#settings" data-view="settings"><svg><use href="#i-gear"/></svg><span>Optionen</span><i class="nav-badge" id="nav-update" title="Neue Version verfügbar" hidden></i></a>
       <div class="taskbar-foot" id="tb-output"></div>
     </nav>
 
@@ -124,6 +124,7 @@
           </div>
           <input type="search" id="lib-search" placeholder="Bibliothek durchsuchen…" autocomplete="off">
           <button class="mini" id="lib-update" title="Bibliothek neu einlesen">Aktualisieren</button>
+          <button class="mini" id="lib-upload" title="Musik vom Handy oder PC auf dieses Gerät kopieren">Hochladen</button>
         </div>
         <div class="crumbs" id="lib-crumbs"></div>
         <div class="lib-body" id="lib-body"></div>
@@ -210,6 +211,16 @@
                 <select name="crossfade"><option value="0">Aus (lückenlos)</option><option value="2">2 Sekunden</option><option value="5">5 Sekunden</option><option value="10">10 Sekunden</option></select>
               </label>
               <p class="hint">Bei „Bit-perfekt“ ist beides aus.</p>
+              <h4 class="subhead">Nachtmodus</h4>
+              <label class="check"><input type="checkbox" name="night_enabled"> Lautstärke in dieser Zeit begrenzen</label>
+              <div class="night-row">
+                <label class="field">Von<input type="time" name="night_from"></label>
+                <label class="field">Bis<input type="time" name="night_to"></label>
+                <label class="field">Höchstens
+                  <select name="night_limit"><option value="10">10 %</option><option value="20">20 %</option><option value="30">30 %</option><option value="40">40 %</option><option value="50">50 %</option><option value="60">60 %</option><option value="70">70 %</option><option value="80">80 %</option><option value="90">90 %</option></select>
+                </label>
+              </div>
+              <p class="hint">Gilt für Bibliothek, Radio, CD, UPnP und Bluetooth; Spotify und AirPlay regelst du weiter am Handy. Der Wecker ist ausgenommen. Danach bleibt der Regler stehen, bis du ihn verschiebst. Gleiche Zeiten bei Von und Bis begrenzen rund um die Uhr.</p>
               <h4 class="subhead">Auf diesem Gerät</h4>
               <label class="field">Erscheinungsbild
                 <select id="theme-select"><option value="auto">Automatisch (Klassisch, bei dunklem System Nacht)</option><option value="classic">Klassisch (Media Player der 2000er)</option><option value="aero">Frutiger Aero</option><option value="nacht">Nacht (dunkel, gedämpft)</option><option value="winamp">Winamp Classic</option><option value="aqua">Aqua (Mac OS X, gebürstetes Metall)</option><option value="hifi">Hi-Fi-Anlage (Holz, Bernstein, VU-Meter)</option><option value="luna">Luna (Windows XP)</option></select>
@@ -233,6 +244,7 @@
             <fieldset data-pane="meta" hidden>
               <legend>CD &amp; Online-Metadaten</legend>
               <label class="check"><input type="checkbox" name="cd_autoplay"> Audio-CD beim Einlegen automatisch abspielen</label>
+              <label class="check"><input type="checkbox" name="update_check"> Einmal am Tag bei GitHub nachsehen, ob es eine neue Version gibt</label>
               <label class="check"><input type="checkbox" name="metadata_online"> Titel und Cover von MusicBrainz / Cover Art Archive laden</label>
               <label class="field">Kontakt für MusicBrainz (E-Mail oder URL, empfohlen)
                 <input name="musicbrainz_contact" maxlength="200" placeholder="du@example.org">
@@ -458,6 +470,15 @@
             <fieldset data-pane="about" hidden>
               <legend>Über Klangstation</legend>
               <p id="about-text"></p>
+              <p id="update-state" class="hint"></p>
+              <button type="button" class="btn" id="update-check">Jetzt nach Updates suchen</button>
+            </fieldset>
+            <fieldset data-pane="about" hidden>
+              <legend>Einstellungen sichern</legend>
+              <p class="hint">Sichert Einstellungen, Radio-Favoriten, Wecker, Freigaben und Wiedergabelisten in eine Datei, etwa vor dem Neuaufsetzen. Musik, Spotify-Anmeldung und gekoppelte Geräte gehören nicht dazu. Passwörter stehen nicht in der Datei: Das Passwort einer Freigabe trägst du danach neu ein.</p>
+              <button type="button" class="btn" id="backup-save">Sicherung herunterladen</button>
+              <button type="button" class="btn" id="backup-load">Sicherung einspielen …</button>
+              <input type="file" id="backup-file" accept=".json,application/json" hidden>
             </fieldset>
             <div class="dlg-buttons">
               <span class="save-msg" id="save-msg"></span>
@@ -529,6 +550,27 @@
     </div>
   </div>
 </div>
+<div class="modal" id="upload-modal" hidden>
+  <div class="modal-box">
+    <div class="modal-title"><span class="orb"></span>Musik hochladen</div>
+    <div class="modal-body">
+      <p class="hint">Kopiert Musikdateien auf dieses Gerät, in den Ordner „Lokal/Hochgeladen“. Am schnellsten ganze Ordner, Cover-Bilder und <code>.lrc</code>-Dateien kommen mit. Vorhandene Dateien bleiben unverändert.</p>
+      <div class="upload-acts">
+        <button type="button" class="btn" id="upload-files">Dateien wählen …</button>
+        <button type="button" class="btn" id="upload-folder">Ordner wählen …</button>
+      </div>
+      <input type="file" id="upload-input-files" multiple accept="audio/*,.flac,.mp3,.m4a,.aac,.ogg,.oga,.opus,.wav,.wma,.ape,.wv,.aif,.aiff,.dsf,.dff,.mka,.jpg,.jpeg,.png,.lrc" hidden>
+      <input type="file" id="upload-input-folder" webkitdirectory hidden>
+      <div id="upload-progress" hidden>
+        <p id="upload-text"></p>
+        <progress id="upload-bar" max="100" value="0"></progress>
+      </div>
+      <p id="upload-result" class="hint"></p>
+    </div>
+    <div class="dlg-buttons"><button type="button" class="btn" id="upload-close">Schließen</button></div>
+  </div>
+</div>
+
 <div class="modal" id="timer-modal" hidden>
   <div class="modal-box wide">
     <div class="modal-title"><span class="orb"></span>Schlummer-Timer &amp; Wecker</div>

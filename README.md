@@ -33,6 +33,10 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Netzwerk | Adapter mit IPv4/IPv6, Gateway, DNS und MAC; DHCP oder feste Adresse (mit automatischer Rücknahme, wenn nicht bestätigt); WLAN suchen und verbinden, auch mit USB-WLAN-Stick im laufenden Betrieb; SSH ein/aus; offene Ports und Port der Weboberfläche |
 | Info | Erkanntes Board, Prozessor (Kerne, Takt, x86-64-Stufe), Arbeitsspeicher, Bootlaufwerk mit freiem Platz, Betriebssystem mit Version, Bit-Zahl und Kernel |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
+| Musik hochladen | Dateien oder ganze Ordner per Browser in den internen Speicher kopieren (`Lokal/Hochgeladen`), auch vom Handy |
+| Nachtmodus | Lautstärke im Zeitfenster oder rund um die Uhr begrenzen (nicht bei Spotify und AirPlay, der Wecker ist ausgenommen) |
+| Sichern | Einstellungen, Favoriten, Wecker, Freigaben und Wiedergabelisten als Datei herunterladen und wieder einspielen, ohne Passwörter |
+| Update-Hinweis | einmal am Tag Abfrage bei GitHub, ob es eine neue Version gibt; abschaltbar, installiert nichts von selbst |
 
 ## Unterstützte Systeme
 
@@ -148,7 +152,11 @@ sudo ./install.sh --no-spotify --no-upnp --no-bluetooth
 sudo ./install.sh --tv-headless --no-bluetooth
 ```
 
-### Aktualisieren
+### Sichern und Aktualisieren
+
+Unter *Optionen › Info* lädst du eine Sicherung herunter und spielst sie wieder ein, etwa vor dem Neuaufsetzen. Passwörter,
+Spotify-Anmeldung, gekoppelte Geräte und die Musik selbst stehen nicht darin. Dort siehst du auch, ob es eine neue Version gibt.
+
 
 Neue Version holen und den Installer mit denselben Optionen erneut aufrufen:
 
@@ -225,6 +233,10 @@ Seite).
 **Lautstärke:** Die Regler der Soundkarte stehen immer auf 100 %, geregelt wird nur in den Quellen. Der Regler im Player
 steht nach jedem Start von Klangstation auf 100 %, Spotify beginnt ebenfalls mit 100 %, und AirPlay bekommt 100 % als
 Vorschlag (das Handy kann seinen eigenen Wert mitbringen). Die Lautstärke des Raums bestimmt also der Verstärker.
+
+**Nachtmodus:** Unter *Optionen › Ausgabe* lässt sich die Lautstärke für ein Zeitfenster begrenzen, gleiche Zeiten bei *Von* und
+*Bis* begrenzen rund um die Uhr. Das gilt für Bibliothek, Radio, CD, UPnP und Bluetooth; Spotify und AirPlay regelst du am Handy.
+Der Wecker ist ausgenommen und kann lauter werden. Nach dem Zeitfenster bleibt der Regler stehen, bis du ihn verschiebst.
 
 Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
 
@@ -482,6 +494,9 @@ UPnP/DLNA-Renderer und einen Bluetooth-Empfänger mit, damit erreicht man prakti
 | POST | `/api/player/seek` `{position}` · `/api/player/volume` `{volume}` | Position, Lautstärke |
 | GET/POST | `/api/queue` · `/api/queue/add` `{uris, mode}` · `/api/queue/play` `{id}` | Warteschlange |
 | GET | `/api/playlists` | gespeicherte Wiedergabelisten |
+| POST | `/api/library/upload?path=` (Datei als Rohdaten) · `/api/library/upload/done` | Musik hochladen, danach einlesen |
+| GET/POST | `/api/backup` · `/api/backup/restore` | Sicherung herunterladen, einspielen |
+| POST | `/api/update/check` | jetzt nach einer neuen Version suchen |
 | GET | `/api/library/albums` · `/api/library/browse?path=` · `/api/library/search?q=` | Bibliothek |
 | GET | `/api/art?uri=` · `/api/art?album=&artist=` | Cover |
 | GET | `/api/lyrics?artist=&title=&album=&duration=&uri=` | Liedtext (`synced` mit Zeitstempeln, `plain` oder `instrumental`), sonst 404 |

@@ -223,6 +223,7 @@ function render() {
   const tm = S.timers || {};
   $("#b-timer").classList.toggle("on", !!tm.sleep);
   if (!$("#timer-modal").hidden) renderTimers();
+  $("#nav-update").hidden = !(S.update && S.update.available);
   document.title = n.title && playing ? n.title + " – Klangstation" : "Klangstation";
 
   // Warteschlange: aktuellen Titel markieren
@@ -939,6 +940,7 @@ function fillSettings(res) {
     return `<div class="svc"><span>${SVC[d.name] || d.name}</span><span class="st ${cls}">${txt}</span></div>`;
   }).join("");
   renderSysInfo(res.system || {});
+  renderUpdate();
   $("#about-text").innerHTML = `Klangstation ${esc(res.version)}<br>Wiedergabe: MPD · AirPlay: shairport-sync · Spotify Connect: librespot<br>
     Metadaten: <a href="https://musicbrainz.org" target="_blank" rel="noopener">MusicBrainz</a> &amp; <a href="https://coverartarchive.org" target="_blank" rel="noopener">Cover Art Archive</a> ·
     Radio: <a href="https://www.radio-browser.info" target="_blank" rel="noopener">radio-browser.info</a>`;
@@ -1402,6 +1404,113 @@ function renderNetConfirm(p) {
 $("#net-keep").onclick = async () => { await post("/api/network/ipv4_confirm"); toast("Netzwerkeinstellung behalten."); };
 $("#net-revert").onclick = async () => { await post("/api/network/ipv4_revert").catch(() => {}); toast("Alte Einstellung wird wiederhergestellt …"); };
 
+/* =========================================================== Update-Hinweis */
+function renderUpdate() {
+  const u = (S && S.update) || {};
+  $("#nav-update").hidden = !u.available;
+  const el = $("#update-state");
+  if (u.available) el.innerHTML = `<b>Version ${esc(u.latest)} ist verfügbar.</b> Installieren auf dem Gerät im Ordner von Klangstation: <code>git pull &amp;&amp; sudo ./install.sh</code> (mit denselben Optionen wie beim ersten Mal).`;
+  else if (u.error) el.textContent = "GitHub war nicht erreichbar, es wird später erneut versucht.";
+  else el.textContent = u.latest ? "Klangstation ist auf dem neuesten Stand." : "Noch nicht nach Updates gesucht.";
+}
+$("#update-check").onclick = async () => {
+  if (S) S.update = await post("/api/update/check");
+  renderUpdate();
+};
+
+/* =========================================================== Sichern und Wiederherstellen */
+$("#backup-save").onclick = async () => {
+  const data = await api("/api/backup");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  a.download = `klangstation-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+};
+$("#backup-load").onclick = () => $("#backup-file").click();
+$("#backup-file").onchange = async (ev) => {
+  const file = ev.target.files[0];
+  ev.target.value = "";
+  if (!file) return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (e) { toast("Das ist keine Sicherung von Klangstation.", true); return; }
+  if (!confirm("Sicherung einspielen?\n\nEinstellungen, Wecker und Freigaben werden ersetzt, Wiedergabelisten gleichen Namens überschrieben. Laufende Musik kann kurz aussetzen.")) return;
+  const r = await post("/api/backup/restore", data);
+  toast(`Eingespielt: ${r.playlists} Wiedergabelisten, ${r.alarms} Wecker, ${r.shares} Freigaben.` +
+    (r.missing_passwords ? ` Bitte bei ${r.missing_passwords} Freigaben das Passwort neu eintragen.` : ""));
+  await loadSettings();
+};
+
+/* =========================================================== Musik hochladen */
+const UPLOAD_OK = /\.(flac|mp3|m4a|aac|ogg|oga|opus|wav|wma|ape|wv|aif|aiff|dsf|dff|mka|jpe?g|png|lrc)$/i;
+let uploadXhr = null;
+let uploadStop = false;
+
+function uploadOne(file, path, onProgress) {
+  return new Promise((resolve) => {
+    const xhr = uploadXhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/library/upload?path=" + encodeURIComponent(path));
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded); };
+    xhr.onload = () => {
+      let error = "";
+      try { error = JSON.parse(xhr.responseText).error || ""; } catch (e) { /* leere Antwort */ }
+      resolve({ status: xhr.status, error });
+    };
+    xhr.onerror = xhr.onabort = () => resolve({ status: 0, error: "Verbindung unterbrochen" });
+    xhr.send(file);
+  });
+}
+
+async function uploadFiles(list) {
+  const files = list.filter((f) => UPLOAD_OK.test(f.name) && !f.name.startsWith("."));
+  const skipped = list.length - files.length;
+  if (!files.length) { $("#upload-result").textContent = "Keine passenden Dateien gefunden."; return; }
+  const total = files.reduce((n, f) => n + f.size, 0);
+  let done = 0, added = 0, existed = 0;
+  const failed = [];
+  uploadStop = false;
+  $("#upload-result").textContent = "";
+  $("#upload-progress").hidden = false;
+  $("#upload-close").textContent = "Abbrechen";
+  const bar = $("#upload-bar");
+  for (const [i, f] of files.entries()) {
+    if (uploadStop) break;
+    $("#upload-text").textContent = `Datei ${i + 1} von ${files.length}: ${f.name}`;
+    let r = await uploadOne(f, f.webkitRelativePath || f.name, (n) => { bar.value = total ? (done + n) / total * 100 : 100; });
+    if (r.status === 401) {
+      await requireLogin("Zum Hochladen ist eine Anmeldung nötig.");
+      r = await uploadOne(f, f.webkitRelativePath || f.name, (n) => { bar.value = total ? (done + n) / total * 100 : 100; });
+    }
+    done += f.size;
+    bar.value = total ? done / total * 100 : 100;
+    if (r.status === 200) added++;
+    else if (r.status === 409) existed++;
+    else if (!uploadStop) failed.push(`${f.name}: ${r.error || "Fehler " + r.status}`);
+  }
+  uploadXhr = null;
+  $("#upload-progress").hidden = true;
+  $("#upload-close").textContent = "Schließen";
+  if (added) await post("/api/library/upload/done").catch(() => {});
+  const parts = [`${added} ${added === 1 ? "Datei" : "Dateien"} hochgeladen${added ? ", die Bibliothek liest sie jetzt ein" : ""}`];
+  if (uploadStop) parts.push("abgebrochen");
+  if (existed) parts.push(`${existed} gab es schon`);
+  if (skipped) parts.push(`${skipped} übersprungen (falscher Dateityp)`);
+  $("#upload-result").textContent = parts.join(", ") + "." + (failed.length ? " Fehler: " + failed.slice(0, 3).join("; ") : "");
+}
+$("#lib-upload").onclick = () => {
+  $("#upload-result").textContent = "";
+  $("#upload-modal").hidden = false;
+};
+$("#upload-files").onclick = () => $("#upload-input-files").click();
+$("#upload-folder").onclick = () => $("#upload-input-folder").click();
+for (const id of ["#upload-input-files", "#upload-input-folder"]) {
+  $(id).onchange = (ev) => { const l = [...ev.target.files]; ev.target.value = ""; uploadFiles(l); };
+}
+$("#upload-close").onclick = () => {
+  if (uploadXhr) { uploadStop = true; uploadXhr.abort(); return; }
+  $("#upload-modal").hidden = true;
+};
+
 $("#settings-form").addEventListener("change", (ev) => {
   if (ev.target.name === "output" || ev.target.name === "bitperfect") updateSpeakers();
 });
@@ -1414,7 +1523,7 @@ $("#settings-form").addEventListener("submit", async (ev) => {
     if (!el.name || (el.name !== "output" && !(el.name in settings))) continue;
     if (el.type === "checkbox") data[el.name] = el.checked;
     else if (el.type === "radio") { if (el.checked) data.output = el.value || null; }
-    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade", "speakers"].includes(el.name)) data[el.name] = +el.value;
+    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade", "speakers", "night_limit"].includes(el.name)) data[el.name] = +el.value;
     else data[el.name] = el.value;
   }
   $("#save-msg").textContent = "Wird übernommen…";

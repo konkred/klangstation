@@ -5,13 +5,16 @@ import asyncio
 import contextlib
 import hmac
 import logging
+import os
+import shutil
 import struct
+import time
 from pathlib import Path
 
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
-from starlette.requests import Request
+from starlette.requests import ClientDisconnect, Request
 from starlette.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
@@ -19,7 +22,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from http.cookies import SimpleCookie
 
-from . import audio, sysinfo
+from . import audio, extras, sysinfo
 from .auth import COOKIE, MAX_AGE, check_password, hash_password
 from .config import VERSION, WEB_DIR
 from .core import Core
@@ -173,6 +176,47 @@ async def library_search(request):
 
 async def library_update(request):
     await core.mpd.run("update")
+    return ok()
+
+
+async def library_upload(request):
+    """Eine Datei als Rohdaten im Rumpf, damit grosse Dateien nicht im Speicher landen (eigener Knopf in der Bibliothek)."""
+    target = extras.upload_target(request.query_params.get("path", ""))
+    if target.exists():
+        raise HTTPException(409, "Die Datei gibt es schon")
+    size = int(request.headers.get("content-length") or 0)
+    if not size:
+        raise HTTPException(411, "Dateigröße fehlt")
+    if size > extras.UPLOAD_MAX:
+        raise HTTPException(413, "Die Datei ist zu groß (höchstens 4 GB)")
+    await asyncio.to_thread(target.parent.mkdir, parents=True, exist_ok=True)
+    if shutil.disk_usage(target.parent).free < size + extras.UPLOAD_RESERVE:
+        raise HTTPException(507, "Nicht genug freier Speicher")
+    part = target.with_name(f".{target.name}.part")  # versteckt: MPD liest die halbe Datei nicht ein
+    written = 0
+    try:
+        with open(part, "wb") as fh:
+            async for chunk in request.stream():
+                written += len(chunk)
+                if written > size:
+                    raise HTTPException(400, "Mehr Daten als angekündigt")
+                await asyncio.to_thread(fh.write, chunk)
+        if written != size:
+            raise HTTPException(400, "Die Übertragung ist abgebrochen")
+        os.chmod(part, 0o644)
+        os.replace(part, target)
+    except ClientDisconnect:
+        log.info("Hochladen abgebrochen: %s", target.name)
+        return Response(status_code=400)
+    finally:
+        with contextlib.suppress(OSError):
+            part.unlink()
+    log.info("Hochgeladen: %s (%d Bytes)", target.name, written)
+    return ok()
+
+
+async def library_upload_done(request):
+    await core.upload_finished()
     return ok()
 
 
@@ -350,6 +394,23 @@ async def settings_endpoint(request):
                "active_output": core.output, "surround": core.surround, "services": core.services(), "cec": core.cec.public(),
                "shares": core.shares_public(), "version": VERSION,
                "system": await asyncio.to_thread(sysinfo.info)})
+
+
+async def backup_get(request):
+    stamp = time.strftime("%Y-%m-%d")
+    return JSONResponse(core.backup(), headers={"Content-Disposition": f'attachment; filename="klangstation-{stamp}.json"'})
+
+
+async def backup_restore(request):
+    if int(request.headers.get("content-length") or 0) > extras.BACKUP_MAX:
+        raise HTTPException(413, "Die Datei ist zu groß für eine Sicherung")
+    return ok(await core.restore_backup(await body(request)))
+
+
+async def update_check(request):
+    result = await core.update_check.check()
+    core.push()
+    return ok(result)
 
 
 # ---------------------------------------------------------------- Zugangsschutz
@@ -588,6 +649,8 @@ routes = [
     Route("/api/library/album", library_album),
     Route("/api/library/search", library_search),
     Route("/api/library/update", library_update, methods=["POST"]),
+    Route("/api/library/upload", library_upload, methods=["POST"]),
+    Route("/api/library/upload/done", library_upload_done, methods=["POST"]),
     Route("/api/media", media_list),
     Route("/api/art", art),
     Route("/api/silence.wav", silence),
@@ -605,6 +668,9 @@ routes = [
     Route("/api/cd/rip", cd_rip, methods=["GET", "POST"]),
     Route("/api/cd/rip/cancel", cd_rip_cancel, methods=["POST"]),
     Route("/api/settings", settings_endpoint, methods=["GET", "POST"]),
+    Route("/api/backup", backup_get),
+    Route("/api/backup/restore", backup_restore, methods=["POST"]),
+    Route("/api/update/check", update_check, methods=["POST"]),
     Route("/api/services", services),
     Route("/api/bluetooth", bluetooth_get),
     Route("/api/bluetooth/{action}", bluetooth_action, methods=["POST"]),

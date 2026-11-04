@@ -4,12 +4,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import socket
 import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 _ROOT = Path(__file__).resolve().parents[2]
 
@@ -63,6 +64,11 @@ DEFAULTS: Dict[str, Any] = {
     "speakers": 2,               # 2 = Stereo, 6 = 5.1, 8 = 7.1 (Stereo auf alle Lautsprecher hochmischen)
     "loudness": "off",           # Lautstaerke angleichen: "off", "replaygain" (Tags) oder "dynamic" (MPD-Normalisierung)
     "crossfade": 0,              # Ueberblenden zwischen Titeln in Sekunden
+    "night_enabled": False,      # Nachtmodus: Lautstaerke im Zeitfenster begrenzen
+    "night_from": "22:00",
+    "night_to": "07:00",         # gleiche Zeiten = immer begrenzen
+    "night_limit": 40,           # hoechste Lautstaerke in %
+    "update_check": True,        # einmal am Tag nachsehen, ob es eine neuere Version gibt
     "airplay_enabled": True,
     "spotify_enabled": True,
     "spotify_bitrate": 320,
@@ -94,6 +100,8 @@ DEFAULTS: Dict[str, Any] = {
 # Werden nie ueber die API herausgegeben
 SECRET_KEYS = ("auth_hash",)
 
+_HHMM = re.compile(r"([01]\d|2[0-3]):[0-5]\d")
+
 _VALIDATORS = {
     "device_name": lambda v: isinstance(v, str) and 0 < len(v.strip()) <= 40,
     "output": lambda v: v is None or (isinstance(v, str) and len(v) < 200),
@@ -101,6 +109,11 @@ _VALIDATORS = {
     "speakers": lambda v: v in (2, 6, 8),
     "loudness": lambda v: v in ("off", "replaygain", "dynamic"),
     "crossfade": lambda v: v in (0, 2, 5, 10),
+    "night_enabled": lambda v: isinstance(v, bool),
+    "night_from": lambda v: isinstance(v, str) and bool(_HHMM.fullmatch(v)),
+    "night_to": lambda v: isinstance(v, str) and bool(_HHMM.fullmatch(v)),
+    "night_limit": lambda v: v in range(10, 100, 10),
+    "update_check": lambda v: isinstance(v, bool),
     "airplay_enabled": lambda v: isinstance(v, bool),
     "spotify_enabled": lambda v: isinstance(v, bool),
     "spotify_bitrate": lambda v: v in (96, 160, 320),
@@ -155,6 +168,10 @@ class Settings:
         out["auth_enabled"] = bool(self._data.get("auth_hash"))
         out["shares"] = [dict(s, password="", has_password=bool(s.get("password"))) for s in self._data["shares"]]
         return out
+
+    @staticmethod
+    def valid(key: str, value: Any) -> bool:
+        return key in _VALIDATORS and _VALIDATORS[key](value)
 
     def update(self, changes: Dict[str, Any]) -> Dict[str, Any]:
         """Uebernimmt gueltige Werte und gibt die tatsaechlich geaenderten zurueck."""

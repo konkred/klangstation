@@ -27,7 +27,8 @@ LOCAL = {"127.0.0.1", "::1"}
 _PUBLIC_PREFIXES = ("/css/", "/js/", "/img/")
 _PUBLIC_PATHS = {"/", "/index.html", "/manifest.json", "/tv", "/tv.html", "/api/auth/status", "/api/auth/login", "/api/internal/hook"}
 # Bei Stufe "settings" geschuetzt (alles, was Einstellungen oder Geraete veraendert)
-_SETTINGS_PREFIXES = ("/api/settings", "/api/bluetooth/", "/api/shares", "/api/network", "/api/auth/password", "/api/tv/show")
+_SETTINGS_PREFIXES = ("/api/settings", "/api/bluetooth/", "/api/shares", "/api/network", "/api/auth/password", "/api/tv/show",
+                      "/api/backup", "/api/library/upload", "/api/update")
 
 
 def _b64(data: bytes) -> str:

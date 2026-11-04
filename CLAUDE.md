@@ -44,7 +44,8 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 
 ### Git und GitHub
 
-* Repo: `konkred/klangstation` (privat), Branch `main`. Commits mit der noreply-Adresse von GitHub, nicht
+* Repo: `konkred/klangstation` (öffentlich, seit 04.11.2026), Branch `main`. Bei Änderungen für Nutzer `VERSION` in `config.py`
+  erhöhen: Der Update-Hinweis der Geräte liest genau diese Zeile aus `main`. Commits mit der noreply-Adresse von GitHub, nicht
   mit der privaten E-Mail (auf dem Laptop in der Repo-Konfiguration gesetzt).
 * Zugriff auf GitHub per SSH (`ssh.github.com:443`). gh ist auf dem Laptop nicht installiert.
 
@@ -439,6 +440,14 @@ Vorher bzw. dabei bedenken:
 * Lautstärke (Wunsch des Nutzers: Karte immer 100 %, geregelt wird in den Quellen): Karte von Hand auf 90 % und MPD auf 40 → nach
   Neustart beide 100; Player von Hand auf 60 bleibt, Karte bleibt 100; librespot mit `--initial-volume 100`, dazu `default_airplay_volume`.
   Spotify und AirPlay mit iPhone: Laut Nutzer alles in Ordnung; bei AirPlay meldet der Zustand Lautstärke 100, Karte 100 %.
+* Nachtmodus: Grenze 30 → Wächter holt 80 in 7 s zurück, Regler bleibt darunter, außerhalb des Fensters frei; Zeitfenster über
+  Mitternacht per Test. Wecker-Test (`Speaker mute`, Grenze 20, Weckerlautstärke 60): wird trotzdem bis 51 lauter, danach wieder 20.
+  Spotify/AirPlay fängt er nicht ab (lässt sich nur am Handy regeln).
+* Sicherung: Keine Passwörter oder Hash in der Datei; Rückspielen mit `auth_hash`, kaputtem Wecker, kaputter Freigabe, `../`-Liste,
+  unbekannter Einstellung → übergangen, Passwort-Hash bleibt; Original zurückgespielt → `settings.json` identisch.
+* Hochladen (per curl und in der Oberfläche): Ordner, Umlaute, doppelte Datei 409, `../` und `.exe` abgelehnt, Abbruch hinterlässt
+  keine Teildatei, danach in `Lokal/Hochgeladen` in der Bibliothek. Update-Hinweis: gegen GitHub mit simulierter alter und neuer
+  Version, Punkt an „Optionen“ und Text unter Info. Noch nicht getestet: Hochladen vom iPhone, Ordnerwahl mit echtem Dateidialog.
 * Reiter unter Optionen in allen Themes: 1920, 1280 und 900 px eine Reihe, darunter Umbruch, am Handy wie bisher wischbar.
 
 **HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton** (Ubuntu seitdem nicht mehr unterstützt, gilt nur als Beleg für PipeWire und Python 3.14)

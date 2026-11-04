@@ -40,35 +40,32 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 
 ## Unterstützte Systeme
 
-Betriebssystem und Hardware sind unabhängig voneinander: Jedes unterstützte Betriebssystem läuft auf jeder
-unterstützten Architektur, mit Desktop oder ohne (dann zeigt `--tv-headless` den „Läuft gerade“-Bildschirm am
-Fernseher).
+| | Betriebssystem | Hardware |
+|---|---|---|
+| **Empfohlen** | Debian 13 oder AlmaLinux 10 ohne Desktop, auf dem Pi Raspberry Pi OS Lite | Raspberry Pi 4 (4 GB), PC mit x86-64-CPU |
+| **Getestet, läuft auch** | dieselben Systeme mit Desktop (GNOME bzw. Pi OS Desktop) | PC-CPU ohne AVX (x86-64-v2) |
+| **Sollte laufen, nicht getestet** | RHEL, Rocky Linux, CentOS Stream, Fedora | Raspberry Pi 5, andere 64-Bit-ARM-Rechner, Raspberry Pi 2/3 mit 32-Bit-System |
+| **Nicht unterstützt** | Ubuntu und Ableger wie Linux Mint (Browser nur als Snap), andere Systeme wie Arch, openSUSE, Alpine | |
 
-| | Getestet | Unterstützt, nicht getestet | Hinweise |
-|---|---|---|---|
-| **Betriebssystem** | Raspberry Pi OS (Debian 13) mit Desktop und Lite · Debian 13 ohne Desktop und mit GNOME · AlmaLinux 10.2 ohne Desktop und mit GNOME, SELinux aktiv | RHEL, Rocky Linux, CentOS Stream, Fedora | siehe unten |
-| **Rechner** | Raspberry Pi 4 (4 GB) · PC mit Intel-HDA-Sound (x86-64-v3) · Dell OptiPlex 3060 (Celeron G4900T ohne AVX, x86-64-v2) | Raspberry Pi 5 und andere 64-Bit-ARM-Rechner · Raspberry Pi 2/3 mit 32-Bit-System (armv7) | |
-| **Tonausgang** | Klinke (Pi) · HDMI (Pi, OptiPlex) · DisplayPort und PC-Lautsprecher (Intel-HDA) · 7.1 über USB-Soundkarte mit CM106 | USB-DACs und I²S-HATs | USB-DACs und I²S-HATs werden erkannt und bevorzugt |
-| **Fernseher/Monitor** | Fernseher mit CEC am Pi · Philips-TV ohne CEC · DP-Monitor | USB-CEC-Adapter am PC | CEC geht am Pi direkt, PCs brauchen dafür einen Adapter |
-| **CD-Laufwerk** | internes SATA-Laufwerk · USB-Laufwerk Samsung SE-218GN | | das USB-Laufwerk braucht am Pi ein Y-Kabel oder einen aktiven Hub |
-| **Bluetooth** | eingebautes Bluetooth des Pi · USB-Stick RTL8761BU | | |
-| **WLAN-Stick** | Edimax N150 (RTL8188EU, 2,4 GHz) · Netgear WNDA3100v3 (MT7632U, 2,4 + 5 GHz), beide unter AlmaLinux | | siehe unten |
-| **USB-Speicher** | Sticks mit FAT32 und NTFS | | |
+Ohne Desktop greift nichts anderes auf den Tonausgang zu, und `--tv-headless` zeigt den „Läuft gerade“-Bildschirm trotzdem am
+Fernseher. AlmaLinux 10 braucht eine CPU mit x86-64-v3, für x86-64-v2 gibt es eine eigene Ausgabe.
 
-**Betriebssystem:** Der Installer erkennt das System an `/etc/os-release`. Alles, was sich als Debian oder RHEL ausweist
-(`ID` bzw. `ID_LIKE`), wird wie diese Familie behandelt.
+<details>
+<summary>Getestetes Zubehör</summary>
 
-* **Debian-Familie:** alle Dienste aus den Paketquellen, librespot (Spotify) aus dem Raspotify-Paketarchiv. Fehlt
-  shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode.
-* **RHEL-Familie:** Was in den Paketquellen fehlt (mpd, shairport-sync, gmediarender, bluez-alsa), baut der Installer aus dem
-  Quellcode, librespot immer. ffmpeg kommt aus RPM Fusion, auf CPUs ohne x86-64-v3 aus EPEL.
-* **Abgelehnt:** andere Systeme (z. B. Arch, openSUSE, Alpine), ebenso Ubuntu und davon abgeleitete Systeme wie Linux Mint:
-  Browser gibt es dort nur als Snap, das passt nicht zum Betrieb als Dienst ohne Desktop.
+| Zubehör | Getestet mit | Hinweis |
+|---|---|---|
+| Tonausgang | Klinke (Pi), HDMI, DisplayPort, PC-Lautsprecher, 7.1 über USB-Karte mit CM106 | USB-DACs und I²S-HATs werden erkannt, sind aber nicht getestet |
+| Fernseher | mit CEC am Pi, ohne CEC, DP-Monitor | CEC am PC braucht einen USB-Adapter (nicht getestet) |
+| CD-Laufwerk | internes SATA-Laufwerk, USB-Laufwerk Samsung SE-218GN | USB-Laufwerk am Pi nur mit Y-Kabel oder aktivem Hub |
+| Bluetooth | eingebaut am Pi, USB-Stick RTL8761BU | |
+| WLAN-Stick | Edimax N150, Netgear WNDA3100v3 | geht nicht: Broadcom BCM43236 rev 2, AVM FRITZ!WLAN USB Stick N v2 (Test-PC startete mehrfach neu) |
+| USB-Speicher | Sticks mit FAT32 und NTFS | |
 
-**WLAN-Sticks, die nicht gehen:** Sticks mit Broadcom BCM43236 rev 2 (keine Firmware unter Linux). Der AVM FRITZ!WLAN USB Stick
-N v2 trennt sich unter AlmaLinux kurz nach der Suche, der Test-PC startete dabei mehrfach neu.
+</details>
 
-### Was womit getestet ist
+<details>
+<summary>Was womit getestet ist</summary>
 
 | | Pi OS Desktop | Pi OS Lite | Alma ohne Desktop | Alma GNOME | Debian ohne Desktop | Debian GNOME |
 |---|---|---|---|---|---|---|
@@ -91,9 +88,7 @@ N v2 trennt sich unter AlmaLinux kurz nach der Suche, der Test-PC startete dabei
 | Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | ✓ | | | |
 | Erscheinungsbilder | | | ✓ | | | |
 
-Einzelheiten: Auf dem Pi und dem OptiPlex lief die CD über das USB-Laufwerk, sonst intern. „Läuft gerade“ zeigt ohne Desktop
-`--tv-headless` an, mit GNOME Firefox nach dem Anmelden. Auf dem OptiPlex kommt ffmpeg aus EPEL statt RPM Fusion. Ton lief
-über Klinke und HDMI (Pi), PC-Lautsprecher und DisplayPort (PC) und zusätzlich als 7.1 über die USB-Karte (Debian ohne Desktop).
+</details>
 
 ## Installation
 

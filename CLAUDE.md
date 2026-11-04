@@ -251,8 +251,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **Debian 13 pur:** ohne Desktop stumm bestanden (siehe unten); mit dem Nutzer noch Ton, Kiosk am Monitor, Spotify,
-  AirPlay, Bluetooth, CD und ein Neustart. Danach mit Desktop.
+* **Debian 13 mit Desktop:** noch nicht getestet (ohne Desktop bestanden, siehe unten).
 * **Belegter Ausgang:** Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
@@ -274,7 +273,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 | Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
 | Wincor Nixdorf Beetle, Core 2 Quad | Debian 13 ohne Desktop | ifupdown statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
 | OptiPlex 3060 (Celeron) | später Rocky/AlmaLinux 9 | EL9: ältere Pakete, Quellcode-Builds (Python 3.9) |
-| HP i7 (`KlangStationDebian`) | Debian 13, erst ohne, dann mit Desktop | 5.1/7.1 mit echten Lautsprechern unter Debian wiederholen (unter Ubuntu bestanden, siehe unten) |
+| HP i7 (`KlangStationDebian`) | Debian 13, erst ohne, dann mit Desktop | ohne Desktop bestanden, 7.1 mit CM106 und Soundbird auch; als Nächstes mit Desktop |
 | Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
 
 Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
@@ -493,8 +492,17 @@ Vorher bzw. dabei bedenken:
   Autoplay spielt (Titelnamen und Cover kommen nach). Rippen in den internen Speicher: 8 min 8 s für 18 min Musik, FLAC
   und `cover.jpg`, Auswurf danach, sofort in der Bibliothek, abspielbar.
 
-**HP, Debian 13.7 ohne Desktop frisch, 04.11.2026 – ohne Ton**
+**HP, Debian 13.7 ohne Desktop frisch, 04.11.2026**
 
+* Mit Ton (laut Nutzer alles gut): Radio über den Monitor (HDMI 0, DP) und Kiosk mit Ruhebildschirm und „Läuft gerade“; Spotify und
+  AirPlay mit iPhone samt Wechsel; Bluetooth-Stick im Betrieb eingesteckt, gekoppelt, Play übernimmt, Trennen → Leerlauf.
+* Neustart (Ausgabe Monitor, Bluetooth-Stick steckt): Start 63 s (davon 44 s Firmware), Web nach 74 s, alle Dienste und Kiosk da, kein
+  PipeWire, Regler an, Ausgabe und Kopplung erhalten, kein ungefragtes Weiterspielen. dhcpcd meldet `network-online` vor dem IPv4-Lease
+  (9 s später): librespot beendet sich anfangs ohne Netz, die App startet es neu, nach 18 s läuft es.
+* CD (internes Laufwerk GUD1N, Protokoll): 4 Titel, Autoplay nach dem Einlesen, MusicBrainz 2 s danach, Pause/Weiter. Rippen in den
+  internen Speicher: 7 min 27 s für 18 min 32 s Musik, FLAC mit Tags und `cover.jpg`, Auswurf nach 2 s, sofort in der Bibliothek.
+* 7.1 mit USB-Karte (CM106) und Soundbird: Wechsel beim Spielen, Karte mit 8 Kanälen, S16, 44,1 kHz; laut Nutzer Ton aus allen Lautsprechern.
+* Die übrigen Punkte ohne Ton:
 * `install.sh --tv-headless` von null: 212 s, EXIT 0. Python 3.13.5, MPD 0.24.4, shairport-sync 4.3.7, librespot 0.8.0,
   gmediarender 0.3, Chromium 156, cage 0.2.0, bluez-alsa 4.3.1. Alle Dienste und der Kiosk laufen, keine fehlgeschlagenen
   Units, kein PipeWire, Paketdienste (mpd, shairport-sync, raspotify) aus. Spotify `getInfo` und mDNS antworten.

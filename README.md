@@ -44,51 +44,56 @@ Betriebssystem und Hardware sind unabhängig voneinander: Jedes unterstützte Be
 unterstützten Architektur, mit Desktop oder ohne (dann zeigt `--tv-headless` den „Läuft gerade“-Bildschirm am
 Fernseher).
 
-### Betriebssysteme
-
-Der Installer erkennt das System an `/etc/os-release` und ordnet es einer Familie zu. Alles, was sich als
-Debian oder RHEL ausweist (`ID` bzw. `ID_LIKE`), wird wie diese Familie behandelt.
-
-| Familie | System | Stand | Hinweise |
+| | Getestet | Unterstützt, nicht getestet | Hinweise |
 |---|---|---|---|
-| Debian | Raspberry Pi OS (Debian 13 „trixie“), mit Desktop und Lite | getestet | alle Dienste aus den Paketquellen, librespot (Spotify) aus dem Raspotify-Paketarchiv |
-| Debian | Debian 13, ohne Desktop und mit GNOME | getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
-| RHEL | AlmaLinux 10.2, ohne Desktop und mit GNOME, SELinux aktiv | getestet | was in den Paketquellen fehlt (mpd, shairport-sync, gmediarender, bluez-alsa), baut der Installer aus dem Quellcode, librespot immer; ffmpeg aus RPM Fusion, auf CPUs ohne x86-64-v3 aus EPEL |
-| RHEL | RHEL, Rocky Linux, CentOS Stream, Fedora | unterstützt, nicht getestet | wie AlmaLinux |
+| **Betriebssystem** | Raspberry Pi OS (Debian 13) mit Desktop und Lite · Debian 13 ohne Desktop und mit GNOME · AlmaLinux 10.2 ohne Desktop und mit GNOME, SELinux aktiv | RHEL, Rocky Linux, CentOS Stream, Fedora | siehe unten |
+| **Rechner** | Raspberry Pi 4 (4 GB) · PC mit Intel-HDA-Sound (x86-64-v3) · Dell OptiPlex 3060 (Celeron G4900T ohne AVX, x86-64-v2) | Raspberry Pi 5 und andere 64-Bit-ARM-Rechner · Raspberry Pi 2/3 mit 32-Bit-System (armv7) | |
+| **Tonausgang** | Klinke (Pi) · HDMI (Pi, OptiPlex) · DisplayPort und PC-Lautsprecher (Intel-HDA) · 7.1 über USB-Soundkarte mit CM106 | USB-DACs und I²S-HATs | USB-DACs und I²S-HATs werden erkannt und bevorzugt |
+| **Fernseher/Monitor** | Fernseher mit CEC am Pi · Philips-TV ohne CEC · DP-Monitor | USB-CEC-Adapter am PC | CEC geht am Pi direkt, PCs brauchen dafür einen Adapter |
+| **CD-Laufwerk** | internes SATA-Laufwerk · USB-Laufwerk Samsung SE-218GN | | das USB-Laufwerk braucht am Pi ein Y-Kabel oder einen aktiven Hub |
+| **Bluetooth** | eingebautes Bluetooth des Pi · USB-Stick RTL8761BU | | |
+| **WLAN-Stick** | Edimax N150 (RTL8188EU, 2,4 GHz) · Netgear WNDA3100v3 (MT7632U, 2,4 + 5 GHz), beide unter AlmaLinux | | siehe unten |
+| **USB-Speicher** | Sticks mit FAT32 und NTFS | | |
 
-Andere Systeme (z. B. Arch, openSUSE, Alpine) lehnt der Installer ab, ebenso Ubuntu und davon abgeleitete Systeme wie Linux Mint: Browser gibt es dort nur als Snap, das passt nicht zum Betrieb als Dienst ohne Desktop.
+**Betriebssystem:** Der Installer erkennt das System an `/etc/os-release`. Alles, was sich als Debian oder RHEL ausweist
+(`ID` bzw. `ID_LIKE`), wird wie diese Familie behandelt.
 
-### Hardware
+* **Debian-Familie:** alle Dienste aus den Paketquellen, librespot (Spotify) aus dem Raspotify-Paketarchiv. Fehlt
+  shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode.
+* **RHEL-Familie:** Was in den Paketquellen fehlt (mpd, shairport-sync, gmediarender, bluez-alsa), baut der Installer aus dem
+  Quellcode, librespot immer. ffmpeg kommt aus RPM Fusion, auf CPUs ohne x86-64-v3 aus EPEL.
+* **Abgelehnt:** andere Systeme (z. B. Arch, openSUSE, Alpine), ebenso Ubuntu und davon abgeleitete Systeme wie Linux Mint:
+  Browser gibt es dort nur als Snap, das passt nicht zum Betrieb als Dienst ohne Desktop.
 
-| Architektur | Geräte | Stand |
-|---|---|---|
-| aarch64 | Raspberry Pi 4 (4 GB) | getestet |
-| x86_64 | PC mit Intel-HDA-Sound (CPU mit x86-64-v3) | getestet |
-| x86_64 | Dell OptiPlex 3060 (Celeron G4900T ohne AVX, x86-64-v2) | getestet |
-| aarch64 | Raspberry Pi 5 und andere 64-Bit-ARM-Rechner | unterstützt, nicht getestet |
-| armv7 | Raspberry Pi 2/3 mit 32-Bit-System | unterstützt, nicht getestet |
+**WLAN-Sticks, die nicht gehen:** Sticks mit Broadcom BCM43236 rev 2 (keine Firmware unter Linux). Der AVM FRITZ!WLAN USB Stick
+N v2 trennt sich unter AlmaLinux kurz nach der Suche, der Test-PC startete dabei mehrfach neu.
 
-Getestetes Zubehör:
+### Was womit getestet ist
 
-| Zubehör | Getestet mit | Hinweise |
-|---|---|---|
-| Tonausgang | Klinke (Pi), HDMI (Pi, OptiPlex), DisplayPort und PC-Lautsprecher (Intel-HDA) | USB-DACs und I²S-HATs werden erkannt und bevorzugt, sind aber nicht getestet |
-| Fernseher/Monitor | Fernseher mit CEC am Pi, Philips-TV ohne CEC, DP-Monitor | CEC geht am Pi direkt; PCs brauchen dafür einen USB-CEC-Adapter (nicht getestet) |
-| CD-Laufwerk | internes SATA-Laufwerk, USB-Laufwerk Samsung SE-218GN | das USB-Laufwerk braucht am Pi ein Y-Kabel oder einen aktiven Hub |
-| Bluetooth | eingebautes Bluetooth des Pi, USB-Stick RTL8761BU | |
-| WLAN-Stick | Edimax N150 (RTL8188EU, 2,4 GHz), Netgear WNDA3100v3 (MT7632U, 2,4 + 5 GHz) unter AlmaLinux | nicht nutzbar: Sticks mit Broadcom BCM43236 rev 2 (keine Firmware unter Linux); AVM FRITZ!WLAN USB Stick N v2 trennt sich unter AlmaLinux kurz nach der Suche, der Test-PC startete dabei mehrfach neu |
-| USB-Speicher | Sticks mit FAT32 und NTFS | |
+| | Pi OS Desktop | Pi OS Lite | Alma ohne Desktop | Alma GNOME | Debian ohne Desktop | Debian GNOME |
+|---|---|---|---|---|---|---|
+| **Rechner** | Pi 4 | Pi 4 | PC Intel-HDA | OptiPlex 3060 | PC Intel-HDA | PC Intel-HDA |
+| Installation von null | | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Update | ✓ | ✓ | ✓ | | | ✓ |
+| Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ |
+| UPnP | ✓ | | ✓ | ✓ | | |
+| Radio, auch bei Netzausfall | ✓ | | ✓ | | ✓ | ✓ |
+| CD abspielen und rippen | ✓ | | ✓ | ✓ | ✓ | ✓ |
+| Freigabe, auch bei Serverausfall | SMB | NFS | SMB | NFS | | |
+| USB-Sticks, auch Abziehen im Betrieb | | | ✓ | ✓ | | |
+| CEC | ✓ | | | | | |
+| Schlummer-Timer, Wecker | | | ✓ | ✓ | | |
+| Musik hochladen | | | | | ✓ | |
+| Bit-perfekt, Lautstärke angleichen, Überblenden | | | ✓ | | | |
+| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | ✓ | | | |
+| Erscheinungsbilder | | | ✓ | | | |
 
-### Getestete Kombinationen
-
-| Betriebssystem | Hardware | Ergebnis |
-|---|---|---|
-| Raspberry Pi OS mit Desktop | Raspberry Pi 4 | alle Quellen, CD-Wiedergabe und Rippen (USB-Laufwerk), Synology per SMB (auch Serverausfall), Webradio bei Netzausfall, CEC, HDMI-Ton und Klinke, Bluetooth mit iPhone, Update und Neustart |
-| Raspberry Pi OS Lite | Raspberry Pi 4 | Installation von null mit `--tv-headless`, alle Dienste, „Läuft gerade“ am Fernseher, AirPlay ↔ Spotify, NFS-Freigabe (auch Serverausfall), Update und Neustart |
-| AlmaLinux 10.2 ohne Desktop | PC mit Intel-HDA | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Lautstärke angleichen und Überblenden, Sperrbildschirm und Home-Bildschirm-App (iPhone), Wecker, Erscheinungsbilder, Update und Neustart |
-| AlmaLinux 10.2 mit GNOME | Dell OptiPlex 3060 | Installation auf frischem System (ffmpeg aus EPEL statt RPM Fusion), „Läuft gerade“ per Firefox nach dem Anmelden, AirPlay ↔ Spotify, UPnP (mconnect), Bluetooth mit iPhone, NFS-Freigabe (auch Serverausfall), CD über USB-Laufwerk (MusicBrainz-Neuversuch, Rippen auf USB-Stick, Rückfall in den internen Speicher), Schlummer-Timer und Wecker, Neustart |
-| Debian 13 ohne Desktop | PC mit Intel-HDA, USB-Soundkarte mit CM106 | Installation von null mit `--tv-headless`, „Läuft gerade“ am Monitor, Ton über DisplayPort und 7.1 über die USB-Karte, Radio (auch bei Netzausfall), Spotify und AirPlay mit Wechsel, Bluetooth mit iPhone, CD-Wiedergabe und Rippen (internes Laufwerk), Musik hochladen, Neustart |
-| Debian 13 mit GNOME | PC mit Intel-HDA | Installation von null neben PipeWire, „Läuft gerade“ per Firefox nach dem Anmelden, kein Einschlafen, Ton über DisplayPort, Radio (auch bei Netzausfall), Spotify und AirPlay mit Wechsel, Bluetooth mit iPhone, CD-Wiedergabe und Rippen (internes Laufwerk), Neustart |
+Einzelheiten: Auf dem Pi und dem OptiPlex lief die CD über das USB-Laufwerk, sonst intern. „Läuft gerade“ zeigt ohne Desktop
+`--tv-headless` an, mit GNOME Firefox nach dem Anmelden. Auf dem OptiPlex kommt ffmpeg aus EPEL statt RPM Fusion. Ton lief
+über Klinke und HDMI (Pi), PC-Lautsprecher und DisplayPort (PC) und zusätzlich als 7.1 über die USB-Karte (Debian ohne Desktop).
 
 ## Installation
 

@@ -256,7 +256,7 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 
 ## Teststand
 
-Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssysteme, Hardware, getestete Kombinationen).
+Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und Tabelle „Was womit getestet ist“).
 
 ### Noch offen
 

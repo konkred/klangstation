@@ -448,6 +448,9 @@ Vorher bzw. dabei bedenken:
 * Hochladen (per curl und in der Oberfläche): Ordner, Umlaute, doppelte Datei 409, `../` und `.exe` abgelehnt, Abbruch hinterlässt
   keine Teildatei, danach in `Lokal/Hochgeladen` in der Bibliothek. Update-Hinweis: gegen GitHub mit simulierter alter und neuer
   Version, Punkt an „Optionen“ und Text unter Info. Noch nicht getestet: Hochladen vom iPhone, Ordnerwahl mit echtem Dateidialog.
+* „Läuft gerade“ bei 800x600, 1024x768, 1280x1024, 1366x768, 1600x900 (Browser-Viewport, gestellter Zustand mit langem Titel und
+  Liedtext, alle Themes): nichts ragt heraus, Uhr passt. 4:3/5:4 jetzt nach Breite (`tv-schmal.css`), Schrift mindestens 11 px, aktuelle
+  Liedzeile wird nicht mehr abgeschnitten. Noch nicht am echten Monitor mit dieser Auflösung.
 * Reiter unter Optionen in allen Themes: 1920, 1280 und 900 px eine Reihe, darunter Umbruch, am Handy wie bisher wischbar.
 
 **HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton** (Ubuntu seitdem nicht mehr unterstützt, gilt nur als Beleg für PipeWire und Python 3.14)

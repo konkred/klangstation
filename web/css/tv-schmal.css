@@ -1,0 +1,20 @@
+/* Schmale Querformate (4:3, 5:4): Groessen nach der Breite statt der Hoehe, sonst bleibt neben dem Cover kaum Platz
+   fuer den Titel. Nach den Themes geladen, damit es auch deren Schriftgroessen ersetzt. */
+@media (orientation: landscape) and (max-aspect-ratio: 3/2) {
+  html[data-theme] .playing { gap: 4vw; padding-left: 5vw; padding-right: 5vw; }
+  html[data-theme] .cover { width: 34vw; height: 34vw; }
+  html[data-theme] .with-lyrics .cover { width: 28vw; height: 28vw; }
+  html[data-theme] h1 { font-size: 4.4vw; }
+  html[data-theme] .with-lyrics h1 { font-size: 3.4vw; }
+  html[data-theme] .artist { font-size: 2.9vw; }
+  html[data-theme] .with-lyrics .artist { font-size: 2.4vw; }
+  html[data-theme] .album { font-size: 2.2vw; }
+  html[data-theme] .with-lyrics .album { font-size: 1.9vw; }
+  html[data-theme] .badge { font-size: 1.3vw; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* Niedrige Bildschirme: die kleinsten Texte bleiben lesbar */
+@media (max-height: 700px) {
+  html[data-theme] .format, html[data-theme] .recent-item div, html[data-theme] .recent-head, html[data-theme] .lyrics .source { font-size: 11px; }
+  html[data-theme] .badge { font-size: 11px; }
+}

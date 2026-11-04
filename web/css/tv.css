@@ -91,7 +91,8 @@ h1 {
 .lyrics-inner { position: absolute; left: 0; right: 0; top: 0; padding: 13vh 0 20vh; transition: transform .6s ease; will-change: transform; }
 .lyrics-inner.plain-mode { padding-top: 0; }
 .lyrics .line {
-  font-size: 3.4vh; line-height: 1.35; padding: .5vh 0; color: rgba(159,182,218,.55);
+  /* rechts Platz fuer die vergroesserte aktuelle Zeile (scale 1.08), sonst schneidet die Box sie ab */
+  font-size: 3.4vh; line-height: 1.35; padding: .5vh 8% .5vh 0; color: rgba(159,182,218,.55);
   transition: color .4s, transform .4s; transform-origin: left center;
 }
 .lyrics .line.now { color: var(--ink); transform: scale(1.08); text-shadow: 0 0 2vh rgba(47,180,255,.55); }

@@ -214,8 +214,8 @@ USB-DAC oder I²S-HAT, dann HDMI/DP mit erkanntem Gerät, dann die Klinke. Ein H
 angeschlossenes Gerät wird nie automatisch gewählt. Beim Wechsel spielt laufende Musik nach wenigen Sekunden
 am neuen Ausgang weiter.
 
-**Lautsprecher (5.1/7.1):** Hat das gewählte Gerät mindestens 6 Kanäle (z. B. eine USB-Soundkarte mit CM6206 oder
-ein PC mit Surround-Buchsen), erscheint die Auswahl *Lautsprecher*. Bei 5.1 bzw. 7.1 spielen hintere und seitliche
+**Lautsprecher (5.1/7.1):** Hat das gewählte Gerät mindestens 6 Kanäle (getestet mit einer USB-Soundkarte
+mit CM106), erscheint die Auswahl *Lautsprecher*. Bei 5.1 bzw. 7.1 spielen hintere und seitliche
 Lautsprecher dasselbe wie vorne, Center und Subwoofer bekommen die Mitte aus links und rechts – kein echter
 Raumklang, sondern Musik im ganzen Raum, für alle Quellen. Mehrkanal-Dateien werden dabei erst zu Stereo
 zusammengemischt. Bei *Bit-perfekt* ist das aus. Welche Buchse welcher Kanal ist, richtet sich nach der üblichen

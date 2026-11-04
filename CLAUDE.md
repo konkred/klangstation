@@ -249,7 +249,6 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
-* **5.1/7.1 mit echter Karte** (USB, CM6206): Kanalreihenfolge an den Buchsen; der Nutzer hört.
 * **CEC unter RHEL:** braucht einen USB-CEC-Adapter (z. B. Pulse-Eight), die Intel-Grafik kann kein CEC.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
@@ -266,7 +265,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 | Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
 | Wincor Nixdorf Beetle, Core 2 Quad | Debian 13 ohne Desktop | ifupdown statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
 | OptiPlex 3060 (Celeron) | später Rocky/AlmaLinux 9 | EL9: ältere Pakete, Quellcode-Builds (Python 3.9) |
-| HP i7 (`HP-KlangStation`) | offen: läuft noch mit Ubuntu, neu aufsetzen mit Debian 13 oder AlmaLinux 10 (Nutzer entscheidet) | 5.1 mit CM6206 + Soundbird |
+| HP i7 (`HP-KlangStation`) | offen: läuft noch mit Ubuntu, neu aufsetzen mit Debian 13 oder AlmaLinux 10 (Nutzer entscheidet) | 5.1/7.1 unter Debian wiederholen (unter Ubuntu bestanden, siehe unten) |
 | Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
 
 Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
@@ -430,7 +429,13 @@ Vorher bzw. dabei bedenken:
 * Links-only-Rauschen über MPD: 5.1 → FL/RL voll, FC/LFE halb, rechts 0; 7.1 zusätzlich SL voll, SR 0. MPD gibt
   44100:16:2 aus, shairport-sync nutzt `ks_surround`, `ks-spotify-sink` öffnet es. Zurück auf Stereo entfernt
   `.asoundrc`. Oberfläche: Auswahl nur bei ≥ 6 Kanälen, bei Bit-perfekt gesperrt.
-* Noch offen: USB-Kanalreihenfolge mit echter Karte (CM6206) und Lautsprechern.
+
+**HP, Ubuntu 26.04.1, 04.11.2026 – Lautsprecher 7.1 mit echter Karte**
+
+* USB-Karte `ICUSBAUDIO7D` (0d8c:0102, CM106) mit Soundbird: MPD gibt über `ks_surround` 44100:16:8 aus, Musik aus allen
+  Lautsprechern (laut Nutzer).
+* Kanalreihenfolge: Alle 8 Kanäle einzeln mit `speaker-test -t wav -s <n>` direkt auf `hw:`, jede Ansage kam laut Nutzer aus
+  dem passenden Lautsprecher. Die Kanalkarte der Karte (FL FR FC LFE RL RR SL SR) stimmt mit der Tabelle in `ks_surround` überein.
 
 **HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton** (Ubuntu seitdem nicht mehr unterstützt, gilt nur als Beleg für PipeWire und Python 3.14)
 

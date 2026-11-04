@@ -108,6 +108,15 @@ case " ${ID:-} ${ID_LIKE:-} " in
     *" rhel "*|*" fedora "*|*" centos "*) FAMILY=rhel ;;
     *) die "Nicht unterstuetzte Distribution: ${PRETTY_NAME:-$ID}" ;;
 esac
+# AlmaLinux/RHEL/Rocky/CentOS vor Version 10 sind zu alt (Python, Quellcode-Builds); Fedora zaehlt eigene Versionen
+if [ "$FAMILY" = rhel ] && [ "${ID:-}" != fedora ]; then
+    EL_MAJOR="${VERSION_ID:-}"
+    EL_MAJOR="${EL_MAJOR%%.*}"
+    case "$EL_MAJOR" in
+        ''|*[!0-9]*) ;;
+        *) [ "$EL_MAJOR" -ge 10 ] || die "${PRETTY_NAME:-$ID} wird nicht unterstuetzt: Bitte Version 10 oder neuer verwenden, auf aelteren CPUs Debian 13." ;;
+    esac
+fi
 ARCH="$(uname -m)"
 # Update ohne --port: bisherigen Port behalten (laesst sich auch unter Optionen > Netzwerk aendern)
 if [ -z "$PORT" ]; then

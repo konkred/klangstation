@@ -40,15 +40,23 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 
 ## Unterstützte Systeme
 
-| | Betriebssystem | Hardware |
-|---|---|---|
-| **Empfohlen** | Debian 13 oder AlmaLinux 10 ohne Desktop, auf dem Pi Raspberry Pi OS Lite | Raspberry Pi 4 (4 GB), PC mit x86-64-CPU |
-| **Getestet, läuft auch** | dieselben Systeme mit Desktop (GNOME bzw. Pi OS Desktop) | PC-CPU ohne AVX (x86-64-v2) |
-| **Sollte laufen, nicht getestet** | RHEL, Rocky Linux, CentOS Stream, Fedora | Raspberry Pi 5, andere 64-Bit-ARM-Rechner, Raspberry Pi 2/3 mit 32-Bit-System |
-| **Nicht unterstützt** | Ubuntu und Ableger wie Linux Mint (Browser nur als Snap), andere Systeme wie Arch, openSUSE, Alpine | |
+**Empfohlen ist ein System ohne Desktop:** Dann greift nichts anderes auf den Tonausgang zu, und `--tv-headless` zeigt den
+„Läuft gerade“-Bildschirm trotzdem am Fernseher.
 
-Ohne Desktop greift nichts anderes auf den Tonausgang zu, und `--tv-headless` zeigt den „Läuft gerade“-Bildschirm trotzdem am
-Fernseher. AlmaLinux 10 braucht eine CPU mit x86-64-v3, für x86-64-v2 gibt es eine eigene Ausgabe.
+| Hardware | Betriebssystem | Stand |
+|---|---|---|
+| **PC mit x86-64-v3 oder neuer** (empfohlen) | AlmaLinux 10 oder Debian 13 | getestet |
+| **Raspberry Pi 4 (4 GB)** (empfohlen) | Raspberry Pi OS Lite | getestet |
+| PC mit x86-64-v2 | AlmaLinux 10 in der v2-Ausgabe oder Debian 13 | AlmaLinux getestet, Debian nicht |
+| PC mit x86-64-v1 (z. B. Core 2 Quad) | nur Debian 13 | nicht getestet |
+
+Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep supported`.
+
+* **Getestet, läuft auch:** dieselben Systeme mit Desktop (GNOME bzw. Raspberry Pi OS mit Desktop).
+* **Sollte laufen, nicht getestet:** RHEL 10, Rocky Linux 10, CentOS Stream 10, Fedora; Raspberry Pi 5, andere 64-Bit-ARM-Rechner,
+  Raspberry Pi 2/3 mit 32-Bit-System.
+* **Nicht unterstützt:** AlmaLinux und RHEL vor Version 10, Ubuntu und Ableger wie Linux Mint (Browser nur als Snap), andere Systeme wie
+  Arch, openSUSE, Alpine.
 
 <details>
 <summary>Getestetes Zubehör</summary>

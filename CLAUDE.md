@@ -280,11 +280,11 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 | ASUS-Laptop, Ryzen 5 5500U | Debian 13 mit Desktop | AMD-Sound/-Grafik, eingebaute Lautsprecher und Display, eingebautes WLAN, Desktop mit PipeWire |
 | Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
 | Wincor Nixdorf Beetle, Core 2 Quad | Debian 13 ohne Desktop | ifupdown statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
-| OptiPlex 3060 (Celeron) | später Rocky/AlmaLinux 9 | EL9: ältere Pakete, Quellcode-Builds (Python 3.9) |
 | HP i7 (`KlangStationDebian`) | Debian 13 mit GNOME (vorher ohne Desktop) | beides bestanden, 7.1 mit CM106 und Soundbird ohne Desktop |
 | Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
 
-Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
+Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle.
+AlmaLinux 8 und 9 testen wir nicht (Entscheidung des Nutzers, 04.11.): zu alt, für CPUs mit x86-64-v1 gilt nur Debian. Zugang jeweils per SSH mit sudo wie am Pi.
 
 Vorher bzw. dabei bedenken:
 

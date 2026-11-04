@@ -468,6 +468,9 @@ elif [ "$(systemctl get-default)" = graphical.target ] && [ -d /etc/xdg/autostar
     log "Richte den Bildschirm fuer die Desktop-Sitzung ein (Autostart)..."
     install -m 0644 "$PREFIX/system/klangstation-tv.desktop" /etc/xdg/autostart/klangstation-tv.desktop
 fi
+# Ein Musikserver darf nicht einschlafen: GNOME versetzt den Rechner sonst nach 15 min ohne Eingabe in Bereitschaft
+log "Schalte Bereitschaft und Ruhezustand ab..."
+systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target >/dev/null 2>&1 || true
 systemctl daemon-reload
 install_firewall
 systemctl enable --now ks-netmount.socket ks-netadmin.socket
@@ -478,6 +481,15 @@ if [ "$TV_HEADLESS" = 1 ]; then
     systemctl stop klangstation-tv.service "user@$(id -u "$SVC_USER").service" >/dev/null 2>&1 || true
     systemctl restart klangstation.service
     systemctl restart klangstation-tv.service || warn "Bildschirm ohne Desktop liess sich nicht starten"
+elif [ -f /etc/xdg/autostart/klangstation-tv.desktop ]; then
+    # Der Autostart greift erst bei der naechsten Anmeldung: in einer laufenden Sitzung gleich starten
+    for session in $(loginctl list-sessions --no-legend 2>/dev/null | awk '{print $1}'); do
+        case "$(loginctl show-session "$session" -p Type --value 2>/dev/null || true)" in wayland|x11) ;; *) continue ;; esac
+        session_user="$(loginctl show-session "$session" -p Name --value 2>/dev/null || true)"
+        [ -n "$session_user" ] || continue
+        pgrep -u "$session_user" -x ks-tv-kiosk >/dev/null 2>&1 && continue
+        systemd-run --user --machine="$session_user@" --collect --quiet "$PREFIX/system/ks-tv-kiosk" >/dev/null 2>&1 || true
+    done
 fi
 
 # bereits eingesteckte Datentraeger einhaengen

@@ -55,7 +55,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 |---|---|---|
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
-| HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 ohne Desktop, x86_64 (seit 04.11., vorher Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.172` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
+| HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
 | Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
 | NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben von Claude nach den Tests gelöscht, Freigabe ist leer |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
@@ -240,6 +240,12 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   wieder → `_busy_loop` zeigt den Hinweis und versucht es alle 3 s, höchstens 2 min. Pause/Stopp beenden das Warten
   (samt `clearerror`), sonst startet die Wiedergabe später ungefragt.
 
+* **GNOME schläft ein:** Standard sind Bereitschaft nach 15 min ohne Eingabe, Bildschirm dunkel und Sperre nach 5 min; nach dem
+  Aufwecken steht trotz automatischer Anmeldung die Passwortabfrage da → Installer sperrt die Sleep-Ziele (`systemctl mask`),
+  `ks-tv-kiosk` stellt Dunkelschalten und Sperre per `gsettings` ab, solange „Läuft gerade“ an ist.
+* **Autostart greift erst bei der nächsten Anmeldung** → Installer startet `ks-tv-kiosk` in laufenden Sitzungen per
+  `systemd-run --user --machine=<Nutzer>@`; `flock` im Skript verhindert eine zweite Instanz.
+
 ### Python
 
 * **asyncio hält Aufgaben nur schwach** → ohne Referenz räumt der Garbage Collector sie mitten im Lauf weg
@@ -251,7 +257,10 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 
 ### Noch offen
 
-* **Debian 13 mit Desktop:** noch nicht getestet (ohne Desktop bestanden, siehe unten).
+* **Debian 13 mit GNOME, belegter Ausgang:** ließ sich mit `pw-cat --volume 0` nicht nachstellen (MPD bekam den Ausgang trotzdem);
+  unter Ubuntu bestanden. Echte Prüfung: Ton aus einem Desktop-Programm auf demselben Ausgang.
+* **Bildschirm ohne Eingabe und ohne Ton über 15 min:** Einstellungen gesetzt, Bereitschaft gesperrt, aber nicht in voller Länge
+  beobachtet (in den 30 min Test lief fast immer Ton).
 * **Belegter Ausgang:** Fortsetzen an der alten Position nicht getestet; Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
@@ -273,7 +282,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Betriebssystem
 | Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
 | Wincor Nixdorf Beetle, Core 2 Quad | Debian 13 ohne Desktop | ifupdown statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
 | OptiPlex 3060 (Celeron) | später Rocky/AlmaLinux 9 | EL9: ältere Pakete, Quellcode-Builds (Python 3.9) |
-| HP i7 (`KlangStationDebian`) | Debian 13, erst ohne, dann mit Desktop | ohne Desktop bestanden, 7.1 mit CM106 und Soundbird auch; als Nächstes mit Desktop |
+| HP i7 (`KlangStationDebian`) | Debian 13 mit GNOME (vorher ohne Desktop) | beides bestanden, 7.1 mit CM106 und Soundbird ohne Desktop |
 | Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
 
 Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle, OptiPlex. Zugang jeweils per SSH mit sudo wie am Pi.
@@ -492,6 +501,20 @@ Vorher bzw. dabei bedenken:
   Autoplay spielt (Titelnamen und Cover kommen nach). Rippen in den internen Speicher: 8 min 8 s für 18 min Musik, FLAC
   und `cover.jpg`, Auswurf danach, sofort in der Bibliothek, abspielbar.
 
+**HP, Debian 13.7 mit GNOME frisch, 04.11.2026**
+
+* `install.sh` von null: 67 s, EXIT 0, danach Update in 12 s. Alle Dienste laufen, Paketdienste aus, PipeWire und WirePlumber laufen mit.
+* GNOME schlief nach 15 min ein und sperrte (siehe Lehren und Behobene Fehler) → Sleep-Ziele gesperrt, `CanSuspend` = no; nach der
+  Korrektur 30 min wach und ungesperrt, Kiosk direkt nach der Installation da.
+* Neustart: Start 82 s (davon 42 s Firmware), Web nach 73 s, automatische Anmeldung, „Läuft gerade“ (Firefox-ESR) 2 s nach WirePlumber, HDMI an,
+  kein ungefragtes Weiterspielen.
+* WirePlumber-Neustart: HDMI und Master stumm/69 %, nach 1–3 s zurück.
+* Stumm über `snd-aloop`: alle Formate, Umlaute und „&“; Nur-links-Rauschen in 5.1 und 7.1 wie ohne Desktop; Webradio-Netzausfall 60 s, nach
+  spätestens 26 s Hinweis, 15 s nach Rückkehr spielt er wieder. WirePlumber zeigt Loopback als eigenes Gerät: vor `rmmod` PipeWire stoppen.
+* Laut Nutzer alles gut: Monitor und Ton darüber, Radio, Spotify und AirPlay mit Wechsel (librespot stürzt nicht ab), Bluetooth-Stick im Betrieb
+  (Klasse Lautsprecher, gekoppelt, Play übernimmt, Trennen → Leerlauf; GNOME greift nicht ein).
+* CD ohne GNOME-Dialog und ohne Einhängen, Autoplay hier aus. Rippen in den internen Speicher: 7 min 28 s für 18 min 32 s Musik.
+
 **HP, Debian 13.7 ohne Desktop frisch, 04.11.2026**
 
 * Mit Ton (laut Nutzer alles gut): Radio über den Monitor (HDMI 0, DP) und Kiosk mit Ruhebildschirm und „Läuft gerade“; Spotify und
@@ -575,3 +598,4 @@ Vorher bzw. dabei bedenken:
 
 * Webradio blieb dauerhaft aus, wenn die Verbindung abriss und der Sender dabei nicht erreichbar war → Wächter verbindet neu
   (siehe Lehren). Stopp während des Neuversuchs startete den Sender später ungefragt wieder → beendet ihn jetzt (0.2.2).
+* Unter GNOME: Rechner ging nach 15 min in Bereitschaft, danach Anmeldeseite; „Läuft gerade“ erst nach der nächsten Anmeldung (siehe Lehren, 0.2.3).

@@ -8,15 +8,29 @@ BROWSER="$(command -v chromium || command -v chromium-browser || command -v fire
 [ -n "$BROWSER" ] || { echo "Kein Browser (chromium/firefox) gefunden" >&2; exit 0; }
 PROFILE="${XDG_RUNTIME_DIR:-/tmp}/klangstation-tv-$(id -u)"
 
+# Nur eine Instanz je Benutzer (Installer und Autostart koennen beide starten)
+exec 9>"$PROFILE.lock"
+flock -n 9 || exit 0
+
+# GNOME macht den Bildschirm sonst nach 5 min dunkel und sperrt die Sitzung; Ruhezustand sperrt der Installer
+keep_screen_on() {
+    [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]] || return 0
+    gsettings set org.gnome.desktop.session idle-delay 0 2>/dev/null
+    gsettings set org.gnome.desktop.screensaver lock-enabled false 2>/dev/null
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type nothing 2>/dev/null
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type nothing 2>/dev/null
+}
+
 start_browser() {
+    keep_screen_on
     if [[ "$BROWSER" == *firefox* ]]; then
-        "$BROWSER" --kiosk --new-instance --profile "$PROFILE" "$URL/tv" &
+        "$BROWSER" --kiosk --new-instance --profile "$PROFILE" "$URL/tv" 9>&- &
     else
         # Translate aus: auf Systemen mit englischer Sprache bietet Chromium sonst an, die Seite zu uebersetzen
         "$BROWSER" --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-session-crashed-bubble \
             --disable-features=Translate --lang=de \
             --password-store=basic --check-for-update-interval=31536000 --user-data-dir="$PROFILE" \
-            --app="$URL/tv" >/dev/null 2>&1 &
+            --app="$URL/tv" >/dev/null 2>&1 9>&- &
     fi
     pid=$!
 }

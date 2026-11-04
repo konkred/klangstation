@@ -52,8 +52,7 @@ Debian oder RHEL ausweist (`ID` bzw. `ID_LIKE`), wird wie diese Familie behandel
 | Familie | System | Stand | Hinweise |
 |---|---|---|---|
 | Debian | Raspberry Pi OS (Debian 13 „trixie“), mit Desktop und Lite | getestet | alle Dienste aus den Paketquellen, librespot (Spotify) aus dem Raspotify-Paketarchiv |
-| Debian | Debian 13 ohne Desktop | getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
-| Debian | Debian 13 mit Desktop | unterstützt, nicht getestet | wie Debian 13 ohne Desktop |
+| Debian | Debian 13, ohne Desktop und mit GNOME | getestet | wie Raspberry Pi OS; fehlt shairport-sync in den Paketquellen, baut der Installer es aus dem Quellcode |
 | RHEL | AlmaLinux 10.2, ohne Desktop und mit GNOME, SELinux aktiv | getestet | was in den Paketquellen fehlt (mpd, shairport-sync, gmediarender, bluez-alsa), baut der Installer aus dem Quellcode, librespot immer; ffmpeg aus RPM Fusion, auf CPUs ohne x86-64-v3 aus EPEL |
 | RHEL | RHEL, Rocky Linux, CentOS Stream, Fedora | unterstützt, nicht getestet | wie AlmaLinux |
 
@@ -89,6 +88,7 @@ Getestetes Zubehör:
 | AlmaLinux 10.2 ohne Desktop | PC mit Intel-HDA | Installation inkl. Quellcode-Builds, Ton über PC-Lautsprecher und DisplayPort, bit-perfekt, Radio (auch bei Netzausfall), AirPlay mit Fortschritt, Spotify, UPnP, Bluetooth (Ein-/Ausstecken im Betrieb, automatische Wiederverbindung nach Neustart), USB-Sticks (auch Abziehen im Betrieb), Synology per SMB (auch Serverausfall), CD-Wiedergabe und Rippen auf USB-Stick, „Läuft gerade“ per `--tv-headless`, Lautstärke angleichen und Überblenden, Sperrbildschirm und Home-Bildschirm-App (iPhone), Wecker, Erscheinungsbilder, Update und Neustart |
 | AlmaLinux 10.2 mit GNOME | Dell OptiPlex 3060 | Installation auf frischem System (ffmpeg aus EPEL statt RPM Fusion), „Läuft gerade“ per Firefox nach dem Anmelden, AirPlay ↔ Spotify, UPnP (mconnect), Bluetooth mit iPhone, NFS-Freigabe (auch Serverausfall), CD über USB-Laufwerk (MusicBrainz-Neuversuch, Rippen auf USB-Stick, Rückfall in den internen Speicher), Schlummer-Timer und Wecker, Neustart |
 | Debian 13 ohne Desktop | PC mit Intel-HDA, USB-Soundkarte mit CM106 | Installation von null mit `--tv-headless`, „Läuft gerade“ am Monitor, Ton über DisplayPort und 7.1 über die USB-Karte, Radio (auch bei Netzausfall), Spotify und AirPlay mit Wechsel, Bluetooth mit iPhone, CD-Wiedergabe und Rippen (internes Laufwerk), Musik hochladen, Neustart |
+| Debian 13 mit GNOME | PC mit Intel-HDA | Installation von null neben PipeWire, „Läuft gerade“ per Firefox nach dem Anmelden, kein Einschlafen, Ton über DisplayPort, Radio (auch bei Netzausfall), Spotify und AirPlay mit Wechsel, Bluetooth mit iPhone, CD-Wiedergabe und Rippen (internes Laufwerk), Neustart |
 
 ## Installation
 
@@ -211,6 +211,11 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 * „Läuft gerade“: mit Desktop ein Autostart-Eintrag (`/etc/xdg/autostart/klangstation-tv.desktop`), mit
   `--tv-headless` der Dienst `klangstation-tv`. Für dessen Sitzung werden PipeWire und WirePlumber gesperrt:
   Chromium würde sie sonst starten, und WirePlumber setzt die ALSA-Regler zurück (HDMI/DP nach dem Booten stumm).
+  Unter GNOME stellt der Bildschirm bei jedem Start Dunkelschalten und Sperren der Sitzung ab, solange „Läuft gerade“
+  in den Optionen an ist.
+* Bereitschaft und Ruhezustand: Die systemd-Ziele werden gesperrt, damit der Rechner nicht einschläft (GNOME täte das
+  nach 15 min ohne Eingabe). Rückgängig: `systemctl unmask sleep.target suspend.target hibernate.target
+  hybrid-sleep.target suspend-then-hibernate.target`.
 
 ## Bedienung
 

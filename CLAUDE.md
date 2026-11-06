@@ -57,6 +57,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
 | Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
+| ASUS VivoBook X515UA (Hostname `asus-laptop-Klang`, Ryzen 5 5500U, 8 GB), Debian 13.7 mit GNOME, x86_64 | `ssh debianlaptop@10.0.0.171` (SSH-Key, zu Hause, nur WLAN) | sudo ohne Passwort; ALC256 (Lautsprecher/Kopfhörer), HDMI (AMD), Bluetooth QCA9377; Ausgabe steht auf HDMI 0 |
 | NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben von Claude nach den Tests gelöscht, Freigabe ist leer |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
 
@@ -301,8 +302,8 @@ Vorher bzw. dabei bedenken:
 
 * **Laptop-Deckel:** Installer setzt `HandleLidSwitch=ignore` (auch ExternalPower/Docked) in
   `/etc/systemd/logind.conf.d/90-klangstation.conf` (0.2.5), am ASUS bestanden.
-* **Laptop-Display:** Kiosk bei offenem Deckel auf dem eingebauten Display; bei geschlossenem Deckel auf den
-  Fernseher wechseln oder aus.
+* **Laptop-Display:** Kiosk bei offenem Deckel auf dem eingebauten Display, bei geschlossenem Deckel am Fernseher – macht
+  GNOME von selbst (am ASUS bestanden). Ohne Desktop (cage, Dell) noch offen.
 * **Lautsprecher/Kopfhörer:** Erscheint als ein Gerät („ALC256 Analog“); Umschalten per Auto-Mute des Treibers (am ASUS bestanden).
 * **SOF (Dell, evtl. ASUS):** Debian braucht `firmware-sof-signed`, bringt der Installer bisher nicht mit → wahrscheinlich
   kein Ton ohne; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
@@ -573,7 +574,11 @@ Vorher bzw. dabei bedenken:
   Gerätename `konnis-iPhone-16`, Titel und Cover nach ~2 s, zurück zu Spotify; Bluetooth (eingebauter QCA9377) gekoppelt, Fenster
   schließt, Play übernimmt nach ~2 s, Pause und Titelsprung, Trennen → Leerlauf. Master blieb 100 %.
 * Springen im Titel bei Bluetooth: Zeit und Liedtext laufen von der alten Stelle weiter (siehe Lehren, nicht behebbar).
-* Noch offen am ASUS: HDMI, Kiosk bei zugeklapptem Deckel.
+* Deckel und Kiosk (laut Nutzer, Protokoll): ohne HDMI zu und auf → Bluetooth spielt weiter, Sitzung bleibt aktiv und
+  ungesperrt, „Läuft gerade“ sofort wieder da. Mit Fernseher an HDMI: Deckel zu → GNOME schaltet eDP ab, „Läuft gerade“
+  bildschirmfüllend am Fernseher; Deckel auf → Kiosk zurück aufs eingebaute Display, Fernseher zeigt den Desktop (erweitert).
+  HDMI wird als „Monitor angeschlossen“ erkannt; die Ausgabe wechselt beim Anstecken nicht (Automatik wählt nur beim Start).
+* Ton über HDMI am Fernseher (laut Nutzer): Ausgabe auf HDMI 0 umgestellt, Spotify spielt dort.
 
 ### Behobene Fehler
 

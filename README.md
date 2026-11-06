@@ -52,7 +52,8 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 
 Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep supported`.
 
-* **Getestet, läuft auch:** dieselben Systeme mit Desktop (GNOME bzw. Raspberry Pi OS mit Desktop).
+* **Getestet, läuft auch:** dieselben Systeme mit Desktop (GNOME bzw. Raspberry Pi OS mit Desktop), auch auf einem Laptop
+  (Debian 13 mit GNOME: Deckel zuklappen, Lautsprecher und Kopfhörer, eingebautes WLAN und Bluetooth).
 * **Sollte laufen, nicht getestet:** RHEL 10, Rocky Linux 10, CentOS Stream 10, Fedora; Raspberry Pi 5, andere 64-Bit-ARM-Rechner,
   Raspberry Pi 2/3 mit 32-Bit-System.
 * **Nicht unterstützt:** AlmaLinux und RHEL vor Version 10, Ubuntu und Ableger wie Linux Mint (Browser nur als Snap), andere Systeme wie
@@ -63,10 +64,10 @@ Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep suppo
 
 | Zubehör | Getestet mit | Hinweis |
 |---|---|---|
-| Tonausgang | Klinke (Pi), HDMI, DisplayPort, PC-Lautsprecher, 7.1 über USB-Karte mit CM106 | USB-DACs und I²S-HATs werden erkannt, sind aber nicht getestet |
+| Tonausgang | Klinke (Pi), HDMI, DisplayPort, PC-Lautsprecher, Laptop-Lautsprecher und -Kopfhörerbuchse, 7.1 über USB-Karte mit CM106 | USB-DACs und I²S-HATs werden erkannt, sind aber nicht getestet |
 | Fernseher | mit CEC am Pi, ohne CEC, DP-Monitor | CEC am PC braucht einen USB-Adapter (nicht getestet) |
 | CD-Laufwerk | internes SATA-Laufwerk, USB-Laufwerk Samsung SE-218GN | USB-Laufwerk am Pi nur mit Y-Kabel oder aktivem Hub |
-| Bluetooth | eingebaut am Pi, USB-Stick RTL8761BU | |
+| Bluetooth | eingebaut am Pi und am Laptop (Qualcomm QCA9377), USB-Stick RTL8761BU | |
 | WLAN-Stick | Edimax N150, Netgear WNDA3100v3 | geht nicht: Broadcom BCM43236 rev 2, AVM FRITZ!WLAN USB Stick N v2 (Test-PC startete mehrfach neu) |
 | USB-Speicher | Sticks mit FAT32 und NTFS | |
 
@@ -75,26 +76,27 @@ Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep suppo
 <details>
 <summary>Was womit getestet ist</summary>
 
-| | Pi OS Desktop | Pi OS Lite | Alma ohne Desktop | Alma GNOME | Debian ohne Desktop | Debian GNOME |
-|---|---|---|---|---|---|---|
-| **Rechner** | Pi 4 | Pi 4 | PC Intel-HDA | OptiPlex 3060 | PC Intel-HDA | PC Intel-HDA |
-| Installation von null | | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Update | ✓ | ✓ | ✓ | | | ✓ |
-| Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ |
-| UPnP | ✓ | | ✓ | ✓ | | |
-| Radio, auch bei Netzausfall | ✓ | | ✓ | | ✓ | ✓ |
-| CD abspielen und rippen | ✓ | | ✓ | ✓ | ✓ | ✓ |
-| Freigabe, auch bei Serverausfall | SMB | NFS | SMB | NFS | | |
-| USB-Sticks, auch Abziehen im Betrieb | | | ✓ | ✓ | | |
-| CEC | ✓ | | | | | |
-| Schlummer-Timer, Wecker | | | ✓ | ✓ | | |
-| Musik hochladen | | | | | ✓ | |
-| Bit-perfekt, Lautstärke angleichen, Überblenden | | | ✓ | | | |
-| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | ✓ | | | |
-| Erscheinungsbilder | | | ✓ | | | |
+| | Pi OS Desktop | Pi OS Lite | Alma ohne Desktop | Alma GNOME | Debian ohne Desktop | Debian GNOME | Debian GNOME Laptop |
+|---|---|---|---|---|---|---|---|
+| **Rechner** | Pi 4 | Pi 4 | PC Intel-HDA | OptiPlex 3060 | PC Intel-HDA | PC Intel-HDA | ASUS Ryzen 5 |
+| Installation von null | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Update | ✓ | ✓ | ✓ | | | ✓ | ✓ |
+| Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ | ✓ |
+| UPnP | ✓ | | ✓ | ✓ | | | |
+| Radio, auch bei Netzausfall | ✓ | | ✓ | | ✓ | ✓ | ✓ |
+| CD abspielen und rippen | ✓ | | ✓ | ✓ | ✓ | ✓ | |
+| Freigabe, auch bei Serverausfall | SMB | NFS | SMB | NFS | | | |
+| USB-Sticks, auch Abziehen im Betrieb | | | ✓ | ✓ | | | |
+| CEC | ✓ | | | | | | |
+| Schlummer-Timer, Wecker | | | ✓ | ✓ | | | ✓ |
+| Musik hochladen | | | | | ✓ | | |
+| Bit-perfekt, Lautstärke angleichen, Überblenden | | | ✓ | | | | |
+| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | ✓ | | | | |
+| Erscheinungsbilder | | | ✓ | | | | |
+| Laptop: Deckel, Kopfhörer, Bildschirm am Fernseher | | | | | | | ✓ |
 
 </details>
 

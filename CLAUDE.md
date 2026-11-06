@@ -175,6 +175,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   „loading“ erst nach ~4 s) → Backend `subprocess` mit `system/ks-spotify-sink`: wartet bis 10 s auf das Gerät,
   meldet „sink busy“, Klangstation gibt es frei.
 * Beendet sich ein Dienst unerwartet, schreibt `daemons.py` seine letzten Zeilen ins Journal.
+* **Bluetooth-Position nach dem Springen:** Das iPhone schickt beim Springen im Titel nichts über AVRCP (btmon: nur der
+  Audiostrom), BlueZ meldet `Position` nur beim Statuswechsel (z. B. auf „playing“), eine Nachfrage gibt die D-Bus-API nicht
+  her → Zeit und Liedtext laufen von der alten Stelle weiter; in der README als Grenze vermerkt.
 
 ### Kiosk und Oberfläche
 
@@ -559,7 +562,18 @@ Vorher bzw. dabei bedenken:
 * Deckel zu und auf während Radio (laut Nutzer): läuft weiter, Rechner bleibt wach; logind meldet `HandleLidSwitch=ignore`.
 * Radio über Lautsprecher und Kopfhörer (laut Nutzer): Ein- und Ausstecken schaltet um, Lautstärke voll; Protokoll: zehn Wechsel,
   alle Regler 100 %/an. Nach dem Einspielen per Installer: Profil `pro-audio`, `Auto-Mute eingeschaltet` im Protokoll.
-* Noch offen am ASUS: Neustart, Spotify/AirPlay/Bluetooth mit iPhone, HDMI, stumme Tests (snd-aloop), Kiosk bei zugeklapptem Deckel.
+* Neustart: Start 32 s, SSH und Web nach 37 s, alle Dienste und Kiosk da, Regler 100 %, Auto-Mute an, Profil `pro-audio`,
+  Deckel `ignore`, kein ungefragtes Weiterspielen.
+* Stumm über `snd-aloop` (Aufnahme mit `plughw`, sonst schreibt arecord nichts, solange MPD spielt): FLAC, MP3, OGG, Opus, M4A,
+  WMA, WAV mit Pegel; Umlaute und „&“ in Bibliothek, Suche, Warteschlange, Wiedergabeliste; Ausgabewechsel beim Spielen;
+  Überblenden, ReplayGain, „Dynamisch“ (spielt weiter); Schlummer-Timer und Titelende; Wecker-Rampe; kaputter Sender →
+  Bibliothek + 60-min-Timer. Webradio-Netzausfall 60 s über WLAN (v4 und v6): Hinweis nach 27 s, 17 s nach Rückkehr spielt er
+  wieder. Zum Entladen von `snd-aloop` erst PipeWire, WirePlumber und deren Sockets der Sitzung stoppen.
+* Spotify, AirPlay und Bluetooth mit iPhone (laut Nutzer alles gut, Protokoll): Spotify Pause/Weiter; Wechsel zu AirPlay mit
+  Gerätename `konnis-iPhone-16`, Titel und Cover nach ~2 s, zurück zu Spotify; Bluetooth (eingebauter QCA9377) gekoppelt, Fenster
+  schließt, Play übernimmt nach ~2 s, Pause und Titelsprung, Trennen → Leerlauf. Master blieb 100 %.
+* Springen im Titel bei Bluetooth: Zeit und Liedtext laufen von der alten Stelle weiter (siehe Lehren, nicht behebbar).
+* Noch offen am ASUS: HDMI, Kiosk bei zugeklapptem Deckel.
 
 ### Behobene Fehler
 

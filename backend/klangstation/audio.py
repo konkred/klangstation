@@ -95,6 +95,11 @@ def prepare_mixer(device_id: str) -> List[str]:
     for block in blocks[1:]:
         head, _, body = block.partition("\n")
         hm = re.match(r"'(.+)',(\d+)", head)
+        # Lautsprecher und Kopfhoerer bleiben beide an, beim Einstecken schaltet der Treiber um (PipeWire stellt das ab)
+        if hm and hm.group(1) == "Auto-Mute Mode" and "Item0: 'Disabled'" in body and "'Enabled'" in body:
+            _amixer("-c", card, "-q", "sset", f"Auto-Mute Mode,{hm.group(2)}", "Enabled")
+            changed.append("Auto-Mute eingeschaltet")
+            continue
         if not hm or hm.group(1) not in _MIXER_CONTROLS or not re.search(r"Capabilities:.*\bp(volume|switch)", body):
             continue
         name = f"{hm.group(1)},{hm.group(2)}"

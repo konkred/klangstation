@@ -22,6 +22,8 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!!\033[0m  %s\n' "$*" >&2; }
 die()  { printf '\033[1;31mFehler:\033[0m %s\n' "$*" >&2; exit 1; }
+# Desktop: PackageKit haelt nach dem Start oft die dpkg-Sperre (automatische Updates) -> warten statt abbrechen
+apt-get() { command apt-get -o DPkg::Lock::Timeout=600 "$@"; }
 
 usage() {
     cat <<'EOF'
@@ -445,6 +447,33 @@ EOF
         # WirePlumber 0.4 (Debian 12 / Raspberry Pi OS Bookworm)
         echo '-- Klangstation: Bluetooth-Audio uebernimmt bluez-alsa' > /etc/wireplumber/bluetooth.lua.d/90-klangstation.lua
         echo 'bluez_monitor.enabled = false' >> /etc/wireplumber/bluetooth.lua.d/90-klangstation.lua
+        for user in $(loginctl list-users --no-legend 2>/dev/null | awk '{print $2}'); do
+            systemctl --user -M "${user}@" restart wireplumber.service >/dev/null 2>&1 || true
+        done
+    fi
+fi
+
+# Desktop-Systeme: WirePlumber setzt beim Anschlusswechsel (Kopfhoerer ein/aus) und ueber den Lautstaerkeregler
+# des Desktops die Regler der Karte (Master/PCM), MPD spielt dann leiser. Im Profil "pro-audio" fasst PipeWire
+# Regler und Anschluesse nicht an (Desktop-Ton per Software), Lautsprecher/Kopfhoerer schaltet der Treiber um
+# (Auto-Mute, setzt Klangstation). Ein Software-Mixer allein reicht nicht: Dann schaltet PipeWire beim
+# Herausziehen den Kopfhoerer stumm, aber den Lautsprecher nicht wieder ein. Rueckgaengig: Datei loeschen.
+if [ -d /usr/share/wireplumber ]; then
+    install -d /etc/wireplumber/wireplumber.conf.d
+    mixer_conf=/etc/wireplumber/wireplumber.conf.d/90-klangstation-mixer.conf
+    mixer_new=$(cat <<'EOF'
+# Klangstation: PipeWire laesst Regler und Anschluesse der Karten in Ruhe (WirePlumber >= 0.5)
+monitor.alsa.rules = [
+  {
+    matches = [ { device.name = "~alsa_card.*" } ]
+    actions = { update-props = { device.profile = "pro-audio" } }
+  }
+]
+EOF
+)
+    if [ "$(cat "$mixer_conf" 2>/dev/null || true)" != "$mixer_new" ]; then
+        log "PipeWire laesst die Regler der Karte in Ruhe (WirePlumber-Profil pro-audio)..."
+        printf '%s\n' "$mixer_new" > "$mixer_conf"
         for user in $(loginctl list-users --no-legend 2>/dev/null | awk '{print $2}'); do
             systemctl --user -M "${user}@" restart wireplumber.service >/dev/null 2>&1 || true
         done

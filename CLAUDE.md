@@ -248,6 +248,14 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `ks-tv-kiosk` stellt Dunkelschalten und Sperre per `gsettings` ab, solange „Läuft gerade“ an ist.
 * **Autostart greift erst bei der nächsten Anmeldung** → Installer startet `ks-tv-kiosk` in laufenden Sitzungen per
   `systemd-run --user --machine=<Nutzer>@`; `flock` im Skript verhindert eine zweite Instanz.
+* **WirePlumber verstellt die Karte im Betrieb:** Der Lautstärkeregler des Desktops und der Anschlusswechsel (Kopfhörer ein/aus,
+  je Anschluss gemerkte Lautstärke) setzen Master direkt (am ASUS 64 %). `api.alsa.soft-mixer` allein taugt nicht: PipeWire schaltet
+  beim Herausziehen den Kopfhörer stumm (0 %/aus), den Lautsprecher aber nicht wieder ein → still. Lösung: Profil `pro-audio` für
+  alle Karten (WirePlumber-Regel `device.profile`), PipeWire fasst dann Regler und Anschlüsse nicht an; `Auto-Mute Mode` (von
+  PipeWire auf Disabled gestellt) setzt `prepare_mixer` auf Enabled, der Treiber schaltet selbst um.
+* **PackageKit** lädt auf frischen Desktops nach dem Start Updates und hält die dpkg-Sperre (am ASUS über 10 min, alle
+  LibreOffice-Sprachpakete) → apt-get im Installer mit `DPkg::Lock::Timeout=600`; sonst vorher Updates von Hand.
+* WirePlumber 0.5 meldet beim Start „Old configuration file detected“ wegen `bluetooth.lua.d/90-klangstation.lua` (für 0.4) – harmlos.
 
 ### Python
 
@@ -289,11 +297,10 @@ AlmaLinux 8 und 9 testen wir nicht (Entscheidung des Nutzers, 04.11.): zu alt, f
 Vorher bzw. dabei bedenken:
 
 * **Laptop-Deckel:** Installer setzt `HandleLidSwitch=ignore` (auch ExternalPower/Docked) in
-  `/etc/systemd/logind.conf.d/90-klangstation.conf` (0.2.5) → am ASUS prüfen: Zuklappen, Rechner bleibt wach, Ton läuft weiter.
+  `/etc/systemd/logind.conf.d/90-klangstation.conf` (0.2.5), am ASUS bestanden.
 * **Laptop-Display:** Kiosk bei offenem Deckel auf dem eingebauten Display; bei geschlossenem Deckel auf den
   Fernseher wechseln oder aus.
-* **Lautsprecher/Kopfhörer:** Der Codec schaltet beim Einstecken selbst um – unter Optionen › Ausgabe nicht als zwei
-  verwirrende Geräte zeigen.
+* **Lautsprecher/Kopfhörer:** Erscheint als ein Gerät („ALC256 Analog“); Umschalten per Auto-Mute des Treibers (am ASUS bestanden).
 * **SOF (Dell, evtl. ASUS):** Debian braucht `firmware-sof-signed`, bringt der Installer bisher nicht mit → wahrscheinlich
   kein Ton ohne; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
 * **PipeWire auf Debian Desktop** belegt die Karte im Betrieb (gibt sie nach ~5 s Leerlauf frei) – prüfen, ob MPD
@@ -543,6 +550,17 @@ Vorher bzw. dabei bedenken:
   11 s nach Rückkehr spielt er wieder. Stopp und Pause-Taste beenden den Neuversuch, normaler Stopp, Warteschlange leeren und
   kaputter Sender starten keinen.
 
+**ASUS VivoBook X515UA (Ryzen 5 5500U, 8 GB), Debian 13.7 mit GNOME frisch, nur WLAN, 06.11.2026**
+
+* `install.sh` (ohne `--tv-headless`): erst zweimal Abbruch wegen PackageKit (siehe Lehren), nach Updates von Hand 59 s, EXIT 0;
+  Updates danach 17–19 s. Alle Dienste laufen, „Läuft gerade“ (Firefox-ESR) direkt nach der Installation.
+* Info: x86-64-v3, 6 Kerne/12 Threads, NVMe 238 GB. Ausgabe automatisch „ALC256 Analog“ (Lautsprecher und Kopfhörer ein
+  Gerät), HDMI (AMD) „nichts angeschlossen“; eingebautes Bluetooth erkannt.
+* Deckel zu und auf während Radio (laut Nutzer): läuft weiter, Rechner bleibt wach; logind meldet `HandleLidSwitch=ignore`.
+* Radio über Lautsprecher und Kopfhörer (laut Nutzer): Ein- und Ausstecken schaltet um, Lautstärke voll; Protokoll: zehn Wechsel,
+  alle Regler 100 %/an. Nach dem Einspielen per Installer: Profil `pro-audio`, `Auto-Mute eingeschaltet` im Protokoll.
+* Noch offen am ASUS: Neustart, Spotify/AirPlay/Bluetooth mit iPhone, HDMI, stumme Tests (snd-aloop), Kiosk bei zugeklapptem Deckel.
+
 ### Behobene Fehler
 
 **26.10.2026**
@@ -603,3 +621,8 @@ Vorher bzw. dabei bedenken:
   (siehe Lehren). Stopp während des Neuversuchs startete den Sender später ungefragt wieder → beendet ihn jetzt (0.2.2).
 * Unter GNOME: Rechner ging nach 15 min in Bereitschaft, danach Anmeldeseite; „Läuft gerade“ erst nach der nächsten Anmeldung (siehe Lehren, 0.2.3).
 * Belegter Ausgang: Play aus einer Pause blieb still stehen, ohne Hinweis und ohne neuen Versuch (siehe Lehren, 0.2.4).
+
+**06.11.2026**
+
+* Installer brach auf frischem Desktop ab, solange PackageKit Updates lud (dpkg-Sperre) → wartet bis zu 10 min (0.2.6).
+* Desktop: Kopfhörer ein/aus und der Lautstärkeregler des Desktops stellten die Karte leiser → Profil `pro-audio`, Auto-Mute (siehe Lehren, 0.2.6).

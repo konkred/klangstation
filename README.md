@@ -226,6 +226,12 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
   hybrid-sleep.target suspend-then-hibernate.target`.
 * Laptop: Zuklappen des Deckels löst nichts aus (`/etc/systemd/logind.conf.d/90-klangstation.conf`, `HandleLidSwitch=ignore`).
   Rückgängig: Datei löschen und neu starten.
+* Desktop-Ton: WirePlumber nutzt für alle Tonkarten das Profil „Pro Audio“
+  (`/etc/wireplumber/wireplumber.conf.d/90-klangstation-mixer.conf`). Der Desktop regelt seinen Ton dann in Software,
+  die Regler der Karte bleiben auf 100 %, und zwischen Lautsprecher und Kopfhörer schaltet der Treiber selbst um. Sonst
+  stellt der Lautstärkeregler des Desktops oder das Einstecken von Kopfhörern die Karte leiser. In den Toneinstellungen
+  des Desktops heißen die Ausgänge darum „… Pro“. Rückgängig: Datei löschen und neu anmelden.
+* Wartet bis zu 10 min, wenn die Paketverwaltung des Desktops (PackageKit) gerade Updates lädt.
 
 ## Bedienung
 

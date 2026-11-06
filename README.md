@@ -85,27 +85,27 @@ Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep suppo
 <details>
 <summary>Was womit getestet ist</summary>
 
-| | Pi OS Desktop | Pi OS Lite | Alma ohne Desktop | Alma GNOME | Debian ohne Desktop | Debian GNOME | Debian GNOME Laptop |
-|---|---|---|---|---|---|---|---|
-| **Rechner** | Pi 4 | Pi 4 | PC Intel-HDA | OptiPlex 3060 | PC Intel-HDA | PC Intel-HDA | ASUS Ryzen 5 |
-| Installation von null | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Update | ✓ | ✓ | ✓ | | | ✓ | ✓ |
-| Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ | ✓ |
-| UPnP | ✓ | | ✓ | ✓ | | | |
-| Radio, auch bei Netzausfall | ✓ | | ✓ | | ✓ | ✓ | ✓ |
-| CD abspielen und rippen | ✓ | | ✓ | ✓ | ✓ | ✓ | |
-| Freigabe, auch bei Serverausfall | SMB | NFS | SMB | NFS | | | |
-| USB-Sticks, auch Abziehen im Betrieb | | | ✓ | ✓ | | | |
-| CEC | ✓ | | | | | | |
-| Schlummer-Timer, Wecker | | | ✓ | ✓ | | | ✓ |
-| Musik hochladen | | | | | ✓ | | |
-| Bit-perfekt, Lautstärke angleichen, Überblenden | | | ✓ | | | | |
-| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | ✓ | | | | |
-| Erscheinungsbilder | | | ✓ | | | | |
-| Laptop: Deckel, Kopfhörer, Bildschirm am Fernseher | | | | | | | ✓ |
+| | Pi OS Desktop | Pi OS Lite | Alma ohne Desktop | Alma GNOME | Debian ohne Desktop | Debian GNOME | Debian GNOME Laptop | Debian ohne Desktop Laptop |
+|---|---|---|---|---|---|---|---|---|
+| **Rechner** | Pi 4 | Pi 4 | PC Intel-HDA | OptiPlex 3060 | PC Intel-HDA | PC Intel-HDA | ASUS Ryzen 5 | Dell i5 |
+| Installation von null | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Update | ✓ | ✓ | ✓ | | | ✓ | ✓ | |
+| Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| UPnP | ✓ | | ✓ | ✓ | | | | |
+| Radio, auch bei Netzausfall | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✓ |
+| CD abspielen und rippen | ✓ | | ✓ | ✓ | ✓ | ✓ | | |
+| Freigabe, auch bei Serverausfall | SMB | NFS | SMB | NFS | | | | |
+| USB-Sticks, auch Abziehen im Betrieb | | | ✓ | ✓ | | | | |
+| CEC | ✓ | | | | | | | |
+| Schlummer-Timer, Wecker | | | ✓ | ✓ | | | ✓ | ✓ |
+| Musik hochladen | | | | | ✓ | | | |
+| Bit-perfekt, Lautstärke angleichen, Überblenden | | | ✓ | | | | | |
+| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | ✓ | | | | | |
+| Erscheinungsbilder | | | ✓ | | | | | |
+| Laptop: Deckel, Kopfhörer, Bildschirm am Fernseher | | | | | | | ✓ | |
 
 </details>
 

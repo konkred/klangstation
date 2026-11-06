@@ -58,6 +58,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 | HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
 | Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
 | ASUS VivoBook X515UA (Hostname `asus-laptop-Klang`, Ryzen 5 5500U, 8 GB), Debian 13.7 mit GNOME, x86_64 | `ssh debianlaptop@10.0.0.171` (SSH-Key, zu Hause, nur WLAN) | sudo ohne Passwort; ALC256 (Lautsprecher/Kopfhörer), HDMI (AMD), Bluetooth QCA9377; Ausgabe steht auf HDMI 0 |
+| Dell Latitude 5501 (Hostname `Dell-Latitude-KlangTest`, i5-9400H, 32 GB), Debian 13.7 ohne Desktop, x86_64 | `ssh debiandell@10.0.0.174` (SSH-Key, zu Hause, nur WLAN) | sudo ohne Passwort; WLAN (Intel CNVi) über ifupdown/wpa_supplicant, nicht NetworkManager; HDA-Treiber (ALC3204 + Intel-HDMI), kein SOF |
 | NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben von Claude nach den Tests gelöscht, Freigabe ist leer |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
 
@@ -309,10 +310,10 @@ Vorher bzw. dabei bedenken:
 * **Laptop-Deckel:** Installer setzt `HandleLidSwitch=ignore` (auch ExternalPower/Docked) in
   `/etc/systemd/logind.conf.d/90-klangstation.conf` (0.2.5), am ASUS bestanden.
 * **Laptop-Display:** Kiosk bei offenem Deckel auf dem eingebauten Display, bei geschlossenem Deckel am Fernseher – macht
-  GNOME von selbst (am ASUS bestanden). Ohne Desktop (cage, Dell) noch offen.
+  GNOME von selbst (am ASUS bestanden). Ohne Desktop (cage, Dell) noch offen: Installation, Neustart und stumme Tests am Dell bestanden.
 * **Lautsprecher/Kopfhörer:** Erscheint als ein Gerät („ALC256 Analog“); Umschalten per Auto-Mute des Treibers (am ASUS bestanden).
-* **SOF (Dell, evtl. ASUS):** Debian braucht `firmware-sof-signed`, bringt der Installer bisher nicht mit → wahrscheinlich
-  kein Ton ohne; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
+* **SOF:** Weder ASUS noch Dell brauchen es (beide laufen über `snd_hda_intel`). Andere Laptops brauchen evtl.
+  `firmware-sof-signed`, bringt der Installer bisher nicht mit; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
 * **PipeWire auf Debian Desktop** belegt die Karte im Betrieb (gibt sie nach ~5 s Leerlauf frei) – prüfen, ob MPD
   `hw:` bekommt und Regler- und Ausgabe-Wächter greifen (unter Ubuntu getestet, siehe Bestanden).
 * **Beetle:** vorher RAM und Tonausgang klären (Kassensysteme haben teils nur Lautsprecher- oder keinen Ausgang);
@@ -589,6 +590,21 @@ Vorher bzw. dabei bedenken:
   „schwach“ (rot ab 15 %) im Browser mit gestellten Werten geprüft.
 * Freigabe (Synology per SMB über WLAN, Zugangsdaten vom Nutzer eingetragen): etwa 1 min nach dem Anlegen eingehängt, 763 Alben
   in etwa 6 min eingelesen. Cover in der Bibliothek erst bis 15 s je Bild, nach dem Fix 0,3–0,7 s (0.2.8). Ausfall nicht getestet.
+
+**Dell Latitude 5501 (i5-9400H), Debian 13.7 ohne Desktop frisch, nur WLAN über ifupdown, 07.11.2026**
+
+* `install.sh --tv-headless` von null: 144 s, EXIT 0, keine Warnungen. NetworkManager kam dazu und lässt `wlo1` in Ruhe
+  (`unmanaged`), das WLAN unter ifupdown blieb bestehen (Installer losgelöst per `setsid nohup` gestartet, falls es abreißt).
+* Alle Dienste und Kiosk (cage + Chromium auf eDP) laufen, Paketdienste aus. Ausgabe automatisch „ALC3204 Analog“, Master,
+  Speaker, Headphone 100 %, Auto-Mute an. Akku im Zustand (100 %, Netzteil). Laut Nutzer: Display zeigt „Läuft gerade“, Radio
+  aus den Lautsprechern.
+* Neustart: System 10,6 s, SSH und Web nach 49 s, WLAN wieder unter ifupdown, alle Dienste und Kiosk da, kein PipeWire, Regler
+  100 %, kein ungefragtes Weiterspielen.
+* Stumm über `snd-aloop`: FLAC, MP3, OGG, Opus, M4A, WMA, WAV mit Pegel; Umlaute und „&“ in Bibliothek, Suche, Warteschlange,
+  Wiedergabeliste; Ausgabewechsel beim Spielen; Überblenden, ReplayGain, „Dynamisch“ (spielt weiter); Schlummer-Timer blendet aus
+  (Anhalten nicht belegt, die Testtitel endeten vorher), Titelende; Wecker-Rampe; kaputter Sender → Bibliothek + 60-min-Timer.
+  Webradio-Netzausfall 60 s über WLAN (v4 und v6): Hinweis nach 30 s, 19 s nach Rückkehr spielt er wieder.
+* Noch offen: iPhone (Spotify, AirPlay, Bluetooth), Deckel mit cage (mit und ohne Fernseher an HDMI), Ton über HDMI.
 
 ### Behobene Fehler
 

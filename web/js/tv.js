@@ -54,6 +54,7 @@ function render() {
   $("#playing").hidden = !active;
   $("#idle").hidden = !!active;
   sleepTick();
+  renderBattery();
   if (!active) { renderIdle(); return; }
   $("#playing").classList.toggle("paused", n.state === "pause");
   $("#badge").textContent = (S.timers && S.timers.ringing ? "Wecker · " : "") + (KIND[n.kind] || "") + (n.extra ? " · " + n.extra : "") + (n.state === "pause" ? " · Pause" : "");
@@ -234,6 +235,25 @@ function sleepTick() {
   if (!sl) return;
   const left = sl.until - S.timers.ts - (performance.now() - receivedAt) / 1000;
   el.textContent = "☾ " + (sl.mode === "track" ? "nach diesem Titel" : fmt(Math.max(0, left)));
+}
+
+// Laptop: Akkusymbol mit Ladestand, Blitz bei angestecktem Netzteil
+function renderBattery() {
+  const b = S && S.battery, el = $("#battery");
+  el.hidden = !b;
+  if (!b) return;
+  const key = b.percent + "/" + b.charging;
+  if (el.dataset.key === key) return;
+  el.dataset.key = key;
+  const w = Math.round(b.percent / 100 * 17);
+  el.classList.toggle("low", b.percent <= 15 && !b.charging);
+  el.title = b.percent + " %" + (b.charging ? ", Netzteil angeschlossen" : "");
+  el.innerHTML =
+    '<svg viewBox="0 0 26 12" aria-hidden="true"><rect x=".75" y=".75" width="21" height="10.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>' +
+    '<rect x="23" y="3.5" width="2.25" height="5" rx="1" fill="currentColor"/>' +
+    '<rect class="level" x="2.5" y="2.5" width="' + w + '" height="7" rx="1"/></svg>' +
+    (b.charging ? '<svg class="bolt" viewBox="0 0 8 12" aria-hidden="true"><path d="M5 0 0 7h3l-1 5 6-7.5H5z" fill="currentColor"/></svg>' : "") +
+    "<span>" + b.percent + " %</span>";
 }
 
 function clock() {

@@ -311,7 +311,7 @@ Vorher bzw. dabei bedenken:
   `hw:` bekommt und Regler- und Ausgabe-Wächter greifen (unter Ubuntu getestet, siehe Bestanden).
 * **Beetle:** vorher RAM und Tonausgang klären (Kassensysteme haben teils nur Lautsprecher- oder keinen Ausgang);
   Chromium-Kiosk auf alter Intel-Grafik evtl. langsam.
-* Optional: Akkustand auf der Info-Seite.
+* Akkustand: oben rechts auf „Läuft gerade“ (0.2.7, `sysinfo.battery`, alle 5 s); auf der Info-Seite noch nicht.
 
 ### Bestanden
 
@@ -579,6 +579,8 @@ Vorher bzw. dabei bedenken:
   bildschirmfüllend am Fernseher; Deckel auf → Kiosk zurück aufs eingebaute Display, Fernseher zeigt den Desktop (erweitert).
   HDMI wird als „Monitor angeschlossen“ erkannt; die Ausgabe wechselt beim Anstecken nicht (Automatik wählt nur beim Start).
 * Ton über HDMI am Fernseher (laut Nutzer): Ausgabe auf HDMI 0 umgestellt, Spotify spielt dort.
+* Akkustand auf „Läuft gerade“ (0.2.7): Symbol mit Prozent, Blitz beim Anstecken des Netzteils (laut Nutzer); alle Themes und
+  „schwach“ (rot ab 15 %) im Browser mit gestellten Werten geprüft.
 
 ### Behobene Fehler
 

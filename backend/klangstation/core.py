@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from urllib.parse import quote as urlquote
 
-from . import audio, cdrom, extras, ripper as ripper_mod, shares as shares_mod
+from . import audio, cdrom, extras, ripper as ripper_mod, shares as shares_mod, sysinfo
 from .airplay import MetadataReader
 from .auth import Auth
 from .bluetooth import Bluetooth
@@ -64,6 +64,7 @@ class Core:
         self.mb = MusicBrainz(self.settings, self.cache, COVER_DIR)
         self.lyrics = Lyrics(self.settings, self.cache, MEDIA_ROOT)
         self.weather = Weather(self.settings, self.cache)
+        self.battery: Optional[Dict[str, Any]] = None
         self.timers = Timers(self)
         self.update_check = extras.UpdateCheck()
         # Zuletzt gehoert (fuer den Ruhebildschirm): je Album bzw. Sender ein Eintrag, neueste zuerst
@@ -135,6 +136,7 @@ class Core:
             asyncio.create_task(self._guarded("Schlummer-Timer und Wecker", self.timers.loop)),
             asyncio.create_task(self._guarded("Wetter", self._weather_loop)),
             asyncio.create_task(self._guarded("Netzwerk-Ueberwachung", self._net_loop)),
+            asyncio.create_task(self._guarded("Akku", self._battery_loop)),
         ]
         if self.daemons["airplay"].available:
             self._tasks.append(asyncio.create_task(self._guarded("AirPlay-Metadaten", self.airplay.run)))
@@ -489,6 +491,7 @@ class Core:
             "timers": self.timers.public(),
             "history": self.history if self.settings.get("tv_history") else [],
             "weather": self.weather.public(),
+            "battery": self.battery,
             "update": self.update_check.public(),
             "web_build": WEB_BUILD,
             "ts": time.time(),
@@ -599,6 +602,15 @@ class Core:
             os.replace(tmp, path)
         except OSError as exc:
             log.info("Verlauf nicht gespeichert: %s", exc)
+
+    async def _battery_loop(self) -> None:
+        # Laptop: Ladestand und Netzteil fuer "Laeuft gerade"; ohne Akku nur selten nachsehen
+        while True:
+            battery = await asyncio.to_thread(sysinfo.battery)
+            if battery != self.battery:
+                self.battery = battery
+                self.push()
+            await asyncio.sleep(5 if battery else 300)
 
     async def _net_loop(self) -> None:
         # Adapter (z. B. USB-WLAN-Stick) und Adressen live in den Optionen

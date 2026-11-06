@@ -36,6 +36,11 @@ body {
 .top-right { display: flex; align-items: center; gap: 2vw; }
 .clock { font-variant-numeric: tabular-nums; color: var(--ink); }
 .sleep { font-variant-numeric: tabular-nums; color: var(--glow); }
+.battery { display: inline-flex; align-items: center; gap: .6vh; color: var(--ink); font-size: .8em; font-variant-numeric: tabular-nums; opacity: .85; }
+.battery svg { height: 1.5em; width: auto; }
+.battery svg.bolt { height: 1.1em; color: var(--glow); }
+.battery .level { fill: currentColor; }
+.battery.low { color: #ff5a4f; opacity: 1; }
 
 /* ---------------------------------------------------------- Wiedergabe */
 .playing {

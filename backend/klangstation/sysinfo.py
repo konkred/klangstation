@@ -227,3 +227,23 @@ def info() -> Dict[str, Any]:
     d, rest = divmod(int(up), 86400)
     out["uptime"] = (f"{d} T. " if d else "") + f"{rest // 3600} Std. {rest % 3600 // 60} Min."
     return out
+
+
+def battery() -> Optional[Dict[str, Any]]:
+    """Akku des Rechners (Laptop) fuer "Laeuft gerade": Ladestand und ob ein Netzteil steckt; ohne Akku None.
+
+    Akkus von Maus, Tastatur oder Bluetooth-Geraeten (scope Device) zaehlen nicht."""
+    capacity, plugged, status = None, False, ""
+    for dev in sorted(Path("/sys/class/power_supply").glob("*")):
+        kind = _read(f"{dev}/type")
+        if kind == "Battery" and _read(f"{dev}/scope") != "Device" and capacity is None:
+            try:
+                capacity = max(0, min(100, int(_read(f"{dev}/capacity"))))
+            except ValueError:
+                continue
+            status = _read(f"{dev}/status")
+        elif kind in ("Mains", "USB", "USB_C", "USB_PD") and _read(f"{dev}/online") == "1":
+            plugged = True
+    if capacity is None:
+        return None
+    return {"percent": capacity, "charging": plugged or status == "Charging"}

@@ -3,6 +3,15 @@
 Headless-Musik-Streamer mit Weboberfläche für Raspberry Pi und Mini-PCs. Ein Gerät am Verstärker,
 Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet oder PC.
 
+<p align="center">
+  <img src="docs/img/wiedergabe.jpg" alt="Oberfläche am PC: Spotify Connect spielt, daneben die Visualisierung" width="100%">
+</p>
+<p align="center">
+  <img src="docs/img/handy-wiedergabe.jpg" alt="Wiedergabe am Handy" height="300">
+  <img src="docs/img/handy-bibliothek.jpg" alt="Bibliothek am Handy" height="300">
+  <img src="docs/img/bibliothek-aero.jpg" alt="Bibliothek im Erscheinungsbild Frutiger Aero" height="300">
+</p>
+
 **Inhalt:** [Funktionen](#funktionen) · [Unterstützte Systeme](#unterstützte-systeme) ·
 [Installation](#installation) · [Bedienung](#bedienung) · [Fehlersuche](#fehlersuche) ·
 [Technik](#technik) · [API](#api-auszug)
@@ -24,14 +33,14 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), automatische Wahl, wahlweise bit-perfekt; 5.1/7.1-Karten: Stereo auf alle Lautsprecher verteilen |
 | Wiedergabelisten | speichern, laden, ab Eintrag abspielen, umbenennen, Einträge entfernen; auch Radiosender |
 | HDMI-CEC | TV beim Abspielen einschalten und Eingang wählen, TV-Fernbedienung, Pause bei TV aus, optional Standby |
-| „Läuft gerade“ | Vollbild unter `/tv` (Cover, Titel, Fortschritt) am HDMI-Ausgang oder in jedem Browser; im Ruhezustand wandernde Uhr mit Datum, nächstem Wecker, Wetter ([Open-Meteo](https://open-meteo.com), optional) und einem Band der zuletzt gehörten Cover; auf Laptops oben rechts der Akkustand, mit Blitz bei angestecktem Netzteil |
-| Schlummer-Timer & Wecker | Timer (15–90 min oder Titelende) blendet die letzten 30 s aus und hält an; Wecker zu Uhrzeit und Wochentagen mit Radio-Favorit, Wiedergabeliste oder Bibliothek im Zufall, wird über 2 min lauter, schaltet optional nach einer Weile wieder aus, Rückfall auf die Bibliothek, wenn der Sender nicht spielt |
-| Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend, Instrumental-Pausen als Noten: aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key), gecacht; nicht bei Webradio. Springt man bei Bluetooth am iPhone im Titel, laufen Zeit und Liedtext von der alten Stelle weiter: Das iPhone meldet die neue Position nicht |
+| „Läuft gerade“ | Vollbild unter `/tv` am HDMI-Ausgang oder in jedem Browser; ohne Wiedergabe Uhr, Wecker, Wetter ([Open-Meteo](https://open-meteo.com)) und zuletzt gehörte Cover; auf Laptops der Akkustand |
+| Schlummer-Timer & Wecker | Timer mit Ausblenden; Wecker mit Radio, Wiedergabeliste oder Bibliothek, wird langsam lauter |
+| Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend, aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key); nicht bei Webradio |
 | Lautstärke & Übergänge | Angleichen nach ReplayGain (Album/Titel automatisch) oder dynamisch, Überblenden 2–10 s; nicht bei bit-perfekt |
 | Handy | als App auf den Homescreen legen; auf Wunsch Titel, Cover und Tasten im Sperrbildschirm (Bibliothek, Radio, CD) |
-| Erscheinungsbild | Klassisch (Media Player der 2000er), Frutiger Aero, Nacht, Winamp Classic, Aqua (Mac OS X), Hi-Fi-Anlage mit VU-Metern, Luna (Windows XP): Oberfläche pro Gerät (auch automatisch nach Systemeinstellung), „Läuft gerade“ in den Optionen |
-| Netzwerk | Adapter mit IPv4/IPv6, Gateway, DNS und MAC; DHCP oder feste Adresse (mit automatischer Rücknahme, wenn nicht bestätigt); WLAN suchen und verbinden, auch mit USB-WLAN-Stick im laufenden Betrieb; SSH ein/aus; offene Ports und Port der Weboberfläche |
-| Info | Erkanntes Board, Prozessor (Kerne, Takt, x86-64-Stufe), Arbeitsspeicher, Bootlaufwerk mit freiem Platz, Betriebssystem mit Version, Bit-Zahl und Kernel |
+| Erscheinungsbild | sieben zur Wahl, von Media Player der 2000er bis Windows XP (siehe [Erscheinungsbild](#erscheinungsbild)) |
+| Netzwerk | Adapter anzeigen, DHCP oder feste Adresse (mit Rücknahme), WLAN auch per USB-Stick, SSH ein/aus, Port der Weboberfläche |
+| Info | Board, Prozessor, Speicher, Laufwerk und Betriebssystem |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 | Musik hochladen | Dateien oder ganze Ordner per Browser in den internen Speicher kopieren (`Lokal/Hochgeladen`), auch vom Handy |
 | Nachtmodus | Lautstärke im Zeitfenster oder rund um die Uhr begrenzen (nicht bei Spotify und AirPlay, der Wecker ist ausgenommen) |
@@ -111,9 +120,11 @@ Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep suppo
 ### Schnellstart
 
 ```bash
-git clone <dieses-repo> klangstation && cd klangstation
+git clone https://github.com/konkred/klangstation.git && cd klangstation
 sudo ./install.sh
 ```
+
+Fehlt `git`: vorher `sudo apt install git` (Debian, Raspberry Pi OS) bzw. `sudo dnf install git` (AlmaLinux).
 
 Danach im Browser `http://<hostname>.local:8080` öffnen (z. B. `http://raspberrypi.local:8080`).
 Klappt der `.local`-Name nicht, geht auch die IP-Adresse: `http://192.168.x.y:8080`.
@@ -241,6 +252,10 @@ Eine Kurzanleitung zu allen Funktionen steht in der Oberfläche unter *Optionen 
 
 ### Ausgabe
 
+<p align="center">
+  <img src="docs/img/optionen.jpg" alt="Optionen › Ausgabe mit der Liste der Tonausgänge" width="80%">
+</p>
+
 *Optionen › Ausgabe* listet alle Tonausgänge. Hinter HDMI-/DP-Ausgängen steht, ob ein Monitor oder Fernseher
 angeschlossen ist. Solange dort nichts von Hand gewählt ist, nimmt Klangstation in dieser Reihenfolge:
 USB-DAC oder I²S-HAT, dann HDMI/DP mit erkanntem Gerät, dann die Klinke. Ein HDMI-Ausgang ohne
@@ -250,10 +265,7 @@ am neuen Ausgang weiter.
 **Lautsprecher (5.1/7.1):** Hat das gewählte Gerät mindestens 6 Kanäle (getestet mit einer USB-Soundkarte
 mit CM106), erscheint die Auswahl *Lautsprecher*. Bei 5.1 bzw. 7.1 spielen hintere und seitliche
 Lautsprecher dasselbe wie vorne, Center und Subwoofer bekommen die Mitte aus links und rechts – kein echter
-Raumklang, sondern Musik im ganzen Raum, für alle Quellen. Mehrkanal-Dateien werden dabei erst zu Stereo
-zusammengemischt. Bei *Bit-perfekt* ist das aus. Welche Buchse welcher Kanal ist, richtet sich nach der üblichen
-Reihenfolge (USB-Karten: vorne, Center/Subwoofer, hinten, Seite; Onboard-Sound: vorne, hinten, Center/Subwoofer,
-Seite).
+Raumklang, sondern Musik im ganzen Raum, für alle Quellen. Bei *Bit-perfekt* ist das aus.
 
 **Lautstärke:** Die Regler der Soundkarte stehen immer auf 100 %, geregelt wird nur in den Quellen. Der Regler im Player
 steht nach jedem Start von Klangstation auf 100 %, Spotify beginnt ebenfalls mit 100 %, und AirPlay bekommt 100 % als
@@ -263,26 +275,15 @@ Vorschlag (das Handy kann seinen eigenen Wert mitbringen). Die Lautstärke des R
 *Bis* begrenzen rund um die Uhr. Das gilt für Bibliothek, Radio, CD, UPnP und Bluetooth; Spotify und AirPlay regelst du am Handy.
 Der Wecker ist ausgenommen und kann lauter werden. Nach dem Zeitfenster bleibt der Regler stehen, bis du ihn verschiebst.
 
-Darunter, unter *Wiedergabe*, gilt für Bibliothek, Radio und CD:
-
-* **Lautstärke angleichen:** „Nach ReplayGain-Werten“ nutzt die in den Dateien gespeicherten Werte (Album-Wert
-  bei geordneter Wiedergabe, Titel-Wert bei Zufall) und verändert den Klang nicht. Dateien ohne diese Werte
-  bleiben, wie sie sind. Werte lassen sich z. B. mit foobar2000, beets oder MusicBrainz Picard berechnen.
-  „Dynamisch“ regelt laufend nach und wirkt auch ohne ReplayGain; dafür startet der Player kurz neu.
-* **Überblenden:** 2, 5 oder 10 Sekunden zwischen zwei Titeln; „Aus“ spielt lückenlos.
-* Bei *Bit-perfekt* ist beides aus.
+**Lautstärke angleichen und Überblenden** (Bibliothek, Radio, CD): „Nach ReplayGain-Werten“ nutzt die Werte in den
+Dateien (Album-Wert bei geordneter Wiedergabe, Titel-Wert bei Zufall), „Dynamisch“ regelt laufend nach und wirkt auch ohne
+sie. Überblenden geht mit 2, 5 oder 10 Sekunden. Bei *Bit-perfekt* ist beides aus.
 
 ### Erscheinungsbild
 
-Zur Wahl stehen:
-
-* **Klassisch:** Media Player der 2000er, dunkles Chrom mit blauen Leuchtakzenten.
-* **Frutiger Aero:** Glas, Himmel und Luftblasen.
-* **Nacht:** fast schwarz, wenig Kontrast, kein Leuchten – für abends und dunkle Räume.
-* **Winamp Classic:** graues Gehäuse, grüne LCD-Schrift, auf dem Fernseher ein Spektrum aus Leuchtsegmenten.
-* **Aqua:** Mac OS X um 2004 mit gebürstetem Metall, auf dem Fernseher der Titel auf einem iPod-Display.
-* **Hi-Fi-Anlage:** Holz, Silberknöpfe und Bernstein-Display; die Visualisierung zeigt zwei VU-Meter.
-* **Luna:** Windows XP mit grünem Play-Knopf, auf dem Fernseher die Wiese mit ziehenden Wolken.
+**Klassisch** (Media Player der 2000er, oben), **Frutiger Aero** (Glas und Himmel, Bibliothek oben rechts), **Nacht**
+(fast schwarz, für dunkle Räume), **Winamp Classic**, **Aqua** (Mac OS X um 2004), **Hi-Fi-Anlage** (Holz und VU-Meter) und
+**Luna** (Windows XP).
 
 Die **Oberfläche** stellt man unter *Optionen › Ausgabe › Auf diesem Gerät* ein. Die Wahl gilt nur für diesen
 Browser, jedes Handy und jeder PC kann ein anderes Erscheinungsbild haben. „Automatisch“ nimmt Nacht, solange
@@ -300,14 +301,20 @@ Erscheinungsbild* für alle Bildschirme ein, die `/tv` zeigen.
 
 ### „Läuft gerade“-Bildschirm
 
+<p align="center">
+  <img src="docs/img/laeuft-gerade.jpg" alt="„Läuft gerade“ am Fernseher: Spotify Connect mit Cover, Titel und Fortschritt" width="100%">
+</p>
+
 * **Mit Desktop:** Nach dem Anmelden öffnet sich Chromium im Vollbild auf `/tv`. Alt+F4 schließt ihn,
   *Optionen › Fernseher › Jetzt am HDMI-Ausgang anzeigen* holt ihn zurück.
 * **Ohne Desktop** (`--tv-headless`): Der Dienst `klangstation-tv` startet nach jedem Boot von selbst.
 * *Optionen › Fernseher* schaltet den Bildschirm in beiden Fällen ganz ab und wieder an.
 * Jeder andere Browser (Tablet an der Wand, Fernseher-Browser): `http://<hostname>.local:8080/tv`.
-* Ohne Wiedergabe zeigt er Uhr, Datum, den nächsten Wecker und unten ein langsam durchlaufendes Band der zuletzt
-  gehörten Alben und Sender. Für das Wetter trägt man unter *Optionen › Fernseher* einen Ort ein (braucht
-  Online-Metadaten). Uhr und Band bewegen sich ständig, damit nichts einbrennt.
+* Ohne Wiedergabe zeigt er Uhr, Datum, den nächsten Wecker und ein durchlaufendes Band der zuletzt gehörten Alben und
+  Sender. Für das Wetter trägt man unter *Optionen › Fernseher* einen Ort ein. Uhr und Band wandern, damit nichts einbrennt.
+* Liedtexte laufen zeilengenau mit. Springt man bei Bluetooth am iPhone im Titel, laufen Zeit und Text von der alten
+  Stelle weiter: Das iPhone meldet die neue Position nicht.
+* Auf Laptops steht oben rechts der Akkustand, mit Blitz bei angestecktem Netzteil.
 * Nach einem Update lädt der Bildschirm die neue Oberfläche von selbst.
 
 ### Schlummer-Timer und Wecker
@@ -462,6 +469,8 @@ Browser ──HTTP/WebSocket──► Klangstation (Python, Starlette, Benutzer 
 * Für 5.1/7.1 schreibt Klangstation ein ALSA-Gerät `ks_surround` (Typ `plug` mit Verteiltabelle `ttable`) in
   `/var/lib/klangstation/.asoundrc`; alle Dienste nutzen dann dieses statt `plughw`. MPD gibt dabei Stereo aus
   (`format "*:*:2"`). Die Kanalzahl des Geräts liest Klangstation mit `aplay --dump-hw-params`.
+* Die MP3-Decoder `mpg123` und `mad` sind abgeschaltet: Sie lesen beim Einlesen jede MP3 ohne Xing-Header komplett,
+  was über WLAN Stunden dauert. MP3 spielt `ffmpeg` ab.
 * Python-Abhängigkeiten sind ausschließlich reine Python-Pakete. Auf ARM muss also nichts kompiliert werden.
 
 ### Netzwerkfreigaben und `ks-netmount`
@@ -481,9 +490,6 @@ den SSH-Server ein-/ausschalten und den Port der Weboberfläche ändern. WLAN-Pa
 NetworkManager-Profil (`/etc/NetworkManager/system-connections`, nur root), nie auf die Kommandozeile. Vor einer
 IP-Änderung legt er einen Zeitgeber `ks-net-rollback.timer` an (2 Minuten), der die alte Einstellung
 wiederherstellt, falls die Oberfläche die neue nicht bestätigt.
-
-Die MP3-Decoder `mpg123` und `mad` sind abgeschaltet: Sie lesen beim Einlesen jede MP3 ohne Xing-Header komplett,
-was über WLAN Stunden dauert. MP3 spielt `ffmpeg` ab.
 
 ### Webradio: warum Radio Browser
 

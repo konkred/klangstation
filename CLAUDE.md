@@ -107,6 +107,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   Sperrrouten bleiben dann stehen. Sperrrouten immer per `trap … EXIT` entfernen.
 * **Kanäle prüfen:** `S24_LE` belegt 4 Byte je Wert → mit `S32_LE` aufnehmen und als `array('i')` auswerten. Prüfdatei
   nur links: Der rechte Kanal muss 0 sein, sonst taugt die Messung nicht.
+* **Screenshots für die README** (`docs/img/`): Firefox ohne Fenster mit `--remote-debugging-port` und WebDriver BiDi
+  (`browsingContext.setViewport` mit `devicePixelRatio`, `captureScreenshot`); das Bild der Browser-Leiste taugt nicht (800x500).
+  Theme per localStorage `ks-theme`, Ansicht per `#now`/`#library`/`#settings`. Gerätenamen per Skript durch „Wohnzimmer“
+  ersetzen, Reiter Freigaben und Netzwerk (IP, Benutzer) nicht zeigen, keine echten Liedtexte (urheberrechtlich geschützt).
 
 ## Lehren aus der Fehlersuche (nicht wieder einbauen)
 
@@ -114,6 +118,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 
 * **libsmbclient** in MPD ist nicht threadsicher und stürzt ab → Freigaben hängt das System ein (`ks-netmount`).
   CIFS-Optionen: `cache=none,rsize=131072` (rasize muss 1–8 MB sein).
+* **Cover über MPD (`readpicture`/`albumart`)** kommen ohne `binarylimit` in 8-KB-Stücken, MPD öffnet die Datei je Stück
+  neu → auf SMB mit `cache=none` 15,6 s für ein Cover (17 Abfragen). `binarylimit 1048576` beim Verbinden (ab MPD 0.22.4): 0,3 s.
 * **mpg123/mad** lesen beim Einlesen jede MP3 ohne Xing-Header komplett → abgeschaltet, MP3 über ffmpeg.
 * **MPD `update <Pfad>`** scheitert, wenn MPD den Elternordner noch nicht kennt → nach dem Rippen den
   Interpreten-Ordner einlesen.
@@ -581,6 +587,8 @@ Vorher bzw. dabei bedenken:
 * Ton über HDMI am Fernseher (laut Nutzer): Ausgabe auf HDMI 0 umgestellt, Spotify spielt dort.
 * Akkustand auf „Läuft gerade“ (0.2.7): Symbol mit Prozent, Blitz beim Anstecken des Netzteils (laut Nutzer); alle Themes und
   „schwach“ (rot ab 15 %) im Browser mit gestellten Werten geprüft.
+* Freigabe (Synology per SMB über WLAN, Zugangsdaten vom Nutzer eingetragen): etwa 1 min nach dem Anlegen eingehängt, 763 Alben
+  in etwa 6 min eingelesen. Cover in der Bibliothek erst bis 15 s je Bild, nach dem Fix 0,3–0,7 s (0.2.8). Ausfall nicht getestet.
 
 ### Behobene Fehler
 
@@ -647,3 +655,4 @@ Vorher bzw. dabei bedenken:
 
 * Installer brach auf frischem Desktop ab, solange PackageKit Updates lud (dpkg-Sperre) → wartet bis zu 10 min (0.2.6).
 * Desktop: Kopfhörer ein/aus und der Lautstärkeregler des Desktops stellten die Karte leiser → Profil `pro-audio`, Auto-Mute (siehe Lehren, 0.2.6).
+* Cover von Freigaben luden sehr langsam (bis 15 s je Bild) → `binarylimit` (siehe Lehren, 0.2.8).

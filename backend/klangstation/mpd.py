@@ -39,6 +39,12 @@ class _Connection:
         greeting = await self.reader.readline()
         if not greeting.startswith(b"OK MPD"):
             raise MPDError(f"Unerwartete Begruessung: {greeting!r}")
+        # Cover in einem Stueck statt in 8-KB-Teilen: MPD oeffnet die Datei je Teil neu, auf Freigaben
+        # (cache=none) dauerte ein Cover so 15 s statt 0,3 s. Erst ab MPD 0.22.4, aeltere lehnen ab.
+        try:
+            await self.send("binarylimit 1048576")
+        except MPDError:
+            pass
 
     def close(self) -> None:
         if self.writer:

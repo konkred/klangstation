@@ -224,6 +224,8 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 * Bereitschaft und Ruhezustand: Die systemd-Ziele werden gesperrt, damit der Rechner nicht einschläft (GNOME täte das
   nach 15 min ohne Eingabe). Rückgängig: `systemctl unmask sleep.target suspend.target hibernate.target
   hybrid-sleep.target suspend-then-hibernate.target`.
+* Laptop: Zuklappen des Deckels löst nichts aus (`/etc/systemd/logind.conf.d/90-klangstation.conf`, `HandleLidSwitch=ignore`).
+  Rückgängig: Datei löschen und neu starten.
 
 ## Bedienung
 

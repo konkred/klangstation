@@ -288,8 +288,8 @@ AlmaLinux 8 und 9 testen wir nicht (Entscheidung des Nutzers, 04.11.): zu alt, f
 
 Vorher bzw. dabei bedenken:
 
-* **Laptop-Deckel:** logind versetzt beim Zuklappen in den Ruhezustand → Installer soll `HandleLidSwitch=ignore`
-  (eigene Datei unter `/etc/systemd/logind.conf.d/`) setzen. Vor dem ASUS-Test einbauen.
+* **Laptop-Deckel:** Installer setzt `HandleLidSwitch=ignore` (auch ExternalPower/Docked) in
+  `/etc/systemd/logind.conf.d/90-klangstation.conf` (0.2.5) → am ASUS prüfen: Zuklappen, Rechner bleibt wach, Ton läuft weiter.
 * **Laptop-Display:** Kiosk bei offenem Deckel auf dem eingebauten Display; bei geschlossenem Deckel auf den
   Fernseher wechseln oder aus.
 * **Lautsprecher/Kopfhörer:** Der Codec schaltet beim Einstecken selbst um – unter Optionen › Ausgabe nicht als zwei

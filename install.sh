@@ -480,6 +480,11 @@ fi
 # Ein Musikserver darf nicht einschlafen: GNOME versetzt den Rechner sonst nach 15 min ohne Eingabe in Bereitschaft
 log "Schalte Bereitschaft und Ruhezustand ab..."
 systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target >/dev/null 2>&1 || true
+# Laptop: Zuklappen soll nichts ausloesen (logind wuerde sonst versuchen, in den Ruhezustand zu gehen)
+install -d /etc/systemd/logind.conf.d
+printf '[Login]\nHandleLidSwitch=ignore\nHandleLidSwitchExternalPower=ignore\nHandleLidSwitchDocked=ignore\n' \
+    > /etc/systemd/logind.conf.d/90-klangstation.conf
+systemctl kill -s HUP systemd-logind >/dev/null 2>&1 || true
 systemctl daemon-reload
 install_firewall
 systemctl enable --now ks-netmount.socket ks-netadmin.socket

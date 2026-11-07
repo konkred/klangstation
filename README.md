@@ -30,7 +30,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Audio-CD (USB-Laufwerk) | Erkennung per ioctl, Titelliste über MusicBrainz, Wiedergabe per MPD, optional Autoplay |
 | CD rippen | `cdparanoia` (Fehlerkorrektur) + `flac`, mit Tags und Cover, in den internen Speicher oder auf USB |
 | Metadaten & Cover | MusicBrainz + Cover Art Archive, gedrosselt und dauerhaft gecacht |
-| Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), automatische Wahl, wahlweise bit-perfekt; 5.1/7.1-Karten: Stereo auf alle Lautsprecher verteilen |
+| Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), automatische Wahl (wechselt beim An- und Abstecken), wahlweise bit-perfekt; 5.1/7.1-Karten: Stereo auf alle Lautsprecher verteilen |
 | Wiedergabelisten | speichern, laden, ab Eintrag abspielen, umbenennen, Einträge entfernen; auch Radiosender |
 | HDMI-CEC | TV beim Abspielen einschalten und Eingang wählen, TV-Fernbedienung, Pause bei TV aus, optional Standby |
 | „Läuft gerade“ | Vollbild unter `/tv` am HDMI-Ausgang oder in jedem Browser; ohne Wiedergabe Uhr, Wecker, Wetter ([Open-Meteo](https://open-meteo.com)) und zuletzt gehörte Cover; auf Laptops der Akkustand |
@@ -40,7 +40,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | Handy | als App auf den Homescreen legen; auf Wunsch Titel, Cover und Tasten im Sperrbildschirm (Bibliothek, Radio, CD) |
 | Erscheinungsbild | sieben zur Wahl, von Media Player der 2000er bis Windows XP (siehe [Erscheinungsbild](#erscheinungsbild)) |
 | Netzwerk | Adapter anzeigen, DHCP oder feste Adresse (mit Rücknahme), WLAN auch per USB-Stick, SSH ein/aus, Port der Weboberfläche |
-| Info | Board, Prozessor, Speicher, Laufwerk und Betriebssystem |
+| Info | Board, Prozessor, Speicher, Laufwerk, Akku und Betriebssystem |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 | Musik hochladen | Dateien oder ganze Ordner per Browser in den internen Speicher kopieren (`Lokal/Hochgeladen`), auch vom Handy |
 | Nachtmodus | Lautstärke im Zeitfenster oder rund um die Uhr begrenzen (nicht bei Spotify und AirPlay, der Wecker ist ausgenommen) |
@@ -262,8 +262,10 @@ Eine Kurzanleitung zu allen Funktionen steht in der Oberfläche unter *Optionen 
 *Optionen › Ausgabe* listet alle Tonausgänge. Hinter HDMI-/DP-Ausgängen steht, ob ein Monitor oder Fernseher
 angeschlossen ist. Solange dort nichts von Hand gewählt ist, nimmt Klangstation in dieser Reihenfolge:
 USB-DAC oder I²S-HAT, dann HDMI/DP mit erkanntem Gerät, dann die Klinke. Ein HDMI-Ausgang ohne
-angeschlossenes Gerät wird nie automatisch gewählt. Beim Wechsel spielt laufende Musik nach wenigen Sekunden
-am neuen Ausgang weiter.
+angeschlossenes Gerät wird nie automatisch gewählt. Steckst du einen Fernseher, Monitor oder USB-DAC an oder
+ab, wählt Klangstation nach etwa 6 Sekunden neu. Beim Wechsel spielt laufende Musik nach wenigen Sekunden
+am neuen Ausgang weiter. Verbindungen über Spotify, AirPlay und Bluetooth brechen dabei ab, wie beim
+Umschalten von Hand.
 
 **Lautsprecher (5.1/7.1):** Hat das gewählte Gerät mindestens 6 Kanäle (getestet mit einer USB-Soundkarte
 mit CM106), erscheint die Auswahl *Lautsprecher*. Bei 5.1 bzw. 7.1 spielen hintere und seitliche

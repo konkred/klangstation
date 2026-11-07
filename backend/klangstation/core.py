@@ -65,6 +65,7 @@ class Core:
         self.lyrics = Lyrics(self.settings, self.cache, MEDIA_ROOT)
         self.weather = Weather(self.settings, self.cache)
         self.battery: Optional[Dict[str, Any]] = None
+        self._output_lock = asyncio.Lock()
         self.timers = Timers(self)
         self.update_check = extras.UpdateCheck()
         # Zuletzt gehoert (fuer den Ruhebildschirm): je Album bzw. Sender ein Eintrag, neueste zuerst
@@ -137,6 +138,7 @@ class Core:
             asyncio.create_task(self._guarded("Wetter", self._weather_loop)),
             asyncio.create_task(self._guarded("Netzwerk-Ueberwachung", self._net_loop)),
             asyncio.create_task(self._guarded("Akku", self._battery_loop)),
+            asyncio.create_task(self._guarded("Ausgabe-Automatik", self._autoout_loop)),
         ]
         if self.daemons["airplay"].available:
             self._tasks.append(asyncio.create_task(self._guarded("AirPlay-Metadaten", self.airplay.run)))
@@ -611,6 +613,49 @@ class Core:
                 self.battery = battery
                 self.push()
             await asyncio.sleep(5 if battery else 300)
+
+    async def _reapply_output(self, which=None) -> None:
+        """Ausgabe neu einrichten (Wechsel von Hand oder durch die Automatik); laufende Musik spielt danach weiter."""
+        async with self._output_lock:
+            # MPD startet fuer das neue Geraet neu und stellt sich dann pausiert wieder her
+            resume = self.source in ("mpd", "idle") and await self._is_playing()
+            try:
+                # Einen gemerkten Sender stellt MPD beim Start pausiert wieder her und versucht, darin zu
+                # springen - so lange nimmt er keine Verbindung an (am Pi bis ueber 25 s)
+                if _media_kind((await self.mpd.dict("currentsong")).get("file", "")) == "radio":
+                    await self.mpd.run("stop")
+            except (ConnectionError, MPDError):
+                pass
+            if which:
+                await self.apply_audio(which)
+            else:
+                await self.apply_audio()
+            if resume:
+                self._spawn(self._resume_mpd())
+
+    async def _autoout_loop(self) -> None:
+        # Ausgabe "Automatisch": beim An- oder Abstecken (HDMI/DP, USB-DAC) neu waehlen statt nur beim Start.
+        # Erst umschalten, wenn der neue Zustand zwei Durchlaeufe steht (Fernseher im Standby flackern teils)
+        stable = last = None
+        while True:
+            await asyncio.sleep(3)
+            sig = await asyncio.to_thread(audio.output_signature)
+            if sig != last:
+                last = sig
+                continue
+            if sig == stable or self._output_lock.locked():
+                continue
+            first, stable = stable is None, sig
+            if first or self.settings.get("output"):
+                continue
+            best = await asyncio.to_thread(audio.resolve, None)
+            if best["id"] == (self.output or {}).get("id"):
+                continue
+            log.info("Ausgabe automatisch: Anschluesse geaendert, wechsle von %s zu %s",
+                     (self.output or {}).get("label", "?"), best["label"])
+            await self._reapply_output()
+            self.broadcast({"type": "settings"})
+            self.push()
 
     async def _net_loop(self) -> None:
         # Adapter (z. B. USB-WLAN-Stick) und Adressen live in den Optionen
@@ -1655,21 +1700,7 @@ class Core:
         # Die dynamische Angleichung kennt MPD nur als Startoption -> Neustart wie beim Geraetewechsel
         restart_mpd = "loudness" in changed and "dynamic" in (old_loudness, self.settings.get("loudness"))
         if changed & {"output", "bitperfect", "speakers"} or restart_mpd:
-            # MPD startet fuer das neue Geraet neu und stellt sich dann pausiert wieder her
-            resume = self.source in ("mpd", "idle") and await self._is_playing()
-            try:
-                # Einen gemerkten Sender stellt MPD beim Start pausiert wieder her und versucht, darin zu
-                # springen - so lange nimmt er keine Verbindung an (am Pi bis ueber 25 s)
-                if _media_kind((await self.mpd.dict("currentsong")).get("file", "")) == "radio":
-                    await self.mpd.run("stop")
-            except (ConnectionError, MPDError):
-                pass
-            if changed & {"output", "bitperfect", "speakers"}:
-                await self.apply_audio()
-            else:
-                await self.apply_audio(("mpd",))
-            if resume:
-                self._spawn(self._resume_mpd())
+            await self._reapply_output(None if changed & {"output", "bitperfect", "speakers"} else ("mpd",))
         else:
             if changed & {"device_name", "airplay_enabled"}:
                 await self.apply_audio(("airplay",))

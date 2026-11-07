@@ -881,12 +881,13 @@ let settingsRes = null;
 function renderSysInfo(sy) {
   const row = (label, main, ...sub) => main ? `<dt>${label}</dt><dd>${esc(main)}${sub.filter(Boolean).length
     ? `<small>${sub.filter(Boolean).map(esc).join(" · ")}</small>` : ""}</dd>` : "";
-  const b = sy.board || {}, c = sy.cpu || {}, r = sy.ram || {}, d = sy.disk || {}, o = sy.os || {};
+  const b = sy.board || {}, c = sy.cpu || {}, r = sy.ram || {}, d = sy.disk || {}, o = sy.os || {}, a = sy.battery || {};
   $("#sys-info").innerHTML = !sy.os ? "<dd>Nicht ermittelbar</dd>" : [
     row("Board", b.name, b.detail),
     row("Prozessor", c.name, c.detail),
     row("Arbeitsspeicher", r.name, r.detail),
     row("Bootlaufwerk", d.name, d.detail, d.device, d.fstype, d.usage),
+    row("Akku", a.name, a.health, a.model, a.cycles),
     row("Betriebssystem", o.name, o.boot ? `Start per ${o.boot}` : ""),
     row("Version", o.version),
     row("Architektur", o.bits, o.arch),

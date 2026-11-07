@@ -329,7 +329,7 @@ Vorher bzw. dabei bedenken:
   `hw:` bekommt und Regler- und Ausgabe-Wächter greifen (unter Ubuntu getestet, siehe Bestanden).
 * **Beetle:** vorher RAM und Tonausgang klären (Kassensysteme haben teils nur Lautsprecher- oder keinen Ausgang);
   Chromium-Kiosk auf alter Intel-Grafik evtl. langsam.
-* Akkustand: oben rechts auf „Läuft gerade“ (0.2.7, `sysinfo.battery`, alle 5 s); auf der Info-Seite noch nicht.
+* Akkustand: oben rechts auf „Läuft gerade“ (0.2.7, `sysinfo.battery`, alle 5 s); unter Info mit Kapazität vom Neuzustand (0.2.10).
 
 ### Bestanden
 
@@ -595,7 +595,7 @@ Vorher bzw. dabei bedenken:
 * Deckel und Kiosk (laut Nutzer, Protokoll): ohne HDMI zu und auf → Bluetooth spielt weiter, Sitzung bleibt aktiv und
   ungesperrt, „Läuft gerade“ sofort wieder da. Mit Fernseher an HDMI: Deckel zu → GNOME schaltet eDP ab, „Läuft gerade“
   bildschirmfüllend am Fernseher; Deckel auf → Kiosk zurück aufs eingebaute Display, Fernseher zeigt den Desktop (erweitert).
-  HDMI wird als „Monitor angeschlossen“ erkannt; die Ausgabe wechselt beim Anstecken nicht (Automatik wählt nur beim Start).
+  HDMI wird als „Monitor angeschlossen“ erkannt; die Ausgabe wechselt beim Anstecken nicht (Automatik wählte damals nur beim Start, seit 0.2.10 auch beim Anstecken).
 * Ton über HDMI am Fernseher (laut Nutzer): Ausgabe auf HDMI 0 umgestellt, Spotify spielt dort.
 * Akkustand auf „Läuft gerade“ (0.2.7): Symbol mit Prozent, Blitz beim Anstecken des Netzteils (laut Nutzer); alle Themes und
   „schwach“ (rot ab 15 %) im Browser mit gestellten Werten geprüft.
@@ -622,6 +622,9 @@ Vorher bzw. dabei bedenken:
 * Deckel zu und auf ohne Fernseher: Spotify spielt weiter, Kiosk läuft (cage lässt eDP an). Fernseher an DP-3 (Docking-/USB-C-
   bzw. HDMI-Anschluss): erst „Läuft gerade“ über beide Bildschirme verteilt, mit `-m last` (0.2.9) ganz am Fernseher, Display aus;
   Deckel zu → bleibt am Fernseher; Abziehen → zurück aufs Display (laut Nutzer, DRM-Status). Ton über HDMI (laut Nutzer).
+* Ausgabe „Automatisch“ folgt dem Anstecken (0.2.10, `_autoout_loop`, Fingerabdruck `audio.output_signature` alle 3 s, zwei
+  gleiche Durchläufe): Radio am Fernseher, DP abgezogen → Analog, angesteckt → zurück auf HDMI 0, Radio spielt weiter (laut Nutzer,
+  Protokoll). Info zeigt den Akku („100 %, Netzteil, voll“, Kapazität 59 % vom Neuzustand).
 * Noch offen: Kopfhörer am Dell.
 
 ### Behobene Fehler

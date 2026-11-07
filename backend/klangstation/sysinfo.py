@@ -226,7 +226,37 @@ def info() -> Dict[str, Any]:
         up = 0
     d, rest = divmod(int(up), 86400)
     out["uptime"] = (f"{d} T. " if d else "") + f"{rest // 3600} Std. {rest % 3600 // 60} Min."
+    out["battery"] = _battery_detail()
     return out
+
+
+_BAT_STATUS = {"Charging": "lädt", "Discharging": "Akkubetrieb", "Full": "voll", "Not charging": "lädt nicht"}
+
+
+def _battery_detail() -> Optional[Dict[str, str]]:
+    """Info-Seite: Ladestand, Zustand (Kapazitaet gegenueber neu), Modell und Ladezyklen; ohne Akku None."""
+    plugged = any(_read(f"{d}/type") in ("Mains", "USB", "USB_C", "USB_PD") and _read(f"{d}/online") == "1"
+                  for d in Path("/sys/class/power_supply").glob("*"))
+    for dev in sorted(Path("/sys/class/power_supply").glob("*")):
+        if _read(f"{dev}/type") != "Battery" or _read(f"{dev}/scope") == "Device":
+            continue
+        cap = _read(f"{dev}/capacity")
+        if not cap.isdigit():
+            continue
+        status = _BAT_STATUS.get(_read(f"{dev}/status"), "")
+        if plugged and status != "lädt":
+            status = "Netzteil" + (f", {status}" if status and status != "Akkubetrieb" else "")
+        health = ""
+        for unit in ("energy", "charge"):  # je nach Akku in Wh oder Ah gemeldet
+            full, design = _read(f"{dev}/{unit}_full"), _read(f"{dev}/{unit}_full_design")
+            if full.isdigit() and design.isdigit() and int(design) > 0:
+                health = f"Kapazität {round(100 * int(full) / int(design))} % vom Neuzustand"
+                break
+        model = " ".join(x for x in (_read(f"{dev}/manufacturer"), _read(f"{dev}/model_name")) if x)
+        cycles = _read(f"{dev}/cycle_count")
+        return {"name": f"{cap} %" + (f", {status}" if status else ""), "health": health, "model": model,
+                "cycles": f"{cycles} Ladezyklen" if cycles.isdigit() and int(cycles) > 0 else ""}
+    return None
 
 
 def battery() -> Optional[Dict[str, Any]]:

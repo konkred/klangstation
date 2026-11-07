@@ -254,6 +254,38 @@ def list_outputs() -> List[Dict[str, Any]]:
     return outputs
 
 
+def output_signature() -> str:
+    """Billiger Fingerabdruck der Ausgaenge (Karten, Bildschirme, HDMI-Jacks) ohne aplay - aendert er sich,
+    wurde etwas an- oder abgesteckt."""
+    parts: List[str] = []
+    cards_file = ASOUND / "cards"
+    try:
+        cards = cards_file.read_text(errors="replace")
+    except OSError:
+        cards = ""
+    parts.append(cards)
+    for status in sorted(Path("/sys/class/drm").glob("card*-*/status")):
+        try:
+            parts.append(f"{status.parent.name}={status.read_text().strip()}")
+        except OSError:
+            pass
+    for line in cards.splitlines():
+        m = _CARD_RE.match(line)
+        if m and any("HDMI" in _pcm_name(p) for p in (ASOUND / f"card{m.group(1)}").glob("pcm*p")):
+            parts.append(f"{m.group(1)}:{sorted(_hdmi_jacks(m.group(1)).items())}")
+    return "\n".join(parts)
+
+
+def _pcm_name(pcm: Path) -> str:
+    try:
+        for row in (pcm / "info").read_text(errors="replace").splitlines():
+            if row.startswith("name:"):
+                return row.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return ""
+
+
 def resolve(selected: Optional[str]) -> Dict[str, str]:
     outputs = list_outputs()
     for out in outputs:

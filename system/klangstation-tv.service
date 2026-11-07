@@ -17,7 +17,8 @@ StandardOutput=journal
 StandardError=journal
 UtmpIdentifier=tty1
 UtmpMode=user
-ExecStart=/usr/bin/cage -s -- /opt/klangstation/system/ks-tv-kiosk
+# -m last: nur der zuletzt angeschlossene Bildschirm (Laptop mit Fernseher: ganz auf den Fernseher statt ueber beide verteilt)
+ExecStart=/usr/bin/cage -s -m last -- /opt/klangstation/system/ks-tv-kiosk
 Restart=always
 RestartSec=5
 # cage blockiert SIGTERM fuer sich (signalfd) und vererbt die Sperre an das Kiosk-Skript; nach SIGTERM wartet

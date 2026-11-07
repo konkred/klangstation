@@ -514,6 +514,13 @@ install -d /etc/systemd/logind.conf.d
 printf '[Login]\nHandleLidSwitch=ignore\nHandleLidSwitchExternalPower=ignore\nHandleLidSwitchDocked=ignore\n' \
     > /etc/systemd/logind.conf.d/90-klangstation.conf
 systemctl kill -s HUP systemd-logind >/dev/null 2>&1 || true
+# dhcpcd (Debian ohne Desktop, ifupdown): direkte IPv6-Route ins eigene Netz, sonst bleibt AirPlay stumm
+for d in /usr/lib/dhcpcd/dhcpcd-hooks /lib/dhcpcd/dhcpcd-hooks; do
+    if [ -d "$d" ]; then
+        install -m 0644 "$PREFIX/system/dhcpcd-hook-klangstation" "$d/90-klangstation"
+        break
+    fi
+done
 systemctl daemon-reload
 install_firewall
 systemctl enable --now ks-netmount.socket ks-netadmin.socket

@@ -106,6 +106,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   eigene SSH-Shell – stattdessen `ps -eo pid,comm,args | awk '$2=="python3"'`.
 * **`ss -K`** nur mit genauem Ziel (`dst <IP> dport = :<Port>`): `dst any` trennt auch die eigene SSH-Sitzung, gesetzte
   Sperrrouten bleiben dann stehen. Sperrrouten immer per `trap … EXIT` entfernen.
+* **AirPlay ohne Ton untersuchen:** Klangstation gibt die Ausgabe von shairport-sync nur auf Debug-Stufe aus → zweiten,
+  stummen Empfänger daneben starten (`general = { name = "KS-Diag"; output_backend = "stdout"; port = 5100; udp_port_base = 6101; }`,
+  `shairport-sync -c … -vv > /dev/null`). Ohne tcpdump: Mitschnitt mit Python über `AF_PACKET` (zeigt auch die Ziel-MAC).
 * **Kanäle prüfen:** `S24_LE` belegt 4 Byte je Wert → mit `S32_LE` aufnehmen und als `array('i')` auswerten. Prüfdatei
   nur links: Der rechte Kanal muss 0 sein, sonst taugt die Messung nicht.
 * **Screenshots für die README** (`docs/img/`): Firefox ohne Fenster mit `--remote-debugging-port` und WebDriver BiDi
@@ -235,6 +238,14 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   bleibt geladen und blockiert seinen Namen → eindeutige Namen bzw. vorher `stop` + `reset-failed`.
 * **cage** blockiert SIGTERM/SIGINT (signalfd) und vererbt die Sperre an das Kiosk-Skript; nach SIGTERM wartet cage
   auf das Skript → `klangstation-tv` hing beim Stoppen 90 s. Abhilfe: `ExecStop=-pkill -KILL -x ks-tv-kiosk`.
+* **dhcpcd 10 (Debian ohne Desktop, ifupdown)** legt für ein Präfix mit L-Flag keine direkte Route an, wenn der Router es
+  zusätzlich als Route Information über sich ankündigt (FRITZ!Box: `2001:…/64` und ULA `fd20:…/64` je als L=1-Präfix und als
+  RIO) → nur `<Präfix> via <Router>`, alles ins eigene WLAN geht über den Router. TCP leitet er zurück (RTSP, Titel, Cover),
+  die UDP-Zeitpakete von AirPlay nicht → shairport-sync „Sync packet received before we got a timing packet back“, PCM bleibt
+  `PREPARED`, das iPhone verbindet immer neu. Kernel und NetworkManager legen beide Routen an. Abhilfe: Hook
+  `system/dhcpcd-hook-klangstation` (bei `ROUTERADVERT` je L-Präfix `ip -6 route replace … dev <if> metric 100 expires <vltime>`).
+* **cage `-m extend`** (Voreinstellung) verteilt eine Fläche über alle Bildschirme → Laptop mit Fernseher zeigte „Läuft gerade“
+  halb auf dem Display, halb am Fernseher. `-m last`: nur der zuletzt angeschlossene; cage kennt den Deckel nicht.
 * **Port-Probe** vor dem Wechsel mit `SO_REUSEADDR` (wie uvicorn), sonst gilt der alte Port wegen TIME_WAIT als belegt.
 
 ### Installer und PipeWire
@@ -310,7 +321,7 @@ Vorher bzw. dabei bedenken:
 * **Laptop-Deckel:** Installer setzt `HandleLidSwitch=ignore` (auch ExternalPower/Docked) in
   `/etc/systemd/logind.conf.d/90-klangstation.conf` (0.2.5), am ASUS bestanden.
 * **Laptop-Display:** Kiosk bei offenem Deckel auf dem eingebauten Display, bei geschlossenem Deckel am Fernseher – macht
-  GNOME von selbst (am ASUS bestanden). Ohne Desktop (cage, Dell) noch offen: Installation, Neustart und stumme Tests am Dell bestanden.
+  GNOME von selbst (am ASUS bestanden). Ohne Desktop nutzt cage mit `-m last` den Fernseher, sobald er steckt (am Dell bestanden).
 * **Lautsprecher/Kopfhörer:** Erscheint als ein Gerät („ALC256 Analog“); Umschalten per Auto-Mute des Treibers (am ASUS bestanden).
 * **SOF:** Weder ASUS noch Dell brauchen es (beide laufen über `snd_hda_intel`). Andere Laptops brauchen evtl.
   `firmware-sof-signed`, bringt der Installer bisher nicht mit; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
@@ -604,7 +615,14 @@ Vorher bzw. dabei bedenken:
   Wiedergabeliste; Ausgabewechsel beim Spielen; Überblenden, ReplayGain, „Dynamisch“ (spielt weiter); Schlummer-Timer blendet aus
   (Anhalten nicht belegt, die Testtitel endeten vorher), Titelende; Wecker-Rampe; kaputter Sender → Bibliothek + 60-min-Timer.
   Webradio-Netzausfall 60 s über WLAN (v4 und v6): Hinweis nach 30 s, 19 s nach Rückkehr spielt er wieder.
-* Noch offen: iPhone (Spotify, AirPlay, Bluetooth), Deckel mit cage (mit und ohne Fernseher an HDMI), Ton über HDMI.
+* Spotify mit iPhone (laut Nutzer, Protokoll): Titel, Cover, Pause/Weiter, Titelsprung. AirPlay zuerst stumm (siehe Lehren, dhcpcd):
+  Titel, Cover und Gerätename kamen, kein Ton. Mit dem Hook (0.2.9): Ton, Spulen, nächster Titel, Pause/Weiter (laut Nutzer); nach
+  einem Neustart setzt der Hook die Routen von selbst (SSH nach 50 s), AirPlay spielt über ULA- und globale IPv6-Adresse.
+* Bluetooth (eingebaut) mit iPhone: gekoppelt, Kopplungsfenster schließt, Wiedergabe und Tasten laut Nutzer in Ordnung.
+* Deckel zu und auf ohne Fernseher: Spotify spielt weiter, Kiosk läuft (cage lässt eDP an). Fernseher an DP-3 (Docking-/USB-C-
+  bzw. HDMI-Anschluss): erst „Läuft gerade“ über beide Bildschirme verteilt, mit `-m last` (0.2.9) ganz am Fernseher, Display aus;
+  Deckel zu → bleibt am Fernseher; Abziehen → zurück aufs Display (laut Nutzer, DRM-Status). Ton über HDMI (laut Nutzer).
+* Noch offen: Kopfhörer am Dell.
 
 ### Behobene Fehler
 
@@ -672,3 +690,8 @@ Vorher bzw. dabei bedenken:
 * Installer brach auf frischem Desktop ab, solange PackageKit Updates lud (dpkg-Sperre) → wartet bis zu 10 min (0.2.6).
 * Desktop: Kopfhörer ein/aus und der Lautstärkeregler des Desktops stellten die Karte leiser → Profil `pro-audio`, Auto-Mute (siehe Lehren, 0.2.6).
 * Cover von Freigaben luden sehr langsam (bis 15 s je Bild) → `binarylimit` (siehe Lehren, 0.2.8).
+
+**07.11.2026**
+
+* AirPlay ohne Ton unter Debian ohne Desktop (dhcpcd, IPv6-Route über den Router) → dhcpcd-Hook (siehe Lehren, 0.2.9).
+* Kiosk ohne Desktop am Laptop mit Fernseher über beide Bildschirme verteilt → cage `-m last` (siehe Lehren, 0.2.9).

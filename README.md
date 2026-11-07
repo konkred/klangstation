@@ -92,8 +92,8 @@ Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep suppo
 | Update | ✓ | ✓ | ✓ | | | ✓ | ✓ | |
 | Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
-| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | UPnP | ✓ | | ✓ | ✓ | | | | |
 | Radio, auch bei Netzausfall | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✓ |
 | CD abspielen und rippen | ✓ | | ✓ | ✓ | ✓ | ✓ | | |
@@ -105,7 +105,7 @@ Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep suppo
 | Bit-perfekt, Lautstärke angleichen, Überblenden | | | ✓ | | | | | |
 | Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | ✓ | | | | | |
 | Erscheinungsbilder | | | ✓ | | | | | |
-| Laptop: Deckel, Kopfhörer, Bildschirm am Fernseher | | | | | | | ✓ | |
+| Laptop: Deckel, Kopfhörer, Bildschirm am Fernseher | | | | | | | ✓ | ✓ (ohne Kopfhörer) |
 
 </details>
 
@@ -245,6 +245,9 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
   stellt der Lautstärkeregler des Desktops oder das Einstecken von Kopfhörern die Karte leiser. In den Toneinstellungen
   des Desktops heißen die Ausgänge darum „… Pro“. Rückgängig: Datei löschen und neu anmelden.
 * Wartet bis zu 10 min, wenn die Paketverwaltung des Desktops (PackageKit) gerade Updates lädt.
+* Ohne Desktop mit `dhcpcd` (Debian mit ifupdown): ein Hook (`/usr/lib/dhcpcd/dhcpcd-hooks/90-klangstation`) setzt die direkte
+  IPv6-Route ins eigene Netz. Kündigt der Router sein Präfix zusätzlich als Route über sich selbst an (z. B. FRITZ!Box), legt
+  dhcpcd nur diese an, und AirPlay vom iPhone bleibt stumm. Rückgängig: Datei löschen.
 
 ## Bedienung
 
@@ -307,7 +310,9 @@ Erscheinungsbild* für alle Bildschirme ein, die `/tv` zeigen.
 
 * **Mit Desktop:** Nach dem Anmelden öffnet sich Chromium im Vollbild auf `/tv`. Alt+F4 schließt ihn,
   *Optionen › Fernseher › Jetzt am HDMI-Ausgang anzeigen* holt ihn zurück.
-* **Ohne Desktop** (`--tv-headless`): Der Dienst `klangstation-tv` startet nach jedem Boot von selbst.
+* **Ohne Desktop** (`--tv-headless`): Der Dienst `klangstation-tv` startet nach jedem Boot von selbst. Bei mehreren
+  Bildschirmen nutzt er den zuletzt angeschlossenen: Am Laptop wechselt er beim Anstecken des Fernsehers ganz dorthin und
+  beim Abziehen zurück aufs eingebaute Display.
 * *Optionen › Fernseher* schaltet den Bildschirm in beiden Fällen ganz ab und wieder an.
 * Jeder andere Browser (Tablet an der Wand, Fernseher-Browser): `http://<hostname>.local:8080/tv`.
 * Ohne Wiedergabe zeigt er Uhr, Datum, den nächsten Wecker und ein durchlaufendes Band der zuletzt gehörten Alben und

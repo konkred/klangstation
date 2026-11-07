@@ -1,0 +1,24 @@
+# Klangstation: direkte Route ins eigene IPv6-Netz (wird von dhcpcd-run-hooks eingelesen)
+# Kuendigt der Router seine Praefixe zusaetzlich als Route ueber sich selbst an (Route Information), legt dhcpcd
+# nur diese an. Pakete an Geraete im selben Netz gehen dann ueber den Router, und der leitet nicht alles zurueck:
+# AirPlay bekam vom iPhone keine Zeitpakete und blieb stumm. Darum fuer jedes Praefix mit L-Flag die direkte
+# Route setzen (Metrik 100 vor den 3000ern von dhcpcd), mit der Lebensdauer aus der Ankuendigung.
+if [ "$reason" = ROUTERADVERT ] && [ -n "$interface" ]; then
+	ks_n=1
+	while eval "[ -n \"\${nd${ks_n}_from}\" ]"; do
+		ks_i=1
+		while eval "ks_p=\${nd${ks_n}_prefix_information${ks_i}_prefix}"; [ -n "$ks_p" ]; do
+			eval "ks_l=\${nd${ks_n}_prefix_information${ks_i}_length} ks_f=\${nd${ks_n}_prefix_information${ks_i}_flags}"
+			eval "ks_v=\${nd${ks_n}_prefix_information${ks_i}_vltime}"
+			case "$ks_f" in
+			*L*)
+				ip -6 route replace "$ks_p/$ks_l" dev "$interface" metric 100 expires "$ks_v" 2>/dev/null \
+					|| ip -6 route replace "$ks_p/$ks_l" dev "$interface" metric 100 2>/dev/null
+				;;
+			esac
+			ks_i=$((ks_i + 1))
+		done
+		ks_n=$((ks_n + 1))
+	done
+	unset ks_n ks_i ks_p ks_l ks_f ks_v
+fi

@@ -929,7 +929,7 @@ function fillSettings(res) {
   const outs = [{ id: "", label: "Automatisch wählen", detail: "USB-DAC › I²S-DAC › Analog › HDMI", kind: "other" }].concat(res.outputs);
   $("#out-list").innerHTML = outs.map((o) => `
     <label class="out"><input type="radio" name="output" value="${esc(o.id)}" ${(s.output || "") === o.id ? "checked" : ""}>
-      <span class="kind ${o.kind}">${o.id ? KIND_TXT[o.kind] || "ALSA" : "AUTO"}</span>
+      <span class="kind ${o.kind}">${o.id ? KIND_TXT[o.kind] || "ALSA" : "Auto"}</span>
       <span>${esc(o.label)} ${o.id && o.id === active.id ? '<span class="cur">· aktiv</span>' : ""}<small>${esc(o.detail)}${o.channels > 2 ? ` · ${o.channels > 8 ? "bis " + o.channels : o.channels} Kanäle` : ""}${o.id ? " · " + esc(o.id) : ""}</small></span>
     </label>`).join("");
   speakerOutputs = { list: res.outputs, active, surround: res.surround || 2 };

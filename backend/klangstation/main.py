@@ -21,6 +21,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from http.cookies import SimpleCookie
+from urllib.parse import urlsplit
 
 from . import audio, extras, sysinfo
 from .auth import COOKIE, MAX_AGE, check_password, hash_password
@@ -39,6 +40,9 @@ def ok(data=None) -> JSONResponse:
 
 
 async def body(request: Request) -> dict:
+    # Nur echtes JSON: ein Formular oder text/plain von einer fremden Seite kaeme sonst ohne CORS-Vorabfrage durch
+    if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+        raise HTTPException(415, "JSON erwartet")
     try:
         data = await request.json()
     except ValueError:
@@ -192,7 +196,8 @@ async def library_upload(request):
     await asyncio.to_thread(target.parent.mkdir, parents=True, exist_ok=True)
     if shutil.disk_usage(target.parent).free < size + extras.UPLOAD_RESERVE:
         raise HTTPException(507, "Nicht genug freier Speicher")
-    part = target.with_name(f".{target.name}.part")  # versteckt: MPD liest die halbe Datei nicht ein
+    # versteckt: MPD liest die halbe Datei nicht ein; eigener Name je Upload, falls dieselbe Datei zweimal kommt
+    part = target.with_name(f".{target.name}.{os.urandom(4).hex()}.part")
     written = 0
     try:
         with open(part, "wb") as fh:
@@ -204,7 +209,12 @@ async def library_upload(request):
         if written != size:
             raise HTTPException(400, "Die Übertragung ist abgebrochen")
         os.chmod(part, 0o644)
-        os.replace(part, target)
+        try:
+            os.link(part, target)  # anders als replace: ueberschreibt keine Datei, die inzwischen da ist
+        except FileExistsError:
+            raise HTTPException(409, "Die Datei gibt es schon")
+        except OSError:  # Dateisystem ohne harte Links
+            os.replace(part, target)
     except ClientDisconnect:
         log.info("Hochladen abgebrochen: %s", target.name)
         return Response(status_code=400)
@@ -473,8 +483,20 @@ async def auth_password(request):
     return _with_session(ok({"enabled": core.auth.enabled, "scope": core.auth.scope}))
 
 
+def _foreign_origin(scope) -> bool:
+    """Schickt eine fremde Webseite diese Anfrage? Ohne Passwort koennte sonst jede im Heimnetz geoeffnete Seite
+    unbemerkt Einstellungen aendern (CSRF) oder den Zustand per WebSocket mitlesen. Ohne Origin (curl, Hooks) erlaubt."""
+    if scope["type"] == "http" and scope.get("method") in ("GET", "HEAD", "OPTIONS"):
+        return False
+    headers = dict(scope.get("headers", []))
+    origin = headers.get(b"origin", b"").decode("latin-1")
+    if not origin:
+        return False
+    return urlsplit(origin).netloc.lower() != headers.get(b"host", b"").decode("latin-1").lower()
+
+
 class AuthMiddleware:
-    """Prueft vor jeder Anfrage (auch WebSocket), ob eine Anmeldung noetig ist."""
+    """Prueft vor jeder Anfrage (auch WebSocket) die Herkunft und ob eine Anmeldung noetig ist."""
 
     def __init__(self, app):
         self.app = app
@@ -482,6 +504,13 @@ class AuthMiddleware:
     async def __call__(self, scope, receive, send):
         if scope["type"] not in ("http", "websocket") or core is None:
             return await self.app(scope, receive, send)
+        if _foreign_origin(scope):
+            log.warning("Anfrage von fremder Seite abgelehnt: %s %s", scope.get("method", "WS"), scope["path"])
+            if scope["type"] == "websocket":
+                if (await receive())["type"] == "websocket.connect":
+                    await send({"type": "websocket.close", "code": 4403})
+                return
+            return await JSONResponse({"ok": False, "error": "Fremde Herkunft"}, status_code=403)(scope, receive, send)
         cookie = None
         for name, value in scope.get("headers", []):
             if name == b"cookie":
@@ -597,6 +626,12 @@ async def value_error(request, exc: ValueError):
     return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
 
+async def type_error(request, exc: Exception):
+    # Falscher Datentyp in der Anfrage (z. B. Zahl statt Text): 400 statt 500, im Protokoll bleibt die Stelle sichtbar
+    log.warning("Ungueltige Anfrage an %s: %r", request.url.path, exc, exc_info=exc)
+    return JSONResponse({"ok": False, "error": "Ungültige Anfrage"}, status_code=400)
+
+
 async def mpd_error(request, exc: MPDError):
     return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
@@ -700,5 +735,6 @@ app = Starlette(
     lifespan=lifespan,
     middleware=[Middleware(AuthMiddleware)],
     exception_handlers={HTTPException: http_error, ValueError: value_error, MPDError: mpd_error,
+                        TypeError: type_error, AttributeError: type_error,
                         ConnectionError: offline_error, OSError: offline_error},
 )

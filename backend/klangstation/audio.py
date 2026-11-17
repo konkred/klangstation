@@ -209,14 +209,7 @@ def list_outputs() -> List[Dict[str, Any]]:
             jacks: Optional[Dict[str, bool]] = None
             for pcm in sorted(card_dir.glob("pcm*p")):
                 dev = pcm.name[3:-1]
-                pcm_name = ""
-                info = pcm / "info"
-                try:
-                    for row in info.read_text(errors="replace").splitlines():
-                        if row.startswith("name:"):
-                            pcm_name = row.split(":", 1)[1].strip()
-                except OSError:
-                    pass
+                pcm_name = _pcm_name(pcm)
                 kind = _classify(card_id, card_name, pcm_name, is_usb)
                 if card_id.startswith("vc4hdmi"):
                     # Raspberry Pi 4/5: vc4hdmi0 = Buchse HDMI0 (neben USB-C), vc4hdmi1 = HDMI1

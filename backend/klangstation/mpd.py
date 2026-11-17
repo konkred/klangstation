@@ -19,7 +19,11 @@ class MPDError(Exception):
 
 
 def quote(arg) -> str:
-    s = str(arg).replace("\\", "\\\\").replace('"', '\\"')
+    s = str(arg)
+    # Ein Zeilenumbruch beendet im MPD-Protokoll den Befehl - danach stuende ein beliebiger eigener Befehl
+    if any(c in s for c in "\n\r\0"):
+        raise ValueError("Ungültiges Zeichen im Namen")
+    s = s.replace("\\", "\\\\").replace('"', '\\"')
     return f'"{s}"'
 
 

@@ -97,7 +97,7 @@ class Auth:
         return f"{expires}.{sig}"
 
     def cookie_valid(self, value: Optional[str]) -> bool:
-        if not value or "." not in value:
+        if not value or "." not in value or not value.isascii():  # compare_digest kann nur ASCII
             return False
         expires, sig = value.split(".", 1)
         expected = hmac.new(self._secret, expires.encode(), hashlib.sha256).hexdigest()
@@ -117,7 +117,7 @@ class Auth:
 
     # ------------------------------------------------------------ Bremse
     def wait_seconds(self, ip: str) -> int:
-        count, until = self._fails.get(ip, (0, 0.0))
+        until = self._fails.get(ip, (0, 0.0))[1]
         return max(0, int(until - time.time()) + 1) if until > time.time() else 0
 
     def failed(self, ip: str) -> None:

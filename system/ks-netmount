@@ -251,11 +251,19 @@ def do_store(req):
         final = base
         while os.path.exists(final):
             final, n = f"{base} ({n})", n + 1
+        # Ein Symlink-Ordner auf dem Datentraeger (ext4-Stick) darf root nicht ausserhalb schreiben lassen
+        if not os.path.realpath(final).startswith(os.path.realpath(target) + "/"):
+            raise OSError("Zielordner zeigt aus dem Datentraeger heraus")
         os.makedirs(final, mode=0o755)
         for name in files:
-            # Nur Inhalte kopieren (keine Rechte/Eigentuemer) - Symlinks wurden oben schon ausgeschlossen
-            with open(os.path.join(srcdir, name), "rb") as fin, open(os.path.join(final, name), "xb") as fout:
-                shutil.copyfileobj(fin, fout, 1024 * 1024)
+            # Nur Inhalte kopieren (keine Rechte/Eigentuemer). O_NOFOLLOW: zwischen Pruefung und Oeffnen koennte
+            # der Dienstnutzer eine Datei gegen einen Symlink tauschen; "xb" folgt ohnehin keinem Symlink
+            fd = os.open(os.path.join(srcdir, name), os.O_RDONLY | os.O_NOFOLLOW)
+            with os.fdopen(fd, "rb") as fin:
+                if not stat.S_ISREG(os.fstat(fd).st_mode):
+                    raise OSError(f"{name} ist keine normale Datei")
+                with open(os.path.join(final, name), "xb") as fout:
+                    shutil.copyfileobj(fin, fout, 1024 * 1024)
         os.sync()
         result = os.path.relpath(final, target)
     except OSError as exc:

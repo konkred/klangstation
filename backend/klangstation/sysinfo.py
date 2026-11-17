@@ -10,7 +10,7 @@ import platform
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 log = logging.getLogger("klangstation.sysinfo")
 
@@ -233,47 +233,44 @@ def info() -> Dict[str, Any]:
 _BAT_STATUS = {"Charging": "lädt", "Discharging": "Akkubetrieb", "Full": "voll", "Not charging": "lädt nicht"}
 
 
+def _power_supply() -> Tuple[Optional[Path], int, bool]:
+    """Akku des Rechners (Ordner, Ladestand) und ob ein Netzteil steckt. Akkus von Maus, Tastatur oder
+    Bluetooth-Geraeten (scope Device) zaehlen nicht."""
+    bat, capacity, plugged = None, 0, False
+    for dev in sorted(Path("/sys/class/power_supply").glob("*")):
+        kind = _read(f"{dev}/type")
+        if kind == "Battery" and bat is None and _read(f"{dev}/scope") != "Device":
+            cap = _read(f"{dev}/capacity")
+            if cap.isdigit():
+                bat, capacity = dev, min(100, int(cap))
+        elif kind in ("Mains", "USB", "USB_C", "USB_PD") and _read(f"{dev}/online") == "1":
+            plugged = True
+    return bat, capacity, plugged
+
+
 def _battery_detail() -> Optional[Dict[str, str]]:
     """Info-Seite: Ladestand, Zustand (Kapazitaet gegenueber neu), Modell und Ladezyklen; ohne Akku None."""
-    plugged = any(_read(f"{d}/type") in ("Mains", "USB", "USB_C", "USB_PD") and _read(f"{d}/online") == "1"
-                  for d in Path("/sys/class/power_supply").glob("*"))
-    for dev in sorted(Path("/sys/class/power_supply").glob("*")):
-        if _read(f"{dev}/type") != "Battery" or _read(f"{dev}/scope") == "Device":
-            continue
-        cap = _read(f"{dev}/capacity")
-        if not cap.isdigit():
-            continue
-        status = _BAT_STATUS.get(_read(f"{dev}/status"), "")
-        if plugged and status != "lädt":
-            status = "Netzteil" + (f", {status}" if status and status != "Akkubetrieb" else "")
-        health = ""
-        for unit in ("energy", "charge"):  # je nach Akku in Wh oder Ah gemeldet
-            full, design = _read(f"{dev}/{unit}_full"), _read(f"{dev}/{unit}_full_design")
-            if full.isdigit() and design.isdigit() and int(design) > 0:
-                health = f"Kapazität {round(100 * int(full) / int(design))} % vom Neuzustand"
-                break
-        model = " ".join(x for x in (_read(f"{dev}/manufacturer"), _read(f"{dev}/model_name")) if x)
-        cycles = _read(f"{dev}/cycle_count")
-        return {"name": f"{cap} %" + (f", {status}" if status else ""), "health": health, "model": model,
-                "cycles": f"{cycles} Ladezyklen" if cycles.isdigit() and int(cycles) > 0 else ""}
-    return None
+    dev, cap, plugged = _power_supply()
+    if dev is None:
+        return None
+    status = _BAT_STATUS.get(_read(f"{dev}/status"), "")
+    if plugged and status != "lädt":
+        status = "Netzteil" + (f", {status}" if status and status != "Akkubetrieb" else "")
+    health = ""
+    for unit in ("energy", "charge"):  # je nach Akku in Wh oder Ah gemeldet
+        full, design = _read(f"{dev}/{unit}_full"), _read(f"{dev}/{unit}_full_design")
+        if full.isdigit() and design.isdigit() and int(design) > 0:
+            health = f"Kapazität {round(100 * int(full) / int(design))} % vom Neuzustand"
+            break
+    model = " ".join(x for x in (_read(f"{dev}/manufacturer"), _read(f"{dev}/model_name")) if x)
+    cycles = _read(f"{dev}/cycle_count")
+    return {"name": f"{cap} %" + (f", {status}" if status else ""), "health": health, "model": model,
+            "cycles": f"{cycles} Ladezyklen" if cycles.isdigit() and int(cycles) > 0 else ""}
 
 
 def battery() -> Optional[Dict[str, Any]]:
-    """Akku des Rechners (Laptop) fuer "Laeuft gerade": Ladestand und ob ein Netzteil steckt; ohne Akku None.
-
-    Akkus von Maus, Tastatur oder Bluetooth-Geraeten (scope Device) zaehlen nicht."""
-    capacity, plugged, status = None, False, ""
-    for dev in sorted(Path("/sys/class/power_supply").glob("*")):
-        kind = _read(f"{dev}/type")
-        if kind == "Battery" and _read(f"{dev}/scope") != "Device" and capacity is None:
-            try:
-                capacity = max(0, min(100, int(_read(f"{dev}/capacity"))))
-            except ValueError:
-                continue
-            status = _read(f"{dev}/status")
-        elif kind in ("Mains", "USB", "USB_C", "USB_PD") and _read(f"{dev}/online") == "1":
-            plugged = True
-    if capacity is None:
+    """Akku fuer "Laeuft gerade": Ladestand und ob ein Netzteil steckt bzw. geladen wird; ohne Akku None."""
+    dev, cap, plugged = _power_supply()
+    if dev is None:
         return None
-    return {"percent": capacity, "charging": plugged or status == "Charging"}
+    return {"percent": cap, "charging": plugged or _read(f"{dev}/status") == "Charging"}

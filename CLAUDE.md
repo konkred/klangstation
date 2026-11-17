@@ -279,6 +279,17 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   LibreOffice-Sprachpakete) → apt-get im Installer mit `DPkg::Lock::Timeout=600`; sonst vorher Updates von Hand.
 * WirePlumber 0.5 meldet beim Start „Old configuration file detected“ wegen `bluetooth.lua.d/90-klangstation.lua` (für 0.4) – harmlos.
 
+### Sicherheit
+
+* **CSRF ohne Passwort:** Starlette liest `request.json()` auch bei `text/plain` → jede im Heimnetz geöffnete Webseite konnte per
+  `fetch(…, {mode: "no-cors"})` Einstellungen ändern (SSH aus, Port, Freigaben, Hochladen). Abhilfe: `AuthMiddleware` lehnt POST und
+  WebSocket ab, wenn `Origin` nicht zu `Host` passt (ohne `Origin`, z. B. curl und Hooks, erlaubt), `body()` verlangt
+  `application/json`. DNS-Rebinding (fremder Name zeigt aufs Gerät, Origin = Host) fängt das nicht ab.
+* **MPD-Protokoll:** Ein Zeilenumbruch im Argument beendet den Befehl → `mpd.quote()` lehnt `\n`, `\r`, `\0` ab.
+* **Root-Helfer:** Dateien des Dienstnutzers nur mit `O_NOFOLLOW` öffnen (sonst Symlink-Tausch zwischen Prüfung und Öffnen);
+  Zielordner auf Datenträgern per `realpath` prüfen (Symlink-Ordner auf ext4-Sticks).
+* TestClient schickt beim WebSocket immer `host: testserver` – Origin im Test entsprechend setzen.
+
 ### Python
 
 * **asyncio hält Aufgaben nur schwach** → ohne Referenz räumt der Garbage Collector sie mitten im Lauf weg
@@ -698,3 +709,9 @@ Vorher bzw. dabei bedenken:
 
 * AirPlay ohne Ton unter Debian ohne Desktop (dhcpcd, IPv6-Route über den Router) → dhcpcd-Hook (siehe Lehren, 0.2.9).
 * Kiosk ohne Desktop am Laptop mit Fernseher über beide Bildschirme verteilt → cage `-m last` (siehe Lehren, 0.2.9).
+
+**17.11.2026** (0.2.11, nur lokal mit TestClient geprüft, noch nicht auf einem Gerät)
+
+* Prüfung auf Sicherheit und Slop: CSRF ohne Passwort, MPD-Befehle über Zeilenumbrüche, Symlinks im root-Helfer (siehe Sicherheit).
+  Falscher Datentyp in Anfragen gibt 400 statt 500, Cookie mit Nicht-ASCII, zwei gleichzeitige Uploads derselben Datei.
+  Badges der Ausgänge: „ANALOG“ war abgeschnitten, jetzt eine Farbe und normale Schreibung.

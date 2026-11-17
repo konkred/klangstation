@@ -1347,7 +1347,7 @@ class Core:
     def remember_station(self, st: Dict[str, Any]) -> None:
         """Sendername/Logo dauerhaft merken - MPD speichert bei Streams nur die Adresse."""
         url = st.get("url", "")
-        if not url.startswith(("http://", "https://")):
+        if not isinstance(url, str) or not url.startswith(("http://", "https://")):
             return
         info = {k: st.get(k) for k in ("uuid", "name", "favicon", "country", "url")}
         self.stations[url] = info

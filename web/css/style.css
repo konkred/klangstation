@@ -309,13 +309,13 @@ legend { color: var(--accent); padding: 0 4px; font-weight: bold; }
 .field input, .field select { padding: 4px 6px; border: 1px solid #7f9db9; border-radius: 3px; background: #fff; color: var(--list-ink); max-width: 360px; }
 .out-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
 .out {
-  display: grid; grid-template-columns: auto 34px 1fr; gap: 8px; align-items: center;
+  display: grid; grid-template-columns: auto 48px 1fr; gap: 8px; align-items: center;
   padding: 6px 8px; border: 1px solid #d3deee; border-radius: 4px; background: #fff; cursor: pointer;
 }
 .out:hover { border-color: #8fb0dd; }
 .out:has(input:checked) { border-color: var(--accent); background: #eaf2fe; }
-.out .kind { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #fff; background: #7f9db9; border-radius: 3px; text-align: center; padding: 2px 0; }
-.out .kind.usb { background: #2a8f4a; } .out .kind.hdmi { background: #7a4fc4; } .out .kind.analog { background: #c4762a; } .out .kind.i2s { background: #2463c7; }
+.out .kind { font-size: 10px; font-weight: bold; color: #fff; background: #7f9db9; border-radius: 3px; text-align: center; padding: 2px 0; }
+.out:has(input:checked) .kind { background: var(--accent); }
 .out small { display: block; color: var(--list-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .out .cur { color: var(--accent); font-weight: bold; }
 .bt-box { margin: 6px 0 4px 22px; display: grid; gap: 6px; }

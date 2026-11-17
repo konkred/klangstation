@@ -396,6 +396,8 @@ Die Änderungen nimmt der root-Hilfsdienst `ks-netadmin` vor (siehe Technik).
 *Optionen › Zugang*: Passwort für „nur Optionen, Bluetooth-Kopplung und Freigaben“ oder „die gesamte Oberfläche“.
 Passwörter werden mit PBKDF2 gespeichert, Sitzungen per signiertem Cookie (30 Tage). Nach mehreren Fehlversuchen
 greift eine wachsende Sperre. Zugriffe vom Gerät selbst (Kiosk, interne Hooks) sind immer erlaubt.
+Auch ohne Passwort nimmt Klangstation Befehle nur von der eigenen Oberfläche an: Eine andere Webseite, die im Heimnetz
+im Browser offen ist, kann nichts verstellen und den Zustand nicht mitlesen.
 Die Verbindung ist unverschlüsseltes HTTP, also nur für das Heimnetz gedacht. Passwort vergessen:
 
 ```bash

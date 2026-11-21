@@ -8,6 +8,7 @@ Erlaubt ist ausschliesslich:
     wenn die Aenderung nicht innerhalb von ROLLBACK_SECONDS bestaetigt wird
   * den SSH-Server ein- und ausschalten
   * den Port der Weboberflaeche aendern (Dienst, Kiosk, Firewall)
+  * das Geraet neu starten oder herunterfahren
 Den Socket erreicht nur die Gruppe klangstation.
 Anfrage: eine JSON-Zeile auf stdin, Antwort: eine JSON-Zeile auf stdout.
 Aufruf mit --rollback (vom Zeitgeber ks-net-rollback.timer): alte IP-Einstellung wiederherstellen.
@@ -395,6 +396,18 @@ def do_port(req):
     answer(True, port=new)
 
 
+def do_power(req):
+    mode = req.get("mode")
+    if mode not in ("reboot", "poweroff"):
+        answer(False, "Unbekannte Aktion")
+    # Erst antworten, dann ausfuehren: die Oberflaeche soll die Rueckmeldung noch bekommen
+    code, out = run(["systemd-run", f"--unit=ks-power-{int(time.time())}", "--on-active=2",
+                     "--timer-property=AccuracySec=100ms", "--collect", "systemctl", mode])
+    if code != 0:
+        answer(False, f"Liess sich nicht planen: {out}")
+    answer(True)
+
+
 def main():
     if sys.argv[1:] == ["--rollback"]:
         rollback()
@@ -409,7 +422,7 @@ def main():
         "wifi_connect": do_wifi_connect, "wifi_forget": do_wifi_forget, "wifi_radio": do_wifi_radio,
         "wifi_scan": do_wifi_scan, "wifi_up": lambda r: do_con(r, True), "wifi_down": lambda r: do_con(r, False),
         "ipv4": do_ipv4, "ipv4_confirm": do_ipv4_confirm, "ipv4_revert": do_ipv4_revert,
-        "ssh": do_ssh, "port": do_port,
+        "ssh": do_ssh, "port": do_port, "power": do_power,
     }
     fn = actions.get(req.get("action"))
     if not fn:

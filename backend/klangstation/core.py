@@ -70,6 +70,7 @@ class Core:
         self.update_check = extras.UpdateCheck()
         # Zuletzt gehoert (fuer den Ruhebildschirm): je Album bzw. Sender ein Eintrag, neueste zuerst
         self.history: List[Dict[str, Any]] = self._load_history()
+        self.played: List[Dict[str, str]] = self._load_played()
         self.radio = RadioBrowser()
         self.mpd = MPD(MPD_HOST, MPD_PORT)
         self.shares = shares_mod.Shares(self.mpd)
@@ -181,9 +182,13 @@ class Core:
         self.output = audio.resolve(s.get("output"))
         dev = self.output["id"]
         name = s.get("device_name")
-        self.surround = await asyncio.to_thread(audio.configure_surround, dev, s.get("speakers"), s.get("bitperfect"))
-        log.info("Ausgabe: %s (%s)%s", self.output["label"], dev,
-                 f", hochgemischt auf {self.surround} Kanaele" if self.surround > 2 else "")
+        self.surround = await asyncio.to_thread(audio.configure_surround, dev, s.get("speakers"), s.get("bitperfect"),
+                                                s.get("eq_enabled"))
+        if audio.eq_active() and not await asyncio.to_thread(audio.set_eq, s.get("eq_bands")):
+            log.warning("Equalizer: Baender liessen sich nicht setzen")
+        log.info("Ausgabe: %s (%s)%s%s", self.output["label"], dev,
+                 f", hochgemischt auf {self.surround} Kanaele" if self.surround > 2 else "",
+                 ", mit Equalizer" if audio.eq_active() else "")
         fixed = await asyncio.to_thread(audio.prepare_mixer, dev)
         if fixed:
             log.info("Mixer: %s", ", ".join(fixed))
@@ -236,6 +241,14 @@ class Core:
                     await self.daemons["cec"].start(self.cec.monitor_args())
         if self.source in ("airplay", "spotify", "upnp", "bluetooth"):
             self.source = "idle"
+
+    async def prepare_power_off(self) -> None:
+        """Vor Neustart/Herunterfahren: MPD anhalten, damit nach dem Start nichts ungefragt weiterspielt."""
+        try:
+            if (await self.mpd.dict("status")).get("state") == "play":
+                await self.mpd.run("pause", 1)
+        except (ConnectionError, MPDError):
+            pass
 
     # ------------------------------------------------------------ Quellen
     async def take_over(self, new: str) -> None:
@@ -578,9 +591,39 @@ class Core:
         except (OSError, ValueError):
             return []
 
+    PLAYED_MAX = 40
+
+    def _load_played(self) -> List[Dict[str, str]]:
+        try:
+            data = json.loads((DATA_DIR / "played.json").read_text(encoding="utf-8"))
+            return [{"album": str(p["album"]), "artist": str(p.get("artist", ""))}
+                    for p in data if isinstance(p, dict) and p.get("album")][: self.PLAYED_MAX]
+        except (OSError, ValueError, TypeError):
+            return []
+
+    @staticmethod
+    def _write_json(name: str, data: Any) -> None:
+        try:
+            path = DATA_DIR / name
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            os.replace(tmp, path)
+        except OSError as exc:
+            log.info("%s nicht gespeichert: %s", name, exc)
+
+    def _remember_played(self, album: str, artist: str) -> None:
+        # Bibliothek "Zuletzt gespielt": Alben aus der eigenen Musik, Kuenstler wie in album_tracks (AlbumArtist)
+        entry = {"album": album, "artist": artist}
+        if self.played and self.played[0] == entry:
+            return
+        self.played = [entry] + [p for p in self.played if p != entry][: self.PLAYED_MAX - 1]
+        self._write_json("played.json", self.played)
+
     def _remember(self, now: Dict[str, Any]) -> None:
         if now.get("state") != "play" or not now.get("kind"):
             return
+        if now["kind"] == "file" and now.get("album"):
+            self._remember_played(now["album"], now.get("albumartist", ""))
         art = now.get("art") or ""
         if now["kind"] == "airplay" and art.startswith("/api/art/airplay"):
             art = self._mb_art(now.get("album"), now.get("artist")) or ""  # Bild vom Handy ist nur voruebergehend
@@ -597,13 +640,7 @@ class Core:
         else:
             self.history = [entry] + [h for h in self.history
                                       if (h["title"], h["sub"]) != (entry["title"], entry["sub"])][: self.HISTORY_MAX - 1]
-        try:
-            path = DATA_DIR / "history.json"
-            tmp = path.with_suffix(".tmp")
-            tmp.write_text(json.dumps(self.history, ensure_ascii=False), encoding="utf-8")
-            os.replace(tmp, path)
-        except OSError as exc:
-            log.info("Verlauf nicht gespeichert: %s", exc)
+        self._write_json("history.json", self.history)
 
     async def _battery_loop(self) -> None:
         # Laptop: Ladestand und Netzteil fuer "Laeuft gerade"; ohne Akku nur selten nachsehen
@@ -683,7 +720,8 @@ class Core:
         now: Dict[str, Any] = {
             "kind": kind, "state": status.get("state", "stop"), "uri": uri,
             "title": song.get("Title", ""), "artist": song.get("Artist") or song.get("AlbumArtist", ""),
-            "album": song.get("Album", ""), "art": None, "extra": "",
+            "album": song.get("Album", ""), "albumartist": song.get("AlbumArtist") or song.get("Artist", ""),
+            "art": None, "extra": "",
             "elapsed": float(status.get("elapsed", 0) or 0),
             "duration": float(status.get("duration") or song.get("Time") or 0),
             "bitrate": status.get("bitrate", ""), "format": status.get("audio", ""),
@@ -781,18 +819,27 @@ class Core:
             return s.get("night_limit")
         return None
 
+    def volume_limit(self) -> Optional[int]:
+        """Hoechste erlaubte Lautstaerke: Obergrenze (immer) und Nachtmodus (nicht waehrend des Weckers)."""
+        limits = [self.settings.get("volume_max")]
+        night = self.night_limit()
+        if night is not None and not self.timers.ringing:
+            limits.append(night)
+        limit = min(limits)
+        return limit if limit < 100 else None
+
     async def _night_loop(self) -> None:
-        """Holt die Lautstaerke auf die Grenze zurueck. Der Wecker bleibt davon ausgenommen, Spotify und AirPlay
-        lassen sich nur am Handy regeln."""
+        """Holt die Lautstaerke auf die Grenze zurueck (Obergrenze, Nachtmodus). Spotify und AirPlay lassen sich
+        nur am Handy regeln."""
         while True:
             await asyncio.sleep(5)
-            limit = self.night_limit()
-            if limit is None or self.timers.ringing or self.source not in VOLUME_SOURCES:
+            limit = self.volume_limit()
+            if limit is None or self.source not in VOLUME_SOURCES:
                 continue
             if (await self.state()).get("volume", -1) > limit:
                 try:
                     await self.set_volume(limit)
-                    log.info("Nachtmodus: Lautstaerke auf %s %%", limit)
+                    log.info("Lautstaerke auf die Grenze von %s %% zurueckgeholt", limit)
                 except (ValueError, ConnectionError, MPDError):
                     pass
 
@@ -806,8 +853,8 @@ class Core:
 
     async def set_volume(self, volume: int) -> None:
         volume = max(0, min(100, volume))
-        limit = self.night_limit()
-        if limit is not None and not self.timers.ringing:
+        limit = self.volume_limit()
+        if limit is not None:
             volume = min(volume, limit)
         if self.source == "upnp":
             await self.upnp.set_volume(volume)
@@ -1110,7 +1157,8 @@ class Core:
         log.info("ReplayGain/Ueberblenden nicht gesetzt: MPD nicht erreichbar")
 
     async def _apply_player_level(self, tries: int = 15) -> None:
-        """Stellt den Player-Regler beim Start auf 100 %, danach bleibt er frei verschiebbar.
+        """Stellt den Player-Regler beim Start auf die Startlautstaerke (sonst 100 %), danach bleibt er frei
+        verschiebbar.
 
         Bei Bit-perfekt hat MPD keinen Regler.
         """
@@ -1120,7 +1168,9 @@ class Core:
             if attempt:
                 await asyncio.sleep(1)
             try:
-                await self.mpd.run("setvol", self.night_limit() or 100)
+                start = self.settings.get("volume_start")
+                start = 100 if start is None else start
+                await self.mpd.run("setvol", min(start, self.volume_limit() or 100))
                 return
             except (ConnectionError, MPDError):
                 continue
@@ -1400,8 +1450,25 @@ class Core:
                 "artist": e.get("Artist", ""), "album": e.get("Album", ""),
                 "track": e.get("Track", ""), "duration": float(e.get("duration") or e.get("Time") or 0)}
 
-    async def albums(self) -> List[Dict[str, str]]:
-        pairs = await self.mpd.run("list", "album", "group", "albumartist")
+    LIBRARY_TAGS = {"artist": "albumartist", "genre": "genre"}
+
+    @staticmethod
+    def _filter(tag: str, value: str) -> str:
+        # MPD-Filterausdruck; der Wert steht in einfachen Anfuehrungszeichen mit Backslash-Escapes
+        return "(%s == '%s')" % (tag, value.replace("\\", "\\\\").replace("'", "\\'"))
+
+    async def names(self, tag: str) -> List[str]:
+        """Interpreten (AlbumArtist, sonst Artist) oder Genres der Bibliothek."""
+        mpd_tag = self.LIBRARY_TAGS[tag]
+        pairs = await self.mpd.run("list", mpd_tag)
+        found = {v for _, v in pairs}
+        return sorted(found, key=lambda v: (v == "", v.lower()))
+
+    async def albums(self, tag: str = "", value: Optional[str] = None) -> List[Dict[str, str]]:
+        args = ["list", "album"]
+        if tag:
+            args.append(self._filter(self.LIBRARY_TAGS[tag], value or ""))
+        pairs = await self.mpd.run(*args, "group", "albumartist")
         result, artist = [], ""
         for k, v in pairs:
             if k == "AlbumArtist":
@@ -1409,6 +1476,22 @@ class Core:
             elif k == "Album" and v:
                 result.append({"album": v, "artist": artist})
         result.sort(key=lambda a: (a["artist"].lower(), a["album"].lower()))
+        return result
+
+    async def recent_albums(self, limit: int = 60) -> List[Dict[str, str]]:
+        """Zuletzt hinzugefuegt: nach Aenderungszeit der Dateien, neueste zuerst."""
+        found = to_objects(await self.mpd.run("find", "(modified-since '1')", "sort", "-Last-Modified",
+                                              "window", "0:2000"), starts=("file",))
+        result, seen = [], set()
+        for e in found:
+            album = e.get("Album", "")
+            artist = e.get("AlbumArtist") or e.get("Artist", "")
+            if not album or (album, artist) in seen:
+                continue
+            seen.add((album, artist))
+            result.append({"album": album, "artist": artist})
+            if len(result) >= limit:
+                break
         return result
 
     async def album_tracks(self, album: str, artist: str) -> List[Dict[str, Any]]:
@@ -1421,6 +1504,25 @@ class Core:
             except ValueError:
                 return 999
         return sorted(songs, key=key)
+
+    FAVORITES_MAX = 500
+
+    async def set_favorite(self, uri: str, on: bool) -> List[Dict[str, Any]]:
+        """Titel als Favorit merken oder entfernen; neue Favoriten stehen oben."""
+        if not isinstance(uri, str) or not uri:
+            raise ValueError("Kein Titel angegeben")
+        entry = None
+        if on:
+            info = await self.mpd.dict("lsinfo", uri)
+            if "file" not in info:
+                raise ValueError("Titel nicht gefunden")
+            song = self._song(info)
+            entry = {k: song[k] for k in ("uri", "name", "artist", "album", "duration")}
+        favs = [f for f in self.settings.get("track_favorites") if f["uri"] != uri]
+        if entry:
+            favs = [entry] + favs[: self.FAVORITES_MAX - 1]
+        self.settings.update({"track_favorites": favs})
+        return favs
 
     async def search(self, q: str) -> List[Dict[str, Any]]:
         found = to_objects(await self.mpd.run("search", "any", q), starts=("file",))
@@ -1699,9 +1801,12 @@ class Core:
         changed = set(self.settings.update(changes))
         # Die dynamische Angleichung kennt MPD nur als Startoption -> Neustart wie beim Geraetewechsel
         restart_mpd = "loudness" in changed and "dynamic" in (old_loudness, self.settings.get("loudness"))
-        if changed & {"output", "bitperfect", "speakers"} or restart_mpd:
-            await self._reapply_output(None if changed & {"output", "bitperfect", "speakers"} else ("mpd",))
+        devices = {"output", "bitperfect", "speakers", "eq_enabled"}
+        if changed & devices or restart_mpd:
+            await self._reapply_output(None if changed & devices else ("mpd",))
         else:
+            if "eq_bands" in changed and audio.eq_active():
+                await asyncio.to_thread(audio.set_eq, self.settings.get("eq_bands"))
             if changed & {"device_name", "airplay_enabled"}:
                 await self.apply_audio(("airplay",))
             if changed & {"device_name", "spotify_enabled", "spotify_bitrate"}:

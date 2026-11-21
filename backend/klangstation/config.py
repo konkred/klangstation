@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
-VERSION = "0.2.11"
+VERSION = "0.2.12"
 
 _ROOT = Path(__file__).resolve().parents[2]
 
@@ -68,6 +68,10 @@ DEFAULTS: Dict[str, Any] = {
     "night_from": "22:00",
     "night_to": "07:00",         # gleiche Zeiten = immer begrenzen
     "night_limit": 40,           # hoechste Lautstaerke in %
+    "volume_start": None,        # Lautstaerke von MPD nach dem Start in % (None = 100)
+    "volume_max": 100,           # Obergrenze fuer alle regelbaren Quellen, auch fuer den Wecker
+    "eq_enabled": False,         # Equalizer (alsaequal), nicht bei Bit-perfekt
+    "eq_bands": [0] * 10,        # zehn Baender in dB, 31 Hz bis 16 kHz
     "update_check": True,        # einmal am Tag nachsehen, ob es eine neuere Version gibt
     "airplay_enabled": True,
     "spotify_enabled": True,
@@ -80,6 +84,7 @@ DEFAULTS: Dict[str, Any] = {
     "musicbrainz_contact": "",   # E-Mail oder URL fuer den User-Agent
     "radio_country": "DE",
     "radio_favorites": [],
+    "track_favorites": [],       # Lieblingstitel der Bibliothek: {uri, name, artist, album, duration}
     "auth_hash": "",             # leer = kein Zugangsschutz
     "auth_scope": "settings",    # "all" oder "settings"
     "shares": [],                # Netzwerkfreigaben (SMB/NFS)
@@ -113,6 +118,11 @@ _VALIDATORS = {
     "night_from": lambda v: isinstance(v, str) and bool(_HHMM.fullmatch(v)),
     "night_to": lambda v: isinstance(v, str) and bool(_HHMM.fullmatch(v)),
     "night_limit": lambda v: v in range(10, 100, 10),
+    "volume_start": lambda v: v is None or (isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 100),
+    "volume_max": lambda v: v in range(10, 101, 10),
+    "eq_enabled": lambda v: isinstance(v, bool),
+    "eq_bands": lambda v: (isinstance(v, list) and len(v) == 10
+                           and all(isinstance(b, int) and not isinstance(b, bool) and -12 <= b <= 12 for b in v)),
     "update_check": lambda v: isinstance(v, bool),
     "airplay_enabled": lambda v: isinstance(v, bool),
     "spotify_enabled": lambda v: isinstance(v, bool),
@@ -125,6 +135,8 @@ _VALIDATORS = {
     "musicbrainz_contact": lambda v: isinstance(v, str) and len(v) <= 200,
     "radio_country": lambda v: isinstance(v, str) and len(v) <= 2,
     "radio_favorites": lambda v: isinstance(v, list) and len(v) <= 500,
+    "track_favorites": lambda v: (isinstance(v, list) and len(v) <= 500
+                                  and all(isinstance(f, dict) and isinstance(f.get("uri"), str) for f in v)),
     "auth_hash": lambda v: isinstance(v, str) and len(v) <= 300,
     "auth_scope": lambda v: v in ("all", "settings"),
     "shares": lambda v: isinstance(v, list) and len(v) <= 20 and all(isinstance(s, dict) for s in v),

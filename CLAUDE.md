@@ -301,6 +301,14 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 
 ### Noch offen
 
+* **0.2.11 und 0.2.12 noch auf keinem Gerät** (nur lokal mit TestClient und Probe-Server mit Beispieldaten, 21.11.):
+  * Bibliothek mit echtem MPD: Filterausdruck `(albumartist == '…')` mit `'` und `\` im Namen, `list albumartist` fällt auf
+    Artist zurück?, „Neu“ per `find "(modified-since '1')" sort -Last-Modified` (Dauer bei großer Bibliothek), „Zuletzt“.
+  * Equalizer: `libasound2-plugin-equal` + `caps` installieren, `amixer -D ks_equal contents` (zehn Regler, numid 1–10 =
+    31 Hz…16 kHz, Wertebereich 0–100 = −48…+24 dB angenommen), stumm per `snd-aloop` mit Sinus je Band messen; mit 5.1/7.1
+    davor; vc4hdmi am Pi (`default:CARD=…` als slave); Format S16 im Filter.
+  * Neustart/Herunterfahren über `ks-netadmin` (nur am Alma ohne Rückfrage, sonst Nutzer fragen); Startlautstärke und
+    Obergrenze (Wecker-Rampe endet an der Obergrenze, UPnP/Bluetooth werden zurückgeholt).
 * **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).

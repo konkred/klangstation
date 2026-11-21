@@ -31,16 +31,18 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 | CD rippen | `cdparanoia` (Fehlerkorrektur) + `flac`, mit Tags und Cover, in den internen Speicher oder auf USB |
 | Metadaten & Cover | MusicBrainz + Cover Art Archive, gedrosselt und dauerhaft gecacht |
 | Ausgabegerät | alle ALSA-Geräte (USB-DAC, I²S-HAT, Klinke, HDMI/DisplayPort, PC-Lautsprecher), automatische Wahl (wechselt beim An- und Abstecken), wahlweise bit-perfekt; 5.1/7.1-Karten: Stereo auf alle Lautsprecher verteilen |
+| Bibliothek | Alben, Interpreten, Genres, neu hinzugefügt, zuletzt gespielt, Ordner, Suche; Lieblingstitel per Stern |
 | Wiedergabelisten | speichern, laden, ab Eintrag abspielen, umbenennen, Einträge entfernen; auch Radiosender |
 | HDMI-CEC | TV beim Abspielen einschalten und Eingang wählen, TV-Fernbedienung, Pause bei TV aus, optional Standby |
 | „Läuft gerade“ | Vollbild unter `/tv` am HDMI-Ausgang oder in jedem Browser; ohne Wiedergabe Uhr, Wecker, Wetter ([Open-Meteo](https://open-meteo.com)) und zuletzt gehörte Cover; auf Laptops der Akkustand |
 | Schlummer-Timer & Wecker | Timer mit Ausblenden; Wecker mit Radio, Wiedergabeliste oder Bibliothek, wird langsam lauter |
 | Liedtexte | auf „Läuft gerade“ zeilengenau mitlaufend, aus einer `.lrc`-Datei neben dem Titel oder von [LRCLIB](https://lrclib.net) (frei, ohne Key); nicht bei Webradio |
-| Lautstärke & Übergänge | Angleichen nach ReplayGain (Album/Titel automatisch) oder dynamisch, Überblenden 2–10 s; nicht bei bit-perfekt |
+| Lautstärke & Übergänge | Angleichen nach ReplayGain (Album/Titel automatisch) oder dynamisch, Überblenden 2–10 s; nicht bei bit-perfekt; Startlautstärke und Obergrenze |
+| Equalizer | zehn Bänder mit Voreinstellungen für alle Quellen (`alsaequal`, nur Debian und Raspberry Pi OS); nicht bei bit-perfekt |
 | Handy | als App auf den Homescreen legen; auf Wunsch Titel, Cover und Tasten im Sperrbildschirm (Bibliothek, Radio, CD) |
 | Erscheinungsbild | sieben zur Wahl, von Media Player der 2000er bis Windows XP (siehe [Erscheinungsbild](#erscheinungsbild)) |
 | Netzwerk | Adapter anzeigen, DHCP oder feste Adresse (mit Rücknahme), WLAN auch per USB-Stick, SSH ein/aus, Port der Weboberfläche |
-| Info | Board, Prozessor, Speicher, Laufwerk, Akku und Betriebssystem |
+| Info | Board, Prozessor, Speicher, Laufwerk, Akku und Betriebssystem; Neustart und Herunterfahren |
 | Zugangsschutz | optionales Passwort für die Optionen oder die ganze Oberfläche |
 | Musik hochladen | Dateien oder ganze Ordner per Browser in den internen Speicher kopieren (`Lokal/Hochgeladen`), auch vom Handy |
 | Nachtmodus | Lautstärke im Zeitfenster oder rund um die Uhr begrenzen (nicht bei Spotify und AirPlay, der Wecker ist ausgenommen) |
@@ -273,8 +275,18 @@ Lautsprecher dasselbe wie vorne, Center und Subwoofer bekommen die Mitte aus lin
 Raumklang, sondern Musik im ganzen Raum, für alle Quellen. Bei *Bit-perfekt* ist das aus.
 
 **Lautstärke:** Die Regler der Soundkarte stehen immer auf 100 %, geregelt wird nur in den Quellen. Der Regler im Player
-steht nach jedem Start von Klangstation auf 100 %, Spotify beginnt ebenfalls mit 100 %, und AirPlay bekommt 100 % als
-Vorschlag (das Handy kann seinen eigenen Wert mitbringen). Die Lautstärke des Raums bestimmt also der Verstärker.
+steht nach jedem Start von Klangstation auf 100 % (oder auf der *Startlautstärke*), Spotify beginnt mit 100 %, und AirPlay
+bekommt 100 % als Vorschlag (das Handy kann seinen eigenen Wert mitbringen). Die Lautstärke des Raums bestimmt also der
+Verstärker. Die *Obergrenze* gilt immer für Bibliothek, Radio, CD, UPnP und Bluetooth, auch für den Wecker; höher
+lässt sich der Regler nicht stellen, und was ein Handy über UPnP oder Bluetooth lauter stellt, holt Klangstation nach
+wenigen Sekunden zurück.
+
+**Equalizer:** Zehn Bänder von 31 Hz bis 16 kHz (±12 dB) mit Voreinstellungen wie *Mehr Bass* oder *Sprache*. Er gilt für
+alle Quellen, auch AirPlay, Spotify und Bluetooth, und sitzt vor dem Hochmischen auf 5.1/7.1. Die Regler wirken sofort;
+Ein- und Ausschalten startet die Wiedergabe kurz neu, wie ein Ausgabewechsel. Grundlage ist das ALSA-Plugin `alsaequal`
+mit den Filtern aus `caps` (Pakete `libasound2-plugin-equal` und `caps`, bringt der Installer mit). Unter AlmaLinux gibt
+es dafür keine Pakete, dort bleibt der Equalizer aus. Bei *Bit-perfekt* ist er aus. Anheben kann bei lauter Musik
+verzerren, dann lieber die übrigen Bänder absenken.
 
 **Nachtmodus:** Unter *Optionen › Ausgabe* lässt sich die Lautstärke für ein Zeitfenster begrenzen, gleiche Zeiten bei *Von* und
 *Bis* begrenzen rund um die Uhr. Das gilt für Bibliothek, Radio, CD, UPnP und Bluetooth; Spotify und AirPlay regelst du am Handy.
@@ -495,7 +507,7 @@ Passwort übergibt er per Datei an `mount.cifs`, die nur während des Einhängen
 Lesen geht ohne Rechte (`nmcli`, `ip`, `ss`, `systemctl`). Ändern darf nur der root-Hilfsdienst `ks-netadmin`
 (`ks-netadmin.socket`, nur für die Gruppe `klangstation`). Er kann ausschließlich: WLAN verbinden, trennen und
 vergessen, WLAN ein-/ausschalten, IPv4 einer LAN-/WLAN-Verbindung auf DHCP oder eine feste Adresse stellen,
-den SSH-Server ein-/ausschalten und den Port der Weboberfläche ändern. WLAN-Passwörter schreibt er direkt in ein
+den SSH-Server ein-/ausschalten, den Port der Weboberfläche ändern und das Gerät neu starten oder herunterfahren. WLAN-Passwörter schreibt er direkt in ein
 NetworkManager-Profil (`/etc/NetworkManager/system-connections`, nur root), nie auf die Kommandozeile. Vor einer
 IP-Änderung legt er einen Zeitgeber `ks-net-rollback.timer` an (2 Minuten), der die alte Einstellung
 wiederherstellt, falls die Oberfläche die neue nicht bestätigt.

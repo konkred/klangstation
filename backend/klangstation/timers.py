@@ -303,7 +303,8 @@ class Timers:
         log.info("Wecker %s%s: %s, Lautstaerke %s", alarm["time"], " (Test)" if test else "", label, alarm["volume"])
         if self._ramp:
             self._ramp.cancel()
-        start_vol = max(1, round(alarm["volume"] * 0.15))
+        peak = min(alarm["volume"], self.core.settings.get("volume_max"))  # Obergrenze gilt auch beim Wecken
+        start_vol = max(1, round(peak * 0.15))
         try:
             await self.core.take_over("mpd")
             await self._setvol(start_vol)
@@ -317,13 +318,13 @@ class Timers:
             await self.set_sleep(alarm["stop_after"])
         self._ramp = asyncio.current_task()
         try:
-            await self._ramp_up(start_vol, alarm["volume"])
+            await self._ramp_up(start_vol, peak)
         finally:
             self._ramp = None
 
     async def _setvol(self, volume: int) -> bool:
         try:
-            await self.core.mpd.run("setvol", volume)
+            await self.core.mpd.run("setvol", min(volume, self.core.settings.get("volume_max")))
             return True
         except MPDError:
             return False  # z. B. Bit-perfekt ohne Mixer: Lautstaerke nur am Verstaerker

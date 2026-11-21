@@ -165,7 +165,30 @@ async def library_browse(request):
 
 
 async def library_albums(request):
+    q = request.query_params
+    view = q.get("view", "")
+    if view == "added":
+        return ok(await core.recent_albums())
+    if view == "played":
+        return ok(core.played)
+    for tag in core.LIBRARY_TAGS:
+        if tag in q:
+            return ok(await core.albums(tag, q[tag]))
     return ok(await core.albums())
+
+
+async def library_favorites(request):
+    if request.method == "POST":
+        data = await body(request)
+        return ok(await core.set_favorite(data.get("uri"), bool(data.get("on", True))))
+    return ok(core.settings.get("track_favorites"))
+
+
+async def library_names(request):
+    tag = request.query_params.get("tag", "")
+    if tag not in core.LIBRARY_TAGS:
+        raise ValueError("Unbekannte Liste")
+    return ok(await core.names(tag))
 
 
 async def library_album(request):
@@ -402,6 +425,7 @@ async def settings_endpoint(request):
         await core.update_settings(await body(request))
     return ok({"settings": core.settings.public(), "outputs": audio.list_outputs(),
                "active_output": core.output, "surround": core.surround, "services": core.services(), "cec": core.cec.public(),
+               "eq": {"available": audio.eq_available(), "active": audio.eq_active(), "bands": audio.EQ_BANDS},
                "shares": core.shares_public(), "version": VERSION,
                "system": await asyncio.to_thread(sysinfo.info)})
 
@@ -595,6 +619,18 @@ async def network_get(request):
     return ok(await core.net.info())
 
 
+async def system_power(request):
+    mode = (await body(request)).get("mode")
+    if mode not in ("reboot", "poweroff"):
+        raise ValueError("Unbekannte Aktion")
+    log.warning("%s auf Wunsch aus der Oberflaeche", "Neustart" if mode == "reboot" else "Herunterfahren")
+    await core.prepare_power_off()
+    res = await core.net.helper({"action": "power", "mode": mode}, timeout=15)
+    if not res.get("ok"):
+        raise ValueError(res.get("error") or "Fehlgeschlagen")
+    return ok()
+
+
 async def network_action(request):
     res = await core.net.action(request.path_params["action"], await body(request))
     core.push()
@@ -681,6 +717,9 @@ routes = [
     Route("/api/queue/clear", queue_clear, methods=["POST"]),
     Route("/api/library/browse", library_browse),
     Route("/api/library/albums", library_albums),
+    Route("/api/library/names", library_names),
+    Route("/api/system/power", system_power, methods=["POST"]),
+    Route("/api/library/favorites", library_favorites, methods=["GET", "POST"]),
     Route("/api/library/album", library_album),
     Route("/api/library/search", library_search),
     Route("/api/library/update", library_update, methods=["POST"]),

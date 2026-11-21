@@ -222,6 +222,9 @@ install_debian() {
     apt-get update
     apt-get install -y --no-install-recommends python3 python3-venv mpd avahi-daemon avahi-utils ca-certificates curl util-linux \
         v4l-utils cifs-utils nfs-common cdparanoia flac alsa-utils ntfs-3g
+    # Equalizer (ALSA-Plugin mit den LADSPA-Filtern aus caps); ohne die Pakete bleibt er in der Oberflaeche aus
+    apt-get install -y --no-install-recommends libasound2-plugin-equal caps \
+        || warn "Equalizer-Pakete nicht installiert - der Equalizer bleibt aus"
     if [ "$TV_HEADLESS" = 1 ]; then
         apt-get install -y --no-install-recommends cage chromium fonts-dejavu-core
     fi

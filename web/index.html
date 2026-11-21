@@ -119,6 +119,11 @@
         <div class="toolbar">
           <div class="seg" id="lib-tabs">
             <button data-tab="albums" class="on">Alben</button>
+            <button data-tab="artists">Interpreten</button>
+            <button data-tab="genres">Genres</button>
+            <button data-tab="added" title="Zuletzt hinzugefügte Alben">Neu</button>
+            <button data-tab="played" title="Zuletzt gespielte Alben">Zuletzt</button>
+            <button data-tab="favorites" title="Lieblingstitel">Favoriten</button>
             <button data-tab="folders" title="Ordner und Laufwerke">Ordner</button>
             <button data-tab="playlists">Wiedergabelisten</button>
           </div>
@@ -211,6 +216,25 @@
                 <select name="crossfade"><option value="0">Aus (lückenlos)</option><option value="2">2 Sekunden</option><option value="5">5 Sekunden</option><option value="10">10 Sekunden</option></select>
               </label>
               <p class="hint">Bei „Bit-perfekt“ ist beides aus.</p>
+              <h4 class="subhead">Lautstärke</h4>
+              <div class="night-row">
+                <label class="field">Nach dem Start
+                  <select name="volume_start"><option value="">100 %</option><option value="10">10 %</option><option value="20">20 %</option><option value="30">30 %</option><option value="40">40 %</option><option value="50">50 %</option><option value="60">60 %</option><option value="70">70 %</option><option value="80">80 %</option><option value="90">90 %</option></select>
+                </label>
+                <label class="field">Obergrenze
+                  <select name="volume_max"><option value="100">keine</option><option value="10">10 %</option><option value="20">20 %</option><option value="30">30 %</option><option value="40">40 %</option><option value="50">50 %</option><option value="60">60 %</option><option value="70">70 %</option><option value="80">80 %</option><option value="90">90 %</option></select>
+                </label>
+              </div>
+              <p class="hint">Mit dieser Lautstärke beginnen Bibliothek, Radio und CD nach dem Einschalten oder einem Neustart. Die Obergrenze gilt immer für Bibliothek, Radio, CD, UPnP und Bluetooth, auch für den Wecker; Spotify und AirPlay regelst du am Handy.</p>
+              <h4 class="subhead">Equalizer</h4>
+              <label class="check"><input type="checkbox" name="eq_enabled"> Klang mit dem Equalizer anpassen</label>
+              <div id="eq-box">
+                <label class="field">Voreinstellung
+                  <select id="eq-preset"><option value="">Eigene</option><option value="flat">Neutral</option><option value="bass">Mehr Bass</option><option value="treble">Mehr Höhen</option><option value="loud">Leise hören (Bass und Höhen)</option><option value="voice">Sprache</option><option value="lessbass">Weniger Bass</option></select>
+                </label>
+                <div class="eq" id="eq-bands"></div>
+              </div>
+              <p class="hint" id="eq-note"></p>
               <h4 class="subhead">Nachtmodus</h4>
               <label class="check"><input type="checkbox" name="night_enabled"> Lautstärke in dieser Zeit begrenzen</label>
               <div class="night-row">
@@ -355,8 +379,9 @@
               <details>
                 <summary>Bibliothek</summary>
                 <ul>
-                  <li><b>Alben</b> zeigt alles nach Cover, <b>Ordner</b> die Laufwerke und Freigaben so, wie sie gespeichert sind, <b>Wiedergabelisten</b> deine gespeicherten Listen.</li>
-                  <li>Neben jedem Titel: ▶ spielt ab hier, <b>+</b> hängt an die laufende Liste an, das Listen-Symbol legt ihn in eine gespeicherte Wiedergabeliste.</li>
+                  <li><b>Alben</b> zeigt alles nach Cover, <b>Interpreten</b> und <b>Genres</b> die Alben je Name, <b>Neu</b> die zuletzt hinzugefügten (nach Datum der Dateien), <b>Zuletzt</b> die zuletzt gespielten Alben.</li>
+                  <li><b>Ordner</b> zeigt Laufwerke und Freigaben so, wie sie gespeichert sind, <b>Wiedergabelisten</b> deine gespeicherten Listen.</li>
+                  <li>Neben jedem Titel: der Stern merkt ihn unter <b>Favoriten</b>, ▶ spielt ab hier, <b>+</b> hängt an die laufende Liste an, das Listen-Symbol legt ihn in eine gespeicherte Wiedergabeliste.</li>
                   <li>Die Suche findet Titel, Interpreten und Alben.</li>
                   <li>USB-Sticks und -Platten werden beim Einstecken automatisch eingelesen (nur lesend). „Aktualisieren“ liest alles neu ein, falls etwas fehlt.</li>
                 </ul>
@@ -410,6 +435,8 @@
                 <summary>Klang: Ausgabe, Lautstärke angleichen, Überblenden</summary>
                 <ul>
                   <li><b>Ausgabe</b>: Hinter HDMI-Ausgängen steht, ob dort ein Gerät hängt. Ohne Auswahl nimmt Klangstation zuerst einen USB-DAC, dann HDMI mit Fernseher, dann die Klinke. Beim Wechsel spielt die Musik nach wenigen Sekunden weiter.</li>
+                  <li><b>Lautstärke</b>: mit welcher Lautstärke der Player nach dem Start beginnt und wie laut es höchstens werden darf, auch beim Wecker. <b>Equalizer</b>: zehn Bänder für alle Quellen, die Regler wirken sofort.</li>
+                  <li><b>Info</b>: Hardware und System, dazu Neu starten und Herunterfahren.</li>
                   <li><b>Bit-perfekt</b> gibt die Dateien unverändert an den DAC weiter; die Lautstärke regelst du dann am Verstärker.</li>
                   <li><b>Lautsprecher 5.1/7.1</b>: erscheint nur bei Geräten mit so vielen Kanälen (z. B. USB-Soundkarte mit 7.1). Dann spielt Stereo-Musik auf allen Lautsprechern, Center und Subwoofer bekommen die Mitte. Spielt ein Lautsprecher an der falschen Stelle, die Kabel an den Buchsen tauschen.</li>
                   <li><b>Lautstärke angleichen</b>: „ReplayGain“ nutzt in den Dateien gespeicherte Werte und verändert den Klang nicht; „Dynamisch“ regelt laufend nach, auch ohne diese Werte.</li>
@@ -466,6 +493,12 @@
             <fieldset data-pane="about" hidden>
               <legend>Hardware und System</legend>
               <dl class="sys-dl" id="sys-info"></dl>
+            </fieldset>
+            <fieldset data-pane="about" hidden>
+              <legend>Gerät</legend>
+              <p class="hint">Laufende Musik wird vorher angehalten. Nach dem Herunterfahren startet das Gerät erst wieder, wenn du es aus- und einschaltest (Strom ziehen oder Netzschalter).</p>
+              <button type="button" class="btn" id="power-reboot">Neu starten</button>
+              <button type="button" class="btn" id="power-off">Herunterfahren</button>
             </fieldset>
             <fieldset data-pane="about" hidden>
               <legend>Über Klangstation</legend>

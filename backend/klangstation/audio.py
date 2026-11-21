@@ -7,6 +7,8 @@ einem Neustart stabil.
 """
 from __future__ import annotations
 
+import glob
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -30,6 +32,36 @@ _UPMIX = {"FL": (1, 0), "FR": (0, 1), "RL": (1, 0), "RR": (0, 1), "SL": (1, 0), 
           "FC": (0.5, 0.5), "LFE": (0.5, 0.5)}
 _channels: Dict[str, int] = {}
 _surround: Dict[str, Any] = {}
+
+# Equalizer: alsaequal (Paket libasound2-plugin-equal mit den LADSPA-Filtern aus caps) vor dem Ausgang bzw. ks_surround.
+# Zehn Baender, Regler 0..100 entsprechen -48..+24 dB im Filter Eq10 von caps.
+EQ_PCM = "ks_eq"
+EQ_CTL = "ks_equal"
+EQ_BANDS = ("31 Hz", "63 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz")
+_EQ_MIN_DB, _EQ_MAX_DB = -48.0, 24.0
+
+
+def eq_available() -> bool:
+    plugin = (glob.glob("/usr/lib/*/alsa-lib/libasound_module_pcm_equal.so")
+              + glob.glob("/usr/lib*/alsa-lib/libasound_module_pcm_equal.so"))
+    return bool(plugin) and any(os.path.exists(p) for p in ("/usr/lib/ladspa/caps.so", "/usr/lib64/ladspa/caps.so"))
+
+
+def _eq_value(db: float) -> int:
+    return round((db - _EQ_MIN_DB) / (_EQ_MAX_DB - _EQ_MIN_DB) * 100)
+
+
+def set_eq(bands: List[int]) -> bool:
+    """Setzt die Baender (dB) zur Laufzeit; die Wiedergabe liest die Steuerdatei laufend mit."""
+    if not _surround.get("eq"):
+        return False
+    script = "".join(f"cset numid={i + 1} {_eq_value(db)}\n" for i, db in enumerate(bands[:len(EQ_BANDS)]))
+    try:
+        res = subprocess.run(["amixer", "-q", "-D", EQ_CTL, "-s"], input=script, capture_output=True, text=True,
+                             timeout=10, env=dict(os.environ, LC_ALL="C"))
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return res.returncode == 0
 
 
 def _classify(card_id: str, card_name: str, pcm_name: str, is_usb: bool) -> str:
@@ -146,8 +178,8 @@ def max_channels(device_id: str) -> Optional[int]:
     return _channels[device_id]
 
 
-def configure_surround(device_id: str, speakers: int, bitperfect: bool) -> int:
-    """Legt ks_surround fuer das Geraet an (oder entfernt es). Gibt die aktive Kanalzahl zurueck (2 = Stereo)."""
+def configure_surround(device_id: str, speakers: int, bitperfect: bool, eq: bool = False) -> int:
+    """Legt ks_surround und ks_eq fuer das Geraet an (oder entfernt sie). Gibt die aktive Kanalzahl zurueck (2 = Stereo)."""
     _surround.clear()
     rc = Path.home() / ".asoundrc"
     try:
@@ -162,19 +194,21 @@ def configure_surround(device_id: str, speakers: int, bitperfect: bool) -> int:
         # unbekannt (gerade belegt): der Einstellung trauen, die Oberflaeche bietet sie nur bei genug Kanaelen an
         if avail is not None and avail < n:
             n = 2
-    if n == 2:
+    eq = eq and ours and not bitperfect and device_id.startswith("hw:") and eq_available()
+    if n == 2 and not eq:
         if ours and rc.exists():
             rc.unlink()
         return 2
-    order = (_ORDER_USB if _is_usb(device_id) else _ORDER_ALSA)[:n]
-    table = []
-    for dst, name in enumerate(order):
-        for src, gain in enumerate(_UPMIX[name]):
-            if gain:
-                table.append(f"    ttable.{src}.{dst} {gain:g}")
-    label = {6: "5.1", 8: "7.1"}[n]
-    rc.write_text(f"""{_RC_MARK} (Lautsprecher {label}) - Aenderungen werden ueberschrieben
-pcm.{SURROUND_PCM} {{
+    parts, labels = [], []
+    if n > 2:
+        order = (_ORDER_USB if _is_usb(device_id) else _ORDER_ALSA)[:n]
+        table = []
+        for dst, name in enumerate(order):
+            for src, gain in enumerate(_UPMIX[name]):
+                if gain:
+                    table.append(f"    ttable.{src}.{dst} {gain:g}")
+        labels.append("Lautsprecher " + {6: "5.1", 8: "7.1"}[n])
+        parts.append(f"""pcm.{SURROUND_PCM} {{
     type plug
     slave {{
         pcm "{device_id}"
@@ -183,9 +217,34 @@ pcm.{SURROUND_PCM} {{
     # Kanaele im Geraet: {" ".join(order)}
 {chr(10).join(table)}
 }}
-""", encoding="utf-8")
-    _surround.update({"device": device_id, "channels": n})
+""")
+    if eq:
+        # Equalizer vor dem Hochmischen (zwei Kanaele); plug davor wandelt das Format fuer den Filter
+        base = SURROUND_PCM if n > 2 else alsa_device(device_id, False)
+        controls = _q(str(Path.home() / ".klangstation-eq.bin"))
+        labels.append("Equalizer")
+        parts.append(f"""ctl.{EQ_CTL} {{
+    type equal
+    controls "{controls}"
+}}
+pcm.{EQ_PCM}_raw {{
+    type equal
+    slave.pcm "{base}"
+    controls "{controls}"
+}}
+pcm.{EQ_PCM} {{
+    type plug
+    slave.pcm "{EQ_PCM}_raw"
+}}
+""")
+    rc.write_text(f"{_RC_MARK} ({', '.join(labels)}) - Aenderungen werden ueberschrieben\n" + "".join(parts),
+                  encoding="utf-8")
+    _surround.update({"device": device_id, "channels": n, "eq": eq})
     return n
+
+
+def eq_active() -> bool:
+    return bool(_surround.get("eq"))
 
 
 def _is_usb(device_id: str) -> bool:
@@ -303,11 +362,13 @@ def resolve(selected: Optional[str]) -> Dict[str, str]:
 
 def alsa_device(device_id: str, bitperfect: bool) -> str:
     """plughw wandelt Formate/Raten um, hw reicht das Signal unveraendert durch."""
+    if not bitperfect and _surround.get("eq") and _surround.get("device") == device_id:
+        return EQ_PCM
     if device_id.startswith("hw:CARD=vc4hdmi"):
         # Raspberry Pi (KMS): HDMI braucht IEC958-Rahmen, die nur das ALSA-"default" der Karte liefert
         return "default:CARD=" + device_id.split("CARD=", 1)[1].split(",", 1)[0]
     if device_id.startswith("hw:") and not bitperfect:
-        if _surround.get("device") == device_id:
+        if _surround.get("device") == device_id and _surround.get("channels", 2) > 2:
             return SURROUND_PCM
         return "plug" + device_id
     return device_id
@@ -324,7 +385,7 @@ def mpd_config(*, data_dir: Path, media_root: Path, port: int, device: str, bitp
         output_opts = '    mixer_type     "none"\n    auto_resample  "no"\n    auto_channels  "no"\n    auto_format    "no"\n'
     else:
         output_opts = '    mixer_type     "software"\n'
-        if alsa == SURROUND_PCM:
+        if alsa in (SURROUND_PCM, EQ_PCM):
             # Mehrkanal-Dateien erst zu Stereo zusammenmischen, sonst fehlen ihre Zusatzkanaele in der Verteilung
             output_opts += '    format         "*:*:2"\n'
     # Dynamische Angleichung gibt es nur als Startoption; ReplayGain und Ueberblenden setzt core zur Laufzeit

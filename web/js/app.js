@@ -357,33 +357,49 @@ function songTable(songs, { showAlbum = true } = {}) {
   if (!songs.length) return '<div class="empty">Keine Titel gefunden.</div>';
   return `<table class="grid"><thead><tr>
       <th class="num">Nr.</th><th>Titel</th><th class="hide-m">Interpret</th>${showAlbum ? '<th class="hide-m">Album</th>' : ""}
-      <th class="dur">Länge</th><th class="act"></th></tr></thead><tbody>
+      <th class="dur">Länge</th><th class="act act4"></th></tr></thead><tbody>
     ${songs.map((s, i) => `<tr data-uri="${esc(s.uri)}">
       <td class="num">${esc(String(s.track || "").split("/")[0] || i + 1)}</td>
       <td title="${esc(s.name)}">${esc(s.name)}</td>
       <td class="hide-m">${esc(s.artist)}</td>${showAlbum ? `<td class="hide-m">${esc(s.album)}</td>` : ""}
       <td class="dur">${s.duration ? fmt(s.duration) : ""}</td>
-      <td class="act act3">${rowButtons()}</td>
+      <td class="act act4">${rowButtons(s.uri)}</td>
     </tr>`).join("")}</tbody></table>`;
 }
 
-const rowButtons = () =>
+const rowButtons = (uri) =>
+  `<button class="rowbtn${favUris.has(uri) ? " fav" : ""}" data-act="fav" title="Favorit">${ICON("star")}</button>` +
   `<button class="rowbtn" data-act="play" title="Abspielen">${ICON("play")}</button>` +
   `<button class="rowbtn" data-act="add" title="An die aktuelle Wiedergabeliste anhängen">${ICON("plus")}</button>` +
   `<button class="rowbtn" data-act="pl" title="Zu einer gespeicherten Wiedergabeliste …">${ICON("list")}</button>`;
+
+/* Lieblingstitel: die Sterne in allen Titellisten lesen aus dieser Menge */
+let favUris = new Set();
+const loadFavorites = () => api("/api/library/favorites").then((f) => { favUris = new Set(f.map((x) => x.uri)); return f; }).catch(() => []);
+loadFavorites();
+
+async function toggleFavorite(btn, uri) {
+  const on = !favUris.has(uri);
+  const favs = await post("/api/library/favorites", { uri, on });
+  favUris = new Set(favs.map((x) => x.uri));
+  btn.classList.toggle("fav", on);
+  toast(on ? "Zu den Favoriten hinzugefügt" : "Aus den Favoriten entfernt");
+  if (!on && lib.tab === "favorites" && currentView === "library" && lib.q.length < 2) renderLibrary();
+}
 
 function bindSongTable(root, allUris) {
   root.onclick = (ev) => {
     const btn = ev.target.closest("[data-act]");
     const tr = ev.target.closest("tr[data-uri]");
     if (!btn || !tr) return;
+    if (btn.dataset.act === "fav") { toggleFavorite(btn, tr.dataset.uri); return; }
     if (btn.dataset.act === "add") { post("/api/queue/add", { uris: [tr.dataset.uri] }).then(() => toast("An die aktuelle Wiedergabeliste angehängt")); return; }
     if (btn.dataset.act === "pl") { pickPlaylist([tr.dataset.uri]); return; }
     playFrom(allUris, tr.dataset.uri);
   };
   root.ondblclick = (ev) => {
     const tr = ev.target.closest("tr[data-uri]");
-    if (tr) playFrom(allUris, tr.dataset.uri);
+    if (tr && !ev.target.closest("[data-act]")) playFrom(allUris, tr.dataset.uri);
   };
 }
 
@@ -394,15 +410,23 @@ async function playFrom(uris, start) {
 }
 
 /* =========================================================== Bibliothek */
-const lib = { tab: "albums", path: "", album: null, playlist: null, q: "", albums: null };
+// name: gewählter Interpret bzw. gewähltes Genre (null = Liste), cache: Antworten je URL bis zum nächsten Einlesen
+const lib = { tab: "albums", path: "", name: null, album: null, playlist: null, q: "", cache: {} };
 
-segTabs($("#lib-tabs"), (tab) => { lib.tab = tab; lib.album = null; lib.playlist = null; lib.q = ""; $("#lib-search").value = ""; renderLibrary(); });
+segTabs($("#lib-tabs"), (tab) => { lib.tab = tab; lib.name = null; lib.album = null; lib.playlist = null; lib.q = ""; $("#lib-search").value = ""; renderLibrary(); });
 $("#lib-search").addEventListener("input", debounce((ev) => { lib.q = ev.target.value.trim(); renderLibrary(); }, 350));
 $("#lib-update").onclick = () => post("/api/library/update").then(() => toast("Bibliothek wird neu eingelesen…"));
 
 function onLibraryChanged() {
-  lib.albums = null;
+  lib.cache = {};
   if (currentView === "library") renderLibrary();
+}
+
+async function libGet(url, { cache = true } = {}) {
+  if (cache && lib.cache[url]) return lib.cache[url];
+  const data = await api(url);
+  if (cache) lib.cache[url] = data;
+  return data;
 }
 
 async function renderLibrary() {
@@ -413,12 +437,14 @@ async function renderLibrary() {
       const songs = await api("/api/library/search?q=" + enc(lib.q));
       body.innerHTML = songTable(songs);
       bindSongTable(body, songs.map((s) => s.uri));
-    } else if (lib.tab === "albums") {
-      await renderAlbums(body, crumbs);
     } else if (lib.tab === "playlists") {
       await renderPlaylists(body, crumbs);
-    } else {
+    } else if (lib.tab === "folders") {
       await renderFolder(body, crumbs);
+    } else if (lib.tab === "favorites") {
+      await renderFavorites(body, crumbs);
+    } else {
+      await renderAlbums(body, crumbs);
     }
   } catch (e) {
     body.innerHTML = '<div class="empty">Die Bibliothek ist gerade nicht erreichbar.</div>';
@@ -427,14 +453,34 @@ async function renderLibrary() {
 
 const artUrl = (album, artist) => "/api/art?album=" + enc(album) + "&artist=" + enc(artist);
 
+// Brotkrumen: [[Text, Klick oder null], …]
+function setCrumbs(crumbs, parts) {
+  crumbs.innerHTML = parts.map(([label, fn], i) => fn ? `<a data-c="${i}">${esc(label)}</a>` : esc(label)).join(" › ");
+  $$("a[data-c]", crumbs).forEach((a) => { a.onclick = parts[+a.dataset.c][1]; });
+}
+
+const LIB_VIEWS = {
+  albums: { title: "Alle Alben", url: "/api/library/albums" },
+  artists: { title: "Interpreten", tag: "artist", empty: "(ohne Interpret)" },
+  genres: { title: "Genres", tag: "genre", empty: "(ohne Genre)" },
+  added: { title: "Neu hinzugefügt", url: "/api/library/albums?view=added",
+    hint: "Die neuesten Alben zuerst, nach dem Datum der Dateien." },
+  played: { title: "Zuletzt gespielt", url: "/api/library/albums?view=played", live: true,
+    hint: "Alben aus der eigenen Musik, das zuletzt gehörte zuerst." },
+};
+
 async function renderAlbums(body, crumbs) {
+  const view = LIB_VIEWS[lib.tab];
+  const trail = [[view.title, () => { lib.name = null; lib.album = null; renderLibrary(); }]];
+  if (view.tag && lib.name !== null) trail.push([lib.name || view.empty, () => { lib.album = null; renderLibrary(); }]);
+  body.onclick = body.ondblclick = null;
+
   if (lib.album) {
     const { album, artist } = lib.album;
-    crumbs.innerHTML = `<a data-back>Alle Alben</a> › ${esc(album)}`;
+    setCrumbs(crumbs, trail.concat([[album, null]]));
     const songs = await api("/api/library/album?album=" + enc(album) + "&artist=" + enc(artist));
     const uris = songs.map((s) => s.uri);
     const total = songs.reduce((a, s) => a + (s.duration || 0), 0);
-    body.onclick = body.ondblclick = null;
     body.innerHTML = `<div class="album-head"><div class="art">${ICON("note")}<img src="${artUrl(album, artist)}" alt="" onerror="this.remove()"></div>
       <div><h2>${esc(album)}</h2><div class="sub">${esc(artist || "Verschiedene Interpreten")} · ${songs.length} Titel · ${fmt(total)}</div>
       <button class="btn primary" id="alb-play">${ICON("play")}Album abspielen</button> <button class="btn" id="alb-add">${ICON("plus")}Anhängen</button>
@@ -444,25 +490,58 @@ async function renderAlbums(body, crumbs) {
     $("#alb-play").onclick = () => post("/api/queue/add", { uris, mode: "play" });
     $("#alb-add").onclick = () => post("/api/queue/add", { uris }).then(() => toast("Album angehängt"));
     $("#alb-pl").onclick = () => pickPlaylist(uris);
-    crumbs.querySelector("[data-back]").onclick = () => { lib.album = null; renderLibrary(); };
     return;
   }
-  crumbs.innerHTML = "";
-  if (!lib.albums) lib.albums = await api("/api/library/albums");
-  if (!lib.albums.length) {
-    body.innerHTML = '<div class="empty">Noch keine Alben gefunden.<br>Stecke einen USB-Stick oder eine SD-Karte mit Musik an. Sie wird automatisch eingelesen.</div>';
+
+  if (view.tag && lib.name === null) {
+    // Liste der Interpreten bzw. Genres
+    crumbs.innerHTML = "";
+    const names = await libGet("/api/library/names?tag=" + view.tag);
+    if (!names.length) { body.innerHTML = '<div class="empty">Noch nichts gefunden.</div>'; return; }
+    body.innerHTML = `<table class="grid"><thead><tr><th class="ico"></th><th>${esc(view.title)}</th></tr></thead><tbody>
+      ${names.map((n, i) => `<tr data-i="${i}" class="link"><td class="ico">${ICON(view.tag === "artist" ? "note" : "lib")}</td><td>${esc(n || view.empty)}</td></tr>`).join("")}
+      </tbody></table>`;
+    body.onclick = (ev) => {
+      const tr = ev.target.closest("tr[data-i]");
+      if (tr) { lib.name = names[+tr.dataset.i]; renderLibrary(); }
+    };
     return;
   }
-  body.innerHTML = `<div class="albums">${lib.albums.map((a, i) => `
+
+  const url = view.tag ? `/api/library/albums?${view.tag}=${enc(lib.name)}` : view.url;
+  if (view.tag) setCrumbs(crumbs, trail.slice(0, 1).concat([[lib.name || view.empty, null]]));
+  else crumbs.textContent = view.hint || "";
+  const albums = await libGet(url, { cache: !view.live });
+  if (!albums.length) {
+    body.innerHTML = lib.tab === "played" ? '<div class="empty">Noch nichts aus der Bibliothek gehört.</div>'
+      : '<div class="empty">Noch keine Alben gefunden.<br>Stecke einen USB-Stick oder eine SD-Karte mit Musik an. Sie wird automatisch eingelesen.</div>';
+    return;
+  }
+  body.innerHTML = `<div class="albums">${albums.map((a, i) => `
     <div class="album" data-i="${i}">
       <div class="art">${ICON("note")}<img loading="lazy" src="${artUrl(a.album, a.artist)}" alt="" onerror="this.remove()"></div>
       <b title="${esc(a.album)}">${esc(a.album)}</b><span>${esc(a.artist || "Verschiedene")}</span>
     </div>`).join("")}</div>`;
   body.onclick = (ev) => {
     const el = ev.target.closest(".album[data-i]");
-    if (el) { lib.album = lib.albums[+el.dataset.i]; renderLibrary(); }
+    if (el) { lib.album = albums[+el.dataset.i]; renderLibrary(); }
   };
-  body.ondblclick = null;
+}
+
+async function renderFavorites(body, crumbs) {
+  body.onclick = body.ondblclick = null;
+  const songs = await loadFavorites();
+  crumbs.textContent = songs.length ? `${songs.length} Lieblingstitel` : "";
+  if (!songs.length) {
+    body.innerHTML = '<div class="empty">Noch keine Favoriten.<br>Tippe in einer Titelliste auf den Stern, um einen Titel hier zu sammeln.</div>';
+    return;
+  }
+  const uris = songs.map((s) => s.uri);
+  body.innerHTML = `<div class="fav-acts"><button class="btn primary" id="fav-play">${ICON("play")}Alle abspielen</button>
+    <button class="btn" id="fav-add">${ICON("plus")}Anhängen</button></div><div id="fav-songs">${songTable(songs)}</div>`;
+  bindSongTable($("#fav-songs"), uris);
+  $("#fav-play").onclick = () => post("/api/queue/add", { uris, mode: "play" });
+  $("#fav-add").onclick = () => post("/api/queue/add", { uris }).then(() => toast("Favoriten angehängt"));
 }
 
 async function renderFolder(body, crumbs) {
@@ -488,7 +567,7 @@ async function renderFolder(body, crumbs) {
   };
   let html = "";
   if (dirs.length) {
-    html += `<table class="grid"><thead><tr><th class="ico"></th><th>Name</th><th class="act"></th></tr></thead><tbody>
+    html += `<table class="grid"><thead><tr><th class="ico"></th><th>Name</th><th class="act act3"></th></tr></thead><tbody>
       ${dirs.map((d) => `<tr data-dir="${esc(d.uri)}"><td class="ico">${dirIcon(d)}</td><td>${esc(d.name)}</td>
         <td class="act act3"><button class="rowbtn" data-dplay title="Ordner abspielen">${ICON("play")}</button><button class="rowbtn" data-dadd title="Ordner anhängen">${ICON("plus")}</button><button class="rowbtn" data-dpl title="Ordner zu einer gespeicherten Wiedergabeliste …">${ICON("list")}</button></td></tr>`).join("")}
       </tbody></table>`;
@@ -683,7 +762,7 @@ async function renderRadio() {
     return;
   }
   body.innerHTML = radio.list.length ? `<table class="grid"><thead><tr><th class="ico"></th><th>Sender</th>
-      <th class="hide-m">Land</th><th class="hide-m" style="width:120px">Format</th><th class="act"></th></tr></thead><tbody>
+      <th class="hide-m">Land</th><th class="hide-m" style="width:120px">Format</th><th class="act act3"></th></tr></thead><tbody>
     ${radio.list.map((st, i) => `<tr data-i="${i}">
       <td class="ico">${st.favicon ? `<img loading="lazy" referrerpolicy="no-referrer" src="${esc(st.favicon)}" alt="" onerror="this.outerHTML='<svg><use href=&quot;#i-radio&quot;/></svg>'">` : ICON("radio")}</td>
       <td title="${esc(st.name)}">${esc(st.name)}</td>
@@ -896,6 +975,71 @@ function renderSysInfo(sy) {
   ].join("");
 }
 
+async function powerAction(mode) {
+  const name = S && S.device_name ? `„${S.device_name}“` : "das Gerät";
+  const q = mode === "reboot" ? `${name} jetzt neu starten? Die Oberfläche ist danach etwa eine Minute nicht erreichbar.`
+    : `${name} jetzt herunterfahren? Danach ist es nicht mehr erreichbar, bis du es aus- und wieder einschaltest.`;
+  if (!confirm(q)) return;
+  await post("/api/system/power", { mode });
+  toast(mode === "reboot" ? "Startet neu …" : "Fährt herunter …");
+}
+$("#power-reboot").onclick = () => powerAction("reboot");
+$("#power-off").onclick = () => powerAction("poweroff");
+
+/* Equalizer: die Regler wirken sofort (ohne „Speichern“), Ein/Aus gehört zu den übrigen Einstellungen */
+const EQ_PRESETS = {
+  flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  bass: [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
+  treble: [0, 0, 0, 0, 0, 0, 2, 4, 5, 6],
+  loud: [6, 4, 2, 0, -1, -1, 0, 2, 4, 5],
+  voice: [-4, -3, -1, 0, 2, 3, 3, 2, 0, -2],
+  lessbass: [-6, -5, -3, -1, 0, 0, 0, 0, 0, 0],
+};
+let eqInfo = { available: false, active: false, bands: [] };
+const fmtDb = (v) => (v > 0 ? "+" : v < 0 ? "\u2212" : "") + Math.abs(v);
+
+function renderEq(res) {
+  eqInfo = res.eq || eqInfo;
+  const bands = res.settings.eq_bands || EQ_PRESETS.flat;
+  $("#eq-bands").innerHTML = eqInfo.bands.map((label, i) => `<label class="eq-band">
+    <span>${esc(label)}</span><input type="range" min="-12" max="12" step="1" value="${bands[i]}" data-band="${i}"><output>${fmtDb(bands[i])} dB</output></label>`).join("");
+  const preset = Object.keys(EQ_PRESETS).find((k) => EQ_PRESETS[k].every((v, i) => v === bands[i]));
+  $("#eq-preset").value = preset || "";
+  updateEq();
+}
+
+function updateEq() {
+  const f = $("#settings-form");
+  const bp = f.elements.bitperfect.checked, on = f.elements.eq_enabled.checked;
+  f.elements.eq_enabled.disabled = !eqInfo.available;
+  $("#eq-box").hidden = !eqInfo.available || !on || bp;
+  $("#eq-note").textContent = !eqInfo.available
+    ? "Der Equalizer braucht das Paket libasound2-plugin-equal (Debian, Raspberry Pi OS), install.sh bringt es mit. Unter AlmaLinux gibt es dafür kein Paket."
+    : bp ? "Bei „Bit-perfekt“ geht der Ton unverändert an das Gerät, darum ohne Equalizer."
+    : on && settings.eq_enabled && !eqInfo.active ? "Der Equalizer ist gerade nicht aktiv – das Gerät war beim Start belegt oder wird nicht unterstützt."
+    : "Gilt für alle Quellen, auch AirPlay, Spotify und Bluetooth. Die Regler wirken sofort; Ein- und Ausschalten startet die Wiedergabe kurz neu. Anheben kann bei lauter Musik verzerren – dann lieber die übrigen Bänder etwas absenken.";
+}
+
+let eqTimer = null;
+const eqValues = () => $$("#eq-bands input").map((r) => +r.value);
+function sendEq() {
+  clearTimeout(eqTimer);
+  eqTimer = setTimeout(() => post("/api/settings", { eq_bands: eqValues() }).then((res) => { settings = res.settings; }).catch(() => {}), 200);
+}
+$("#eq-bands").addEventListener("input", (ev) => {
+  const slider = ev.target.closest("input[data-band]");
+  if (!slider) return;
+  slider.nextElementSibling.textContent = fmtDb(+slider.value) + " dB";
+  $("#eq-preset").value = "";
+  sendEq();
+});
+$("#eq-preset").addEventListener("change", (ev) => {
+  const values = EQ_PRESETS[ev.target.value];
+  if (!values) return;
+  $$("#eq-bands input").forEach((slider, i) => { slider.value = values[i]; slider.nextElementSibling.textContent = fmtDb(values[i]) + " dB"; });
+  sendEq();
+});
+
 // Lautsprecher 5.1/7.1 nur anbieten, wenn das gewaehlte Geraet so viele Kanaele hat
 let speakerOutputs = { list: [], active: {}, surround: 2 };
 function updateSpeakers() {
@@ -934,6 +1078,7 @@ function fillSettings(res) {
     </label>`).join("");
   speakerOutputs = { list: res.outputs, active, surround: res.surround || 2 };
   updateSpeakers();
+  renderEq(res);
   const SVC = { mpd: "Player (MPD)", airplay: "AirPlay (shairport-sync)", spotify: "Spotify Connect (librespot)",
     upnp: "UPnP/DLNA (gmediarender)", bluetooth: "Bluetooth (bluez-alsa)" };
   $("#svc-list").innerHTML = res.services.map((d) => {
@@ -1514,6 +1659,7 @@ $("#upload-close").onclick = () => {
 
 $("#settings-form").addEventListener("change", (ev) => {
   if (ev.target.name === "output" || ev.target.name === "bitperfect") updateSpeakers();
+  if (ev.target.name === "bitperfect" || ev.target.name === "eq_enabled") updateEq();
 });
 $("#settings-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();
@@ -1524,7 +1670,8 @@ $("#settings-form").addEventListener("submit", async (ev) => {
     if (!el.name || (el.name !== "output" && !(el.name in settings))) continue;
     if (el.type === "checkbox") data[el.name] = el.checked;
     else if (el.type === "radio") { if (el.checked) data.output = el.value || null; }
-    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade", "speakers", "night_limit"].includes(el.name)) data[el.name] = +el.value;
+    else if (["spotify_bitrate", "cec_standby_minutes", "crossfade", "speakers", "night_limit", "volume_max"].includes(el.name)) data[el.name] = +el.value;
+    else if (el.name === "volume_start") data[el.name] = el.value === "" ? null : +el.value;
     else data[el.name] = el.value;
   }
   $("#save-msg").textContent = "Wird übernommen…";

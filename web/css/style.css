@@ -243,6 +243,14 @@ table.grid .num { width: 44px; text-align: right; color: var(--list-dim); }
 table.grid .dur { width: 64px; text-align: right; color: var(--list-dim); }
 table.grid .act { width: 64px; text-align: right; }
 table.grid .act3 { width: 92px; }
+table.grid .act4 { width: 120px; }
+/* Equalizer: eine Zeile je Band (Frequenz, Regler, Wert) */
+.eq { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; max-width: 440px; margin: 6px 0 4px; }
+.eq-band { display: contents; }
+.eq-band span { font-size: 12px; text-align: right; }
+.eq-band output { font-size: 12px; font-variant-numeric: tabular-nums; min-width: 4.2em; text-align: right; }
+table.grid tr.link { cursor: pointer; }
+.fav-acts { padding: 10px 10px 0; display: flex; gap: 6px; flex-wrap: wrap; }
 table.grid .ico { width: 34px; }
 table.grid .ico img, table.grid .ico svg { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; color: #7f9db9; }
 .rowbtn { border: 0; background: none; cursor: pointer; padding: 3px; color: #7f9db9; border-radius: 3px; }
@@ -592,6 +600,10 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
   .toolbar { gap: 6px; }
   .toolbar .seg { flex: 1 1 100%; }
   .toolbar .seg button { flex: 1; padding: 5px 4px; }
+  /* Bibliothek: acht Reiter in einer wischbaren Zeile */
+  #lib-tabs { overflow-x: auto; scrollbar-width: none; }
+  #lib-tabs::-webkit-scrollbar { display: none; }
+  #lib-tabs button { flex: 0 0 auto; padding: 5px 10px; }
   .cd-head, .album-head { flex-direction: column; align-items: flex-start; }
 
   /* Optionen: Reiter in einer wischbaren Zeile, ganze Breite für den Inhalt */

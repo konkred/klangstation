@@ -28,7 +28,8 @@ _PUBLIC_PREFIXES = ("/css/", "/js/", "/img/")
 _PUBLIC_PATHS = {"/", "/index.html", "/manifest.json", "/tv", "/tv.html", "/api/auth/status", "/api/auth/login", "/api/internal/hook"}
 # Bei Stufe "settings" geschuetzt (alles, was Einstellungen oder Geraete veraendert)
 _SETTINGS_PREFIXES = ("/api/settings", "/api/bluetooth/", "/api/shares", "/api/network", "/api/auth/password", "/api/tv/show",
-                      "/api/backup", "/api/library/upload", "/api/update")
+                      "/api/backup", "/api/library/upload", "/api/update",
+                      "/api/system/power")
 
 
 def _b64(data: bytes) -> str:

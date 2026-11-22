@@ -308,7 +308,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   * Equalizer (nur Debian/Pi OS, am Thin Client nicht möglich): `libasound2-plugin-equal` + `caps` installieren, `amixer -D ks_equal contents` (zehn Regler, numid 1–10 =
     31 Hz…16 kHz, Wertebereich 0–100 = −48…+24 dB angenommen), stumm per `snd-aloop` mit Sinus je Band messen; mit 5.1/7.1
     davor; vc4hdmi am Pi (`default:CARD=…` als slave); Format S16 im Filter.
-  * Herunterfahren (nur mit dem Nutzer, der Thin Client lässt sich nicht aus der Ferne einschalten); Obergrenze bei UPnP/Bluetooth.
+  * Obergrenze bei UPnP/Bluetooth.
 * **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
@@ -663,6 +663,8 @@ Vorher bzw. dabei bedenken:
   nach Neustart 30; Start 30 mit Grenze 20 → 20.
 * Neustart über `POST /api/system/power` (wie die Oberfläche): nach 3 s weg, Web nach 34 s (Boot 32 s), alle Dienste und Kiosk
   da, keine fehlgeschlagenen Units, keine AVCs, kein ungefragtes Weiterspielen.
+* Herunterfahren über die Oberfläche (Nutzer, nach dem Update auf 0.2.13 per Installer, 43 s): Web weg, 3 s später Gerät aus;
+  nach dem Einschalten Boot 32 s, alle Dienste und Kiosk da, keine AVCs, nichts spielt.
 * 0.2.11 Sicherheit: fremder Origin und `Origin: null` 403, `text/plain` und Formular 415, Zeilenumbruch im Namen 400, falscher
   Typ 400. Zwei gleichzeitige Uploads derselben Datei: einer 409, einer 200, Datei vollständig, keine `.part`-Reste.
   `ks-netmount` (Loop-Abbild ext4): Symlink-Zielordner abgelehnt, nichts außerhalb geschrieben; Symlink-Datei im Album wird nicht

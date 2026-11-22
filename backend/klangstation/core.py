@@ -833,15 +833,18 @@ class Core:
         nur am Handy regeln."""
         while True:
             await asyncio.sleep(5)
-            limit = self.volume_limit()
-            if limit is None or self.source not in VOLUME_SOURCES:
-                continue
-            if (await self.state()).get("volume", -1) > limit:
-                try:
-                    await self.set_volume(limit)
-                    log.info("Lautstaerke auf die Grenze von %s %% zurueckgeholt", limit)
-                except (ValueError, ConnectionError, MPDError):
-                    pass
+            await self._enforce_limit()
+
+    async def _enforce_limit(self) -> None:
+        limit = self.volume_limit()
+        if limit is None or self.source not in VOLUME_SOURCES:
+            return
+        if (await self.state()).get("volume", -1) > limit:
+            try:
+                await self.set_volume(limit)
+                log.info("Lautstaerke auf die Grenze von %s %% zurueckgeholt", limit)
+            except (ValueError, ConnectionError, MPDError):
+                pass
 
     async def _update_loop(self) -> None:
         await asyncio.sleep(60)  # nach dem Start ist das Netz oft noch nicht da
@@ -1513,7 +1516,10 @@ class Core:
             raise ValueError("Kein Titel angegeben")
         entry = None
         if on:
-            info = await self.mpd.dict("lsinfo", uri)
+            try:
+                info = await self.mpd.dict("lsinfo", uri)
+            except MPDError:
+                info = {}
             if "file" not in info:
                 raise ValueError("Titel nicht gefunden")
             song = self._song(info)
@@ -1819,6 +1825,8 @@ class Core:
                 await self.apply_audio(("cec",))
             if changed & {"loudness", "crossfade"}:
                 await self._apply_playback(tries=1)
+        if changed & {"volume_max", "night_enabled", "night_from", "night_to", "night_limit"}:
+            self._spawn(self._enforce_limit())  # neue Grenze sofort, nicht erst beim naechsten Durchlauf
         if changed & {"weather_place", "metadata_online"}:
             self._spawn(self._weather_now())
         if "tv_enabled" in changed and self.settings.get("tv_enabled"):

@@ -68,6 +68,7 @@ html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .pl-pi
 html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .out:hover { border-color: var(--field-line); }
 html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .out:has(input:checked),
 html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .pl-pick-list button:hover { background: var(--list-sel); border-color: var(--accent); }
+html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .out:has(input:checked) .kind { color: #111; } /* helle Akzentfarbe, weisse Schrift kaum lesbar */
 html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .alarm.next { border-color: var(--accent); box-shadow: none; }
 html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .cec-status,
 html:is([data-theme="nacht"], [data-theme="winamp"], [data-theme="hifi"]) .auth-state,

@@ -53,6 +53,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 
 | Gerät | Zugang | Hinweise |
 |---|---|---|
+| **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1, Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB, AlmaLinux 10.3 **x86_64_v2** ohne Desktop, SELinux enforcing | `ssh root@10.0.0.178` (SSH-Key, zu Hause, Kabel) | root erlaubt wie am Alma; eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1); kein WLAN, kein Bluetooth-Adapter. Unter AlmaLinux kein `alsaequal` → Equalizer hier nicht testbar |
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
@@ -301,14 +302,13 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 
 ### Noch offen
 
-* **0.2.11 und 0.2.12 noch auf keinem Gerät** (nur lokal mit TestClient und Probe-Server mit Beispieldaten, 21.11.):
-  * Bibliothek mit echtem MPD: Filterausdruck `(albumartist == '…')` mit `'` und `\` im Namen, `list albumartist` fällt auf
-    Artist zurück?, „Neu“ per `find "(modified-since '1')" sort -Last-Modified` (Dauer bei großer Bibliothek), „Zuletzt“.
-  * Equalizer: `libasound2-plugin-equal` + `caps` installieren, `amixer -D ks_equal contents` (zehn Regler, numid 1–10 =
+* **Rest von 0.2.11/0.2.12** (übrige Punkte am Thin Client bestanden, siehe unten):
+  * „Neu“ bei großer Bibliothek (Dauer von `sort -Last-Modified` über alle Titel, z. B. Synology am Pi).
+  * `ks-netmount` mit echtem Rippen auf USB (Symlinks und Speichern per Loop-Abbild bestanden).
+  * Equalizer (nur Debian/Pi OS, am Thin Client nicht möglich): `libasound2-plugin-equal` + `caps` installieren, `amixer -D ks_equal contents` (zehn Regler, numid 1–10 =
     31 Hz…16 kHz, Wertebereich 0–100 = −48…+24 dB angenommen), stumm per `snd-aloop` mit Sinus je Band messen; mit 5.1/7.1
     davor; vc4hdmi am Pi (`default:CARD=…` als slave); Format S16 im Filter.
-  * Neustart/Herunterfahren über `ks-netadmin` (nur am Alma ohne Rückfrage, sonst Nutzer fragen); Startlautstärke und
-    Obergrenze (Wecker-Rampe endet an der Obergrenze, UPnP/Bluetooth werden zurückgeholt).
+  * Herunterfahren (nur mit dem Nutzer, der Thin Client lässt sich nicht aus der Ferne einschalten); Obergrenze bei UPnP/Bluetooth.
 * **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
@@ -645,6 +645,37 @@ Vorher bzw. dabei bedenken:
   gleiche Durchläufe): Radio am Fernseher, DP abgezogen → Analog, angesteckt → zurück auf HDMI 0, Radio spielt weiter (laut Nutzer,
   Protokoll). Info zeigt den Akku („100 %, Netzteil, voll“, Kapazität 59 % vom Neuzustand).
 * Noch offen: Kopfhörer am Dell.
+
+**Thin Client 10ZiG (Celeron J4125), AlmaLinux 10.3 x86_64_v2 ohne Desktop frisch, 22.11.2026 – ohne Ton**
+
+* `install.sh --tv-headless` von null (0.2.12): 15 min 9 s, EXIT 0, einzige Warnung „CPU ohne x86-64-v3 – RPM Fusion wird nicht
+  eingebunden“. MPD 0.24.20. Alle Dienste und Kiosk (cage + Chromium am DP-Monitor) laufen, keine fehlgeschlagenen Units, keine AVCs;
+  bluetooth inaktiv (kein Adapter). Automatik wählt HDMI 0 (Monitor) vor der Klinke. Gerätename „Linux“ (kein Hostname, DHCP `linux.fritz.box`).
+* Oberfläche im Browser vom Laptop hinter der Origin-Prüfung (0.2.11): WebSocket und POST gehen; Badges im klassischen Theme lesbar;
+  Equalizer zeigt „braucht libasound2-plugin-equal“ statt der Regler.
+* Bibliothek mit Testalben (`Lokal/Testalben`, Rauschen, liegen noch dort): `'`, `\`, Umlaute und „&“ in Album und AlbumArtist, ohne
+  AlbumArtist (fällt auf Artist zurück), zwei Genres, ohne Genre → Interpreten, Genres („(ohne Genre)“), Filter je Name, „Neu“ in
+  der Reihenfolge der Dateidaten, Albumtitel; je Abfrage 2–23 ms. Stumm (`setvol 0`) gespielt → „Zuletzt“ mit beiden Alben, neuestes
+  oben; Favorit gesetzt und im Reiter Favoriten. Alles auch in der Oberfläche.
+* Stern auf unbekannten Titel zeigte die rohe MPD-Meldung → „Titel nicht gefunden“ (0.2.12, ohne Versionswechsel).
+* Lautstärke (stumm per `IEC958 off`): Obergrenze 50 holt Regler 90 auf 50, fremdes `setvol 95` nach ~2 s zurück; neue Grenze
+  greift jetzt nach 0,5 s statt erst beim nächsten Durchlauf (0.2.13). Wecker-Rampe 8 → Ziel 80 endet bei 50. Startlautstärke 30
+  nach Neustart 30; Start 30 mit Grenze 20 → 20.
+* Neustart über `POST /api/system/power` (wie die Oberfläche): nach 3 s weg, Web nach 34 s (Boot 32 s), alle Dienste und Kiosk
+  da, keine fehlgeschlagenen Units, keine AVCs, kein ungefragtes Weiterspielen.
+* 0.2.11 Sicherheit: fremder Origin und `Origin: null` 403, `text/plain` und Formular 415, Zeilenumbruch im Namen 400, falscher
+  Typ 400. Zwei gleichzeitige Uploads derselben Datei: einer 409, einer 200, Datei vollständig, keine `.part`-Reste.
+  `ks-netmount` (Loop-Abbild ext4): Symlink-Zielordner abgelehnt, nichts außerhalb geschrieben; Symlink-Datei im Album wird nicht
+  mitkopiert; `dest` Lokal sowie `..` in `src`/`folder` abgelehnt; danach wieder `ro`.
+* Stumm über `snd-aloop`: FLAC, M4A, MP3, OGG, Opus, WAV, WMA nur links (L ≈ 1760–1950, R 0); Ausgabewechsel beim Spielen 1,8 s,
+  an derselben Stelle; Überblenden, ReplayGain, „Dynamisch“ (spielt weiter); Schlummer-Timer blendet 60 → 3 aus, pausiert, 60
+  zurück; Titelende pausiert, `single` 0; echter einmaliger Wecker mit kaputtem Sender → nach ~20 s Bibliothek, 15-min-Timer,
+  Wecker danach aus.
+* Webradio-Netzausfall 60 s (DLF, v4 und v6 gesperrt): Hinweis nach 25 s, 5 s nach Rückkehr spielt er wieder.
+* Update per `install.sh --tv-headless`: 40 s, EXIT 0, `settings.json` unverändert, Favoriten erhalten, keine AVCs.
+* Oberfläche in allen sieben Themes bei 1280 und 390 px (alle Ansichten, Reiter der Bibliothek und Optionen): keine Seite scrollt
+  quer. Ausgabe-Badges hatten zu wenig Kontrast (Grau 2,8:1, gewählt in Winamp 1,8, Hi-Fi 2,1, Nacht 2,5) und „Analog“ war am
+  Handy abgeschnitten → dunkleres Grau, dunkle Schrift auf hellem Akzent, Spalte 44 px (0.2.13); jetzt mindestens 4,1:1 (Aero).
 
 ### Behobene Fehler
 

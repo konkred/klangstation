@@ -322,7 +322,7 @@ legend { color: var(--accent); padding: 0 4px; font-weight: bold; }
 }
 .out:hover { border-color: #8fb0dd; }
 .out:has(input:checked) { border-color: var(--accent); background: #eaf2fe; }
-.out .kind { font-size: 10px; font-weight: bold; color: #fff; background: #7f9db9; border-radius: 3px; text-align: center; padding: 2px 0; }
+.out .kind { font-size: 10px; font-weight: bold; color: #fff; background: #587592; border-radius: 3px; text-align: center; padding: 2px 0; }
 .out:has(input:checked) .kind { background: var(--accent); }
 .out small { display: block; color: var(--list-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .out .cur { color: var(--accent); font-weight: bold; }
@@ -615,7 +615,7 @@ code { background: #eef3fb; padding: 1px 4px; border-radius: 3px; font-size: 11p
   fieldset { padding: 8px 10px 12px; }
   .field input, .field select { max-width: none; }
   .hint { font-size: 11px; }
-  .out { grid-template-columns: auto 34px minmax(0, 1fr); }
+  .out { grid-template-columns: auto 44px minmax(0, 1fr); }
   .share-form { grid-template-columns: 1fr; }
   .alarm-form { grid-template-columns: 1fr; }
   .alarm { grid-template-columns: auto auto 1fr; }

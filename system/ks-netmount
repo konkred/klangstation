@@ -245,7 +245,7 @@ def do_store(req):
     error = make_writable(target, fstype, dev)
     if error:
         answer(False, f"Datentraeger laesst sich nicht beschreibbar machen: {error}")
-    result = ""
+    result, created = "", ""
     try:
         base, n = os.path.join(target, *parts), 2
         final = base
@@ -255,6 +255,7 @@ def do_store(req):
         if not os.path.realpath(final).startswith(os.path.realpath(target) + "/"):
             raise OSError("Zielordner zeigt aus dem Datentraeger heraus")
         os.makedirs(final, mode=0o755)
+        created = final
         for name in files:
             # Nur Inhalte kopieren (keine Rechte/Eigentuemer). O_NOFOLLOW: zwischen Pruefung und Oeffnen koennte
             # der Dienstnutzer eine Datei gegen einen Symlink tauschen; "xb" folgt ohnehin keinem Symlink
@@ -264,10 +265,22 @@ def do_store(req):
                     raise OSError(f"{name} ist keine normale Datei")
                 with open(os.path.join(final, name), "xb") as fout:
                     shutil.copyfileobj(fin, fout, 1024 * 1024)
-        os.sync()
+                    # fsync statt os.sync(): sync() meldet keine Schreibfehler. Wird der Stick abgezogen, waehrend
+                    # die Daten noch im Seiten-Cache liegen, kaeme sonst "ok" zurueck und auf dem Stick laegen
+                    # leere Dateien - der Rueckfall in den internen Speicher griffe nicht
+                    fout.flush()
+                    os.fsync(fout.fileno())
+        dfd = os.open(final, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(dfd)
+        finally:
+            os.close(dfd)
         result = os.path.relpath(final, target)
     except OSError as exc:
         error = f"Kopieren fehlgeschlagen: {exc.strerror or exc}"
+        # halben Ordner wegraeumen (z. B. Stick voll); ist der Stick weg, scheitert das still
+        if created:
+            shutil.rmtree(created, ignore_errors=True)
     finally:
         make_readonly(target, fstype, dev)
     if error:

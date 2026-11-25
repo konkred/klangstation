@@ -120,12 +120,13 @@ class Ripper:
         job = self.job
         assert job is not None
         work = RIP_DIR / safe_name(cd.get("disc_id") or "cd", "cd")
-        shutil.rmtree(work, ignore_errors=True)
-        work.mkdir(parents=True)
         tracks: List[Dict[str, Any]] = cd["tracks"]
         total_sec = sum(t["duration"] for t in tracks) or 1
         done_sec = 0.0
         try:
+            # Im try: scheitert das Anlegen (Rechte, Platte voll), bliebe der Auftrag sonst ewig auf "running"
+            shutil.rmtree(work, ignore_errors=True)
+            work.mkdir(parents=True)
             cover = None
             if cd.get("art_path") and os.path.isfile(cd["art_path"]):
                 cover = work / "cover.jpg"

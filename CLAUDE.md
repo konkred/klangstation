@@ -168,6 +168,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **cdparanoia `-e`** meldet absolute Positionen ab CD-Anfang → relativ zum ersten Wert rechnen.
 * **Auswerfen:** erst CDROMSTOP, dann LOCKDOOR 0, EJECT, Status prüfen; Desktop (gvfs/udisks) per udev
   `UDISKS_IGNORE` fernhalten. USB-Brenner trennen sich sonst beim Auswerfen bei drehender CD.
+* **Speichern auf USB:** `os.sync()` meldet keine Schreibfehler. Abgezogen, solange die Daten noch im Seiten-Cache lagen →
+  Helfer meldete „ok“, auf dem Stick lagen 0-Byte-Dateien, die Arbeitsdateien wurden gelöscht → `ks-netmount` ruft `fsync` je
+  Datei und für den Ordner auf; scheitert es, greift der Rückfall in den internen Speicher.
+* **Ripper:** Alles, was scheitern kann, gehört in `_run` ins `try` – sonst stirbt die Aufgabe still und der Auftrag bleibt
+  für immer auf „running“ (am Thin Client: Rip-Ordner gehörte root, weil `t_sec.sh` ihn mit `mkdir -p` angelegt hatte).
 * **MusicBrainz** drosselt (503), Pi und PC teilen eine IP → CD-Abfrage wird bei „offline“ wiederholt, solange
   die CD drin ist.
 
@@ -317,7 +322,6 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 
 * **Rest von 0.2.11/0.2.12** (übrige Punkte am Thin Client bestanden, siehe unten):
   * „Neu“ bei großer Bibliothek (Dauer von `sort -Last-Modified` über alle Titel, z. B. Synology am Pi).
-  * `ks-netmount` mit echtem Rippen auf USB (Symlinks und Speichern per Loop-Abbild bestanden).
   * Equalizer am Pi (vc4hdmi, `default:CARD=…` als slave) und mit 7.1 an echter Karte; am Thin Client bestanden.
   * Obergrenze bei UPnP/Bluetooth.
 * **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
@@ -325,9 +329,9 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
-* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: Rippen auf USB samt Rückfall (braucht CD-Laufwerk), feste IPv4 mit Rücknahme (braucht eine Kabelverbindung unter
-  NetworkManager, am Thin Client läuft das Kabel unter ifupdown), USB-WLAN-Sticks, UPnP, Herunterfahren (mit dem Nutzer),
-  Sperrbildschirm am iPhone. Die Tests vom 22.11. sowie Port, SSH und USB-Sticks sind unter Debian bestanden (siehe unten).
+* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: feste IPv4 mit Rücknahme (braucht eine Kabelverbindung unter
+  NetworkManager, am Thin Client läuft das Kabel unter ifupdown), USB-WLAN-Sticks, UPnP,
+  Sperrbildschirm am iPhone. Die Tests vom 22.11. sowie Port, SSH, USB-Sticks, Herunterfahren und Rippen auf USB sind unter Debian bestanden (siehe unten).
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -722,6 +726,15 @@ Vorher bzw. dabei bedenken:
   binnen 3 s neu ein; Wiederanstecken nach 2 s. Spotify lief ungestört weiter. Testordner danach gelöscht. `fsck.exfat` fehlte
   (wie `fsck.vfat`) → systemd prüfte exFAT/FAT beim Einhängen nicht, der Kernel meldete „not properly unmounted“. Installer bringt
   seit 0.2.16 `exfatprogs` und `dosfstools` mit; per apt nachinstalliert: beim Wiederanstecken „clean“, Warnung weg.
+* Herunterfahren über `POST /api/system/power` (wie die Oberfläche, mit dem Nutzer, 0.2.16): Web nach 4 s weg, Ping nach 5 s;
+  nach dem Einschalten Boot 22 s, Web zugleich mit dem ersten Ping, alle Dienste und Kiosk da, keine fehlgeschlagenen Units,
+  Ausgabe HDMI 0, Stick wieder eingehängt, nichts spielt.
+* CD (USB-Laufwerk SE-218GN am Thin Client, kein Überstrom; Autoplay aus): No Doubt „It’s My Life“, 4 Titel, MusicBrainz nach
+  12 s. Rippen auf den echten exFAT-Stick (0.2.17): 3 min 40 s für 18 min Musik, Speichern 3 s, FLAC mit Tags und `cover.jpg`
+  (`flac -t` ok), danach `ro`, sofort in der Bibliothek. Rückfall: Stick 0,3 s nach „Wird gespeichert …“ per `authorized=0`
+  getrennt → erst 0-Byte-Dateien mit „ok“ (siehe Behobene Fehler), nach dem Fix „Kopieren fehlgeschlagen: No such device“,
+  Album vollständig in `Lokal` mit Hinweis, auf dem Stick kein neuer Ordner, beim Wiederanstecken „clean“. Wiedergabe vom Stick
+  stoppt beim Abziehen.
 
 ### Behobene Fehler
 
@@ -800,3 +813,8 @@ Vorher bzw. dabei bedenken:
 * Prüfung auf Sicherheit und Slop: CSRF ohne Passwort, MPD-Befehle über Zeilenumbrüche, Symlinks im root-Helfer (siehe Sicherheit).
   Falscher Datentyp in Anfragen gibt 400 statt 500, Cookie mit Nicht-ASCII, zwei gleichzeitige Uploads derselben Datei.
   Badges der Ausgänge: „ANALOG“ war abgeschnitten, jetzt eine Farbe und normale Schreibung.
+
+**25.11.2026**
+
+* Rippen auf USB: Abziehen beim Speichern ergab „gerippt“ mit leeren Dateien auf dem Stick, Album verloren → `fsync` (0.2.17).
+* Rippen blieb ohne Meldung auf „läuft“ stehen, wenn der Arbeitsordner nicht angelegt werden konnte → Fehler im Auftrag (0.2.17).

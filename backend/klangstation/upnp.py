@@ -80,6 +80,7 @@ class UpnpRenderer:
         self.info: Dict[str, Any] = {}
         self.on_busy: Optional[Callable[[], None]] = None
         self._polls = 0
+        self._art_ok: Dict[str, bool] = {}
 
     async def close(self) -> None:
         await self.http.aclose()
@@ -95,6 +96,27 @@ class UpnpRenderer:
     def reset(self) -> None:
         self.base = None
         self.info = {}
+
+    async def _art_usable(self, url: Optional[str]) -> bool:
+        """Liefert die Cover-Adresse der App wirklich ein Bild? mconnect schickt fuer Titel vom iPhone selbst
+        einen Dateipfad des Handys, der immer 404 gibt - dann Cover ueber MusicBrainz. Je Adresse einmal pruefen."""
+        if not url:
+            return False
+        if url not in self._art_ok:
+            ok = False
+            try:
+                async with self.http.stream("GET", url, timeout=2) as resp:
+                    ctype = resp.headers.get("content-type", "")
+                    ok = resp.status_code == 200 and (not ctype or ctype.startswith("image/")
+                                                      or ctype.startswith("application/octet-stream"))
+            except (httpx.HTTPError, ValueError):
+                ok = False
+            if not ok:
+                log.info("UPnP-Cover nicht abrufbar, nehme MusicBrainz: %s", url)
+            if len(self._art_ok) > 200:
+                self._art_ok.clear()
+            self._art_ok[url] = ok
+        return self._art_ok[url]
 
     @property
     def playing(self) -> bool:
@@ -143,7 +165,7 @@ class UpnpRenderer:
             "title": meta.get("title") or (uri.rsplit("/", 1)[-1] if uri else ""),
             "artist": meta.get("artist", ""),
             "album": meta.get("album", ""),
-            "art": meta.get("art"),
+            "art": meta.get("art") if await self._art_usable(meta.get("art")) else None,
             "elapsed": _seconds(p.get("RelTime", "")),
             "duration": _seconds(p.get("TrackDuration", "")),
             "volume": vol,

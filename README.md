@@ -99,7 +99,7 @@ Anschlüsse und Bluetooth ein, der Rechner schläft ein oder sperrt sich.
 | „Läuft gerade“ | ✓ | ✓ | ✓ |
 | Spotify, AirPlay | ✓ | ✓ | ✓ |
 | Bluetooth mit iPhone | | ✓ | ✓ |
-| UPnP | | | |
+| UPnP | | ✓ | |
 | Radio, auch bei Netzausfall | | ✓ | ✓ |
 | CD abspielen und rippen, auch auf USB | | ✓ | |
 | Freigabe, auch bei Serverausfall | NFS | | |
@@ -108,11 +108,11 @@ Anschlüsse und Bluetooth ein, der Rechner schläft ein oder sperrt sich.
 | Schlummer-Timer, Wecker | | ✓ | ✓ |
 | Musik hochladen | | ✓ | |
 | Equalizer, Lautstärke angleichen, Überblenden | | ✓ | ✓ (ohne Equalizer) |
-| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | |
+| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | ✓ | |
 | Erscheinungsbilder | | ✓ | |
 | Laptop: Deckel, Bildschirm am Fernseher | | | ✓ |
 
-Leere Felder: Bis 0.2.13 lief vieles davon unter AlmaLinux (UPnP, Sperrbildschirm, Erscheinungsbilder, Bit-perfekt), bis
+Leere Felder: Bis 0.2.13 lief vieles davon unter AlmaLinux (Bit-perfekt u. a.), bis
 0.2.17 auch auf Systemen mit Desktop (am Pi zusätzlich UPnP, CEC, SMB-Freigabe samt Ausfall). Der Code ist derselbe;
 ohne Desktop werden diese Punkte gerade nachgeholt.
 

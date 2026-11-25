@@ -158,6 +158,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `_EQ_BANK_GAIN_DB` = 4 (flach = Wert 61, gemessen −0,4 dB). Ein einzelnes Band erreicht in der Mitte nur etwa +7,4/−3,5 dB bei ±12,
   die Nachbarn begrenzen vor allem das Absenken; 31 Hz und 16 kHz liegen flach 1,4 bzw. 2,9 dB tiefer. Messen: Sinus −20 dBFS je
   Band über snd-aloop, Bezug ohne EQ (`t_eq.py`, `t_eq2.py` in `/root` am Thin Client).
+* **UPnP-Cover (`albumArtURI`) nicht ungeprüft weitergeben:** mconnect schickt für Titel vom iPhone einen Dateipfad des Handys,
+  der 404 gibt; ohne Prüfung greift der MusicBrainz-Rückfall nie (`UpnpRenderer._art_usable`).
 * **Verbindung reißt ab, Sender nicht erreichbar:** MPD behandelt das wie ein Titelende: `stop` ohne `error` und ohne
   aktuellen Titel, der Sender steht noch in der Warteschlange → daran erkennt es `_stream_lost`. Der Nutzer-Stopp behält den
   aktuellen Titel, aber MPD behält auch `error` → Stopp und Pause beenden den Neuversuch in `player` (samt `clearerror`).
@@ -344,8 +346,6 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
-* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: UPnP,
-  Sperrbildschirm am iPhone. Die Tests vom 22.11. sowie Port, SSH, feste IPv4, USB-Sticks, USB-WLAN, Herunterfahren und Rippen auf USB sind unter Debian bestanden (siehe unten).
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -758,6 +758,10 @@ Vorher bzw. dabei bedenken:
   Nutzer. Dabei verlor das Kabel seine Adresse (ARP-Flux, siehe Lehren); nach dem Fix WLAN getrennt/neu ohne Konflikt.
 * Feste IPv4 auf der WLAN-Verbindung (Kabel als Zugang, per API): 10.0.0.230 ohne Bestätigung → nach 120 s zurück auf DHCP (.168);
   mit Bestätigung → bleibt `manual` (130 s geprüft); auf DHCP und „Zurücknehmen“ → wieder fest; DHCP bestätigt → `auto`.
+* Sperrbildschirm am iPhone (laut Nutzer): Titel, Cover, Pause/Weiter, Spulen mit richtiger Zeit.
+* UPnP mit mconnect (iPhone, Titel vom Handy selbst, laut Nutzer): Titel, Pause/Weiter, Spulen, Lautstärke. Cover fehlte: mconnect
+  schickt als `albumArtURI` einen Dateipfad des Handys (`…/private/var/mobile/…/tmp/8.jpg`), der immer 404 gibt → Klangstation prüft
+  die Adresse einmal und nimmt sonst MusicBrainz (0.2.20); danach Cover über `/api/art`.
 
 ### Behobene Fehler
 
@@ -843,3 +847,4 @@ Vorher bzw. dabei bedenken:
 * Rippen blieb ohne Meldung auf „läuft“ stehen, wenn der Arbeitsordner nicht angelegt werden konnte → Fehler im Auftrag (0.2.17).
 * WLAN-Firmware wurde unter Debian nie installiert (`| grep -q` mit pipefail) → Ausgabe erst einsammeln (0.2.19).
 * WLAN verbunden → Kabel verlor seine Adresse (ARP-Flux) → `arp_ignore`/`arp_announce` (0.2.19).
+* UPnP ohne Cover, wenn die App eine nicht abrufbare Bildadresse schickt (mconnect) → prüfen, sonst MusicBrainz (0.2.20).

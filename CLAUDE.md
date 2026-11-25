@@ -445,6 +445,8 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 * UPnP mit mconnect (iPhone, Titel vom Handy selbst, laut Nutzer): Titel, Pause/Weiter, Spulen, Lautstärke. Cover fehlte: mconnect
   schickt als `albumArtURI` einen Dateipfad des Handys (`…/private/var/mobile/…/tmp/8.jpg`), der immer 404 gibt → Klangstation prüft
   die Adresse einmal und nimmt sonst MusicBrainz (0.2.20); danach Cover über `/api/art`.
+* Spotify nach UPnP (0.2.21, laut Nutzer und Protokoll): mconnect spielt, dann Pause (gmediarender hält HDMI) → Spotify meldet
+  „sink busy“, Klangstation startet gmediarender neu (neue PID), HDMI frei, Spotify spielt nach ~1 s mit Ton.
 
 ### Behobene Fehler
 

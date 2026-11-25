@@ -325,10 +325,9 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
-* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: echter USB-Stick (emuliert bestanden, siehe
-  unten), Rippen auf USB samt Rückfall (braucht CD-Laufwerk), feste IPv4 mit Rücknahme (braucht eine Kabelverbindung unter
+* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: Rippen auf USB samt Rückfall (braucht CD-Laufwerk), feste IPv4 mit Rücknahme (braucht eine Kabelverbindung unter
   NetworkManager, am Thin Client läuft das Kabel unter ifupdown), USB-WLAN-Sticks, UPnP, Herunterfahren (mit dem Nutzer),
-  Sperrbildschirm am iPhone. Die Tests vom 22.11. sowie Port, SSH und USB sind unter Debian bestanden (siehe unten).
+  Sperrbildschirm am iPhone. Die Tests vom 22.11. sowie Port, SSH und USB-Sticks sind unter Debian bestanden (siehe unten).
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -717,6 +716,12 @@ Vorher bzw. dabei bedenken:
   `utf8`), Umlaute und „&“ in Ordner und Datei in der Bibliothek; Speichern per `ks-netmount` (wie nach dem Rippen, Ordner mit Umlaut)
   → Datei auf dem Stick, danach wieder `ro` (NTFS über Aus- und neu Einhängen); Abziehen per `authorized=0` mit offener Datei →
   nach ≤ 1 s ausgehängt, Ordner entfernt; Wiederanstecken nach 1 s eingehängt; fsck/ntfsfix sauber.
+* Echter Stick (exFAT, 58,6 GB, USB 3, Stick des Nutzers mit eigenen Dateien), während Spotify spielte: `ro` eingehängt
+  (`iocharset=utf8`); Speichern per `ks-netmount` in Testordner mit Umlauten und „&“ → Datei gleich (cmp), danach wieder `ro`,
+  in der Bibliothek; Abziehen per `authorized=0` mit offener Datei → nach 1 s ausgehängt, Ordner entfernt, Mount-Wächter liest
+  binnen 3 s neu ein; Wiederanstecken nach 2 s. Spotify lief ungestört weiter. Testordner danach gelöscht. `fsck.exfat` fehlte
+  (wie `fsck.vfat`) → systemd prüfte exFAT/FAT beim Einhängen nicht, der Kernel meldete „not properly unmounted“. Installer bringt
+  seit 0.2.16 `exfatprogs` und `dosfstools` mit; per apt nachinstalliert: beim Wiederanstecken „clean“, Warnung weg.
 
 ### Behobene Fehler
 

@@ -216,7 +216,7 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 
 * Pakete aus den offiziellen Quellen von Debian bzw. Raspberry Pi OS: `mpd`, `shairport-sync`, `gmediarender`,
   `bluez-alsa-utils`, `avahi-daemon`, `cdparanoia`, `flac`, `cifs-utils`, `nfs-common`, `alsa-utils`,
-  `ntfs-3g`, `v4l-utils` (CEC), für WLAN `network-manager`, `wpasupplicant`, `iw` und Firmware für USB-Sticks
+  `ntfs-3g`, `dosfstools` und `exfatprogs` (Prüfen von FAT- und exFAT-Sticks beim Einstecken), `v4l-utils` (CEC), für WLAN `network-manager`, `wpasupplicant`, `iw` und Firmware für USB-Sticks
   (`firmware-realtek`, `-mediatek`, `-atheros`, `-iwlwifi`). `librespot` kommt aus dem Raspotify-Archiv (amd64/arm64/armhf), sonst per Cargo.
 * Legt den Systembenutzer `klangstation` an (Gruppen `audio`, `cdrom`, `video`, `render`, `input`), installiert
   die Anwendung mit Python-venv nach `/opt/klangstation` und richtet den Dienst `klangstation` ein.

@@ -176,7 +176,9 @@ class MetadataReader:
                 self.pic_rtp = data.decode("ascii", "replace").strip() or None
             elif (kind, code) == ("ssnc", "PICT") and data and not _image_complete(data):
                 # shairport-sync liefert manche Bilder nur teilweise (Rest mit Nullen aufgefuellt)
-                self.trace.append(f"{time.strftime('%H:%M:%S')} ssnc/PICT unvollstaendig, verworfen")
+                got = len(data.rstrip(b"\x00"))
+                self.trace.append(f"{time.strftime('%H:%M:%S')} ssnc/PICT unvollstaendig ({got} von {len(data)} Bytes), verworfen")
+                log.info("AirPlay-Cover unvollstaendig (%d von %d Bytes), verworfen", got, len(data))
                 self.pic_rtp = None
             elif (kind, code) == ("ssnc", "PICT") and data:
                 self.cover = data

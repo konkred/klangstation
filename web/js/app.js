@@ -167,9 +167,12 @@ let lastArt = null;
 function setArt(img, fallback, url) {
   if (url === lastArt) return;
   lastArt = url;
-  if (!url) { img.hidden = true; fallback.hidden = false; return; }
-  img.onload = () => { img.hidden = false; fallback.hidden = true; };
-  img.onerror = () => { img.hidden = true; fallback.hidden = false; };
+  // Bis das neue Bild da ist, Platzhalter zeigen: sonst bleibt das alte Cover stehen, solange das neue laedt
+  // (MusicBrainz braucht bei Drosselung bis zu ~30 s)
+  img.hidden = true; fallback.hidden = false;
+  if (!url) return;
+  img.onload = () => { if (lastArt === url) { img.hidden = false; fallback.hidden = true; } };
+  img.onerror = () => { if (lastArt === url) { img.hidden = true; fallback.hidden = false; } };
   img.referrerPolicy = "no-referrer";
   img.src = url;
 }

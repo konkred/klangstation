@@ -100,6 +100,7 @@ class Core:
         self.surround = 2
         self.spotify: Dict[str, Any] = {}
         self.airplay_active = False
+        self._airplay_gen = 0  # zaehlt AirPlay-Start/-Ende, damit ein verspaetetes Ende ins Leere laeuft
         self.airplay = MetadataReader(RUN_DIR / "shairport-metadata", self._on_airplay_meta)
         self.cd: Dict[str, Any] = {"available": False, "status": "none", "present": False}
         self.stations: Dict[str, Dict[str, Any]] = {}
@@ -281,18 +282,33 @@ class Core:
             self.source = new
         self.push()
 
+    AIRPLAY_STOP_GRACE = 5  # s nach dem Ende, bevor AirPlay als beendet gilt
+
+    async def _airplay_ended(self, gen: int) -> None:
+        await asyncio.sleep(self.AIRPLAY_STOP_GRACE)
+        if gen != self._airplay_gen or not self.airplay_active:
+            return  # inzwischen neu gestartet oder von einer anderen Quelle uebernommen
+        self.airplay_active = False
+        self.airplay.reset()
+        if self.source == "airplay":
+            self.source = "idle"
+        self.push()
+
     async def hook(self, payload: Dict[str, Any]) -> None:
         src, event = payload.get("source"), payload.get("event", "")
         env = payload.get("env") or {}
         if src == "airplay":
+            self._airplay_gen += 1
             if event == "start":
                 self.airplay_active = True
                 await self.take_over("airplay")
-            elif event == "stop":
-                self.airplay_active = False
-                self.airplay.reset()
-                if self.source == "airplay":
-                    self.source = "idle"
+            elif event == "stop" and self.airplay_active:
+                # Beim iPhone endet die Wiedergabe fuer shairport-sync auch bei Pause und Titelwechsel, ~2 s
+                # spaeter kommt wieder "start". Sofort auf Leerlauf zu schalten liess kurz den pausierten
+                # MPD-Titel samt Cover aufblitzen -> so lange als pausiertes AirPlay stehen lassen.
+                self.airplay.meta["elapsed"] = self.airplay.position()
+                self.airplay.meta["paused"] = True
+                self._spawn(self._airplay_ended(self._airplay_gen))
         elif src == "spotify":
             if event.startswith("session_"):
                 log.info("Spotify: %s %s", event, {k: v for k, v in env.items() if k.startswith("CLIENT_")})

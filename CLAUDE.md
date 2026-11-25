@@ -179,6 +179,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   Titel, ohne Ton. Dienst läuft mit `LC_ALL=C.UTF-8` (0.2.21). Meldungen nie ohne englische Locale auswerten.
 * **gmediarender hält das ALSA-Gerät auch nach Stop** (GStreamer-Pipeline bleibt in READY) → bei Übernahme durch eine andere
   Quelle gmediarender neu starten, sobald UPnP einen Titel geladen hat (`uri`), nicht nur beim Spielen.
+* **AirPlay vom iPhone: shairport-sync meldet bei Pause und Titelwechsel „Wiedergabe zu Ende“**, ~2 s später wieder „Start“ → sofort auf Leerlauf zu
+  schalten ließ den pausierten MPD-Titel samt Cover aufblitzen; Klangstation wartet 5 s (`AIRPLAY_STOP_GRACE`).
+* **iPhone-Cover über shairport-sync 4.3.7 abgeschnitten** (Puffer 180224 Bytes, nur teilweise gefüllt) → wird verworfen,
+  Cover über MusicBrainz; die Größe steht im Log („AirPlay-Cover unvollstaendig“).
 * Beendet sich ein Dienst unerwartet, schreibt `daemons.py` seine letzten Zeilen ins Journal.
 * **Bluetooth-Position nach dem Springen:** Das iPhone schickt beim Springen im Titel nichts über AVRCP (btmon: nur der
   Audiostrom), BlueZ meldet `Position` nur beim Statuswechsel (z. B. auf „playing“), eine Nachfrage gibt die D-Bus-API nicht
@@ -198,6 +202,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   Änderungszeit der Dateien in `web/`, beim Start berechnet): ändert sie sich, lädt `/tv` neu. Greift also erst nach
   einem Neustart von Klangstation. Einzeln eingespielte Web-Dateien ohne Neustart: `klangstation-tv` neu starten
   oder Browser beenden und `POST /api/tv/show` (erhöht `launch`, `ks-tv-kiosk` startet ihn neu).
+* **Neues Cover lädt langsam** (MusicBrainz bei Drosselung bis ~30 s): Das `img` zeigte so lange das alte Bild (No-Doubt-Cover
+  bei AirPlay) → `setArt` zeigt sofort den Platzhalter, `onload` nur für die aktuelle Adresse.
 * **Browser nahm `js`/`css` nach dem Neuladen ungefragt aus dem Cache** (keine Cache-Vorgabe → heuristische
   Frische) → statische Dateien mit `Cache-Control: no-cache` (`RevalidatedStatic` in `main.py`, sonst 304).
 * **Dialog auf dem iPhone ohne „Schließen“:** Im Flex-Dialog braucht der scrollende Inhalt `min-height: 0`, sonst
@@ -300,9 +306,9 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   an?) und Ruhebildschirm am Fernseher; Equalizer an vc4hdmi (`default:CARD=…` als slave); Synology/SMB samt Ausfall und „Neu“ bei
   großer Bibliothek (Dauer von `sort -Last-Modified`); Obergrenze bei UPnP/Bluetooth; eingebautes WLAN verbinden/trennen (nur mit
   Kabel testen).
-* **Thin Client:** Equalizer mit 7.1 an echter Karte (USB-Karte CM106 des Nutzers); AirPlay (unter Debian bisher nur Spotify).
-  Bluetooth geht dort nicht (kein Adapter).
-* **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
+* **Thin Client:** Equalizer mit 7.1 an echter Karte (USB-Karte CM106 des Nutzers). Bluetooth geht dort nicht (kein Adapter).
+* **Belegter Ausgang durch fremdes Programm:** Spotify gibt nach 10 s stumm auf, AirPlay scheitert stumm (MPD zeigt einen Hinweis).
+  Klangstations eigene Quellen geben sich das Gerät gegenseitig frei; ohne Desktop kommt der Fall praktisch nicht vor.
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm; Hochladen vom iPhone und
   Ordnerwahl mit echtem Dateidialog.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
@@ -447,6 +453,9 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   die Adresse einmal und nimmt sonst MusicBrainz (0.2.20); danach Cover über `/api/art`.
 * Spotify nach UPnP (0.2.21, laut Nutzer und Protokoll): mconnect spielt, dann Pause (gmediarender hält HDMI) → Spotify meldet
   „sink busy“, Klangstation startet gmediarender neu (neue PID), HDMI frei, Spotify spielt nach ~1 s mit Ton.
+* AirPlay mit iPhone (0.2.22, laut Nutzer und Protokoll): Ton, Titel, Gerätename `konnis-iPhone-16`, Pause/Weiter, Titelsprung;
+  Spotify ↔ AirPlay hin und zurück; UPnP pausiert → AirPlay übernimmt (gmediarender neu gestartet). Cover meist über MusicBrainz:
+  shairport-sync 4.3.7 liefert das iPhone-Bild abgeschnitten (immer 180224 Bytes, davon 44–63 % Daten, Rest Nullen).
 
 ### Behobene Fehler
 
@@ -525,3 +534,4 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 * WLAN verbunden → Kabel verlor seine Adresse (ARP-Flux) → `arp_ignore`/`arp_announce` (0.2.19).
 * UPnP ohne Cover, wenn die App eine nicht abrufbare Bildadresse schickt (mconnect) → prüfen, sonst MusicBrainz (0.2.20).
 * Spotify nach UPnP: Titel liefen nur Sekunden, kein Ton (gmediarender hielt HDMI, „belegt“ auf Deutsch) → Locale, Freigabe (0.2.21).
+* AirPlay: falsches Cover (pausierter MPD-Titel) bei Pause/Titelwechsel und solange das neue Cover lud → Wartezeit, Platzhalter (0.2.22).

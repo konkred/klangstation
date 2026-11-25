@@ -95,7 +95,7 @@ Sitzung in Regler, Anschlüsse und Bluetooth eingreifen, der Rechner schliefe ei
 | Neustart | ✓ | ✓ | ✓ |
 | Herunterfahren aus der Oberfläche | | ✓ | |
 | „Läuft gerade“ | ✓ | ✓ | ✓ |
-| Spotify, AirPlay | ✓ | Spotify | ✓ |
+| Spotify, AirPlay | ✓ | ✓ | ✓ |
 | Bluetooth mit iPhone | | (kein Adapter) | ✓ |
 | UPnP | | ✓ | |
 | Radio, auch bei Netzausfall | | ✓ | ✓ |
@@ -437,6 +437,11 @@ systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
 * **Radio-Suche schlägt fehl:** Die Radio-Browser-Server setzen zeitweise Verbindungen zurück; Klangstation versucht
   es automatisch mehrfach über alle Server. Ist der Dienst ganz ausgefallen (Meldung 503), hilft nur abwarten –
   gespeicherte Favoriten spielen weiter, weil sie die Adresse des Senders direkt kennen.
+* **Spotify springt nach Sekunden zum nächsten Titel, AirPlay bleibt stumm:** Ein Programm außerhalb von Klangstation
+  belegt den Ausgang (z. B. ein von Hand gestartetes `aplay`). Klangstations eigene Quellen geben ihn sich gegenseitig frei,
+  fremde nicht. Wer ihn hält, zeigt `cat /proc/asound/card*/pcm*p/sub0/status` (`owner_pid`).
+* **AirPlay ohne Cover vom iPhone:** shairport-sync liefert das Bild oft nur teilweise; Klangstation sucht das Cover dann
+  bei MusicBrainz, das kann bei Drosselung eine Weile dauern.
 * **AirPlay 2:** Installiert wird klassisches AirPlay (geht mit allen iPhones/Macs). Für AirPlay 2 (Multiroom in der
   Home-App) shairport-sync mit `--with-airplay-2` und `nqptp` bauen.
 

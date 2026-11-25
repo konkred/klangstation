@@ -30,9 +30,11 @@ function setArt(url) {
   if (url === lastArt) return;
   lastArt = url;
   const img = $("#art"), fb = $("#art-fallback");
-  if (!url) { img.hidden = true; fb.hidden = false; return; }
-  img.onload = () => { img.hidden = false; fb.hidden = true; };
-  img.onerror = () => { img.hidden = true; fb.hidden = false; };
+  // Bis das neue Bild da ist, Platzhalter zeigen, sonst bleibt das alte Cover stehen
+  img.hidden = true; fb.hidden = false;
+  if (!url) return;
+  img.onload = () => { if (lastArt === url) { img.hidden = false; fb.hidden = true; } };
+  img.onerror = () => { if (lastArt === url) { img.hidden = true; fb.hidden = false; } };
   img.referrerPolicy = "no-referrer";
   img.src = url;
 }

@@ -1,9 +1,7 @@
 # Klangstation – Arbeitskontext für Claude
 
 Musik-Streaming-Webapp (Python/Starlette + MPD) im Stil der 2000er (WMP-Skin, wahlweise Frutiger Aero) für
-headless Debian-Systeme samt Raspberry Pi OS, jeweils **ohne Desktop**
-(ARM und x86); RHEL/AlmaLinux bis 0.2.13, seit 0.2.14 nicht mehr; Desktop-Systeme bis 0.2.17, seit 0.2.18 nicht mehr
-(beides Entscheidungen des Nutzers, 25.11.2026). Was das Projekt kann und wie es installiert wird, steht in der README.md. Diese Datei hält fest,
+headless Debian 13 und Raspberry Pi OS Lite, jeweils **ohne Desktop** (ARM und x86). Was das Projekt kann und wie es installiert wird, steht in der README.md. Diese Datei hält fest,
 was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der Fehlersuche und den Teststand.
 
 ## Absprachen mit dem Nutzer
@@ -52,15 +50,16 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 
 ## Testgeräte
 
+Entwickelt und getestet wird nur am **Thin Client** (alle Tests für PCs) und am **Pi**; der Dell-Laptop nur ausnahmsweise, wenn
+laptop-spezifische Neuerungen kommen (Deckel, Akku, eingebautes Display, Laptop-WLAN). Andere Geräte gibt es nicht mehr
+(Entscheidung des Nutzers, 25.11.2026).
+
 | Gerät | Zugang | Hinweise |
 |---|---|---|
-| **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1 (Hostname `KlangStation`), Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB, **Debian 13 ohne Desktop** (seit 25.11., vorher AlmaLinux 10.3) | `ssh root@10.0.0.190` (bis 25.11. .189, siehe ARP-Flux) bzw. `KlangStation.fritz.box` (SSH-Key, zu Hause, Kabel unter ifupdown; IPv6 `fd20:fb6d:4793:0:2e0:c5ff:fe2b:4050` mit `-o HostKeyAlias=10.0.0.190`) | root erlaubt, Neustart ja, Herunterfahren nur mit dem Nutzer; kein `sudo` installiert (in Skripten `runuser -u klangstation`); eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1 = HDMI 0); kein WLAN, kein Bluetooth-Adapter; Testskripte `t_*.py`, `t_sec.sh` in `/root` |
+| **Test-PC**: Thin Client 10ZiG 6000q-1 (Hostname `KlangStation`), Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB, **Debian 13 ohne Desktop** | `ssh root@10.0.0.190` bzw. `KlangStation.fritz.box` (SSH-Key, zu Hause, Kabel unter ifupdown; IPv6 `fd20:fb6d:4793:0:2e0:c5ff:fe2b:4050` mit `-o HostKeyAlias=10.0.0.190`) | root erlaubt, Neustart ja, Herunterfahren nur mit dem Nutzer; kein `sudo` installiert (in Skripten `runuser -u klangstation`); eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1 = HDMI 0); kein WLAN, kein Bluetooth-Adapter; Testskripte `t_*.py`, `t_sec.sh` in `/root` |
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0; **Desktop: Installer lehnt seit 0.2.18 ab** – für weitere Tests Pi OS Lite neu aufsetzen (mit dem Nutzer) |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
-| HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
-| Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
-| ASUS VivoBook X515UA (Hostname `asus-laptop-Klang`, Ryzen 5 5500U, 8 GB), Debian 13.7 mit GNOME, x86_64 | `ssh debianlaptop@10.0.0.171` (SSH-Key, zu Hause, nur WLAN) | sudo ohne Passwort; ALC256 (Lautsprecher/Kopfhörer), HDMI (AMD), Bluetooth QCA9377; Ausgabe steht auf HDMI 0 |
-| Dell Latitude 5501 (Hostname `Dell-Latitude-KlangTest`, i5-9400H, 32 GB), Debian 13.7 ohne Desktop, x86_64 | `ssh debiandell@10.0.0.174` (SSH-Key, zu Hause, nur WLAN) | sudo ohne Passwort; WLAN (Intel CNVi) über ifupdown/wpa_supplicant, nicht NetworkManager; HDA-Treiber (ALC3204 + Intel-HDMI), kein SOF |
+| Dell Latitude 5501 (Hostname `Dell-Latitude-KlangTest`, i5-9400H, 32 GB), Debian 13.7 ohne Desktop, x86_64 – **nur für laptop-spezifische Neuerungen** | `ssh debiandell@10.0.0.174` (SSH-Key, zu Hause, nur WLAN) | sudo ohne Passwort; WLAN (Intel CNVi) über ifupdown/wpa_supplicant, nicht NetworkManager; HDA-Treiber (ALC3204 + Intel-HDMI), kein SOF |
 | NFS auf dem Laptop | `192.168.8.155:/mnt/nfsshare` (vom Nutzer angelegt, Adresse im Reise-Netz per DHCP) | Testalben von Claude nach den Tests gelöscht, Freigabe ist leer |
 | Synology | `//10.0.0.15/Musik` (am Pi als „Synology Test2“, ~930 Titel); früher `//10.0.0.10/TestMusik` | Zugangsdaten trägt der Nutzer selbst in der Oberfläche ein |
 
@@ -140,32 +139,6 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   nimmt er keine Verbindung an (am Pi bis über 25 s) → vor dem MPD-Neustart Radio stoppen, danach `play <Nr>`.
 * **Freigabe-Server weg:** MPD bleibt ~3 min stumm und springt dann durch die Warteschlange. `pause` kehrt im
   Hänger sofort zurück, `stop` blockiert → Freigabe-Wächter pausiert und setzt per `seekid` fort.
-* **RPM Fusion baut für EL10 nur x86-64-v3** (AVX2) → auf CPUs ohne AVX (AlmaLinux x86_64_v2) stürzen mpd und
-  shairport-sync beim Laden von `libx265` mit SIGILL ab (Code -4) → Installer bindet RPM Fusion dort nicht ein,
-  ffmpeg-free aus EPEL (MP3/AAC/WMA/APE/WV/DSF gehen).
-* **Headless-Mixer:** Regler stehen auf frischen Systemen stumm/0 % → `audio.prepare_mixer` schaltet sie ein und setzt sie auf 100 %.
-* **vc4hdmi (Pi)** hat keinen Jack-Regler → Anschlussstatus aus `/sys/class/drm/card*-HDMI-A-<n+1>/status`.
-* **Dynamische Lautstärke (`volume_normalization`)** gibt es in MPD nur als Startoption → MPD-Neustart wie beim
-  Ausgabewechsel; ReplayGain und Überblenden gehen zur Laufzeit (`replay_gain_mode`, `crossfade`).
-* **MPD `single oneshot`** bleibt nach dem Anhalten stehen → Schlummer-Timer „Titelende“ setzt es danach auf 0.
-* **5.1/7.1 hochmischen:** eigenes ALSA-Gerät `ks_surround` (plug + ttable) in `~/.asoundrc` des Dienstnutzers
-  (HOME = `/var/lib/klangstation`); eine fremde `.asoundrc` (ohne Kopfzeile von Klangstation) wird nicht
-  überschrieben. `aplay`-Meldungen sind lokalisiert → mit `LC_ALL=C` aufrufen. Stumm testen mit `snd-aloop`
-  (bis 32 Kanäle; Aufnahme an `DEV=1` in S24_LE, plug wählt das beste Format); zum Entladen erst `alsa-state`
-  stoppen (alsactl hält die Karte).
-* **Equalizer (caps Eq10 über alsaequal):** Regler 0–100 = −48…+24 dB je Band, linear (alle Bänder gleich: 0 → −44,4 dB,
-  100 → +22,2 dB). Die Bänder überlappen: alle auf „0 dB“ (Wert 66) ergeben +3,2 dB → laute Musik übersteuert. Darum
-  `_EQ_BANK_GAIN_DB` = 4 (flach = Wert 61, gemessen −0,4 dB). Ein einzelnes Band erreicht in der Mitte nur etwa +7,4/−3,5 dB bei ±12,
-  die Nachbarn begrenzen vor allem das Absenken; 31 Hz und 16 kHz liegen flach 1,4 bzw. 2,9 dB tiefer. Messen: Sinus −20 dBFS je
-  Band über snd-aloop, Bezug ohne EQ (`t_eq.py`, `t_eq2.py` in `/root` am Thin Client).
-* **UPnP-Cover (`albumArtURI`) nicht ungeprüft weitergeben:** mconnect schickt für Titel vom iPhone einen Dateipfad des Handys,
-  der 404 gibt; ohne Prüfung greift der MusicBrainz-Rückfall nie (`UpnpRenderer._art_usable`).
-* **Verbindung reißt ab, Sender nicht erreichbar:** MPD behandelt das wie ein Titelende: `stop` ohne `error` und ohne
-  aktuellen Titel, der Sender steht noch in der Warteschlange → daran erkennt es `_stream_lost`. Der Nutzer-Stopp behält den
-  aktuellen Titel, aber MPD behält auch `error` → Stopp und Pause beenden den Neuversuch in `player` (samt `clearerror`).
-* **Nicht erreichbarer Sender:** `addid`/`play` gelingen, MPD meldet den Fehler erst danach (`state: stop` + `error`)
-  → der Wecker prüft das in der Lautstärke-Rampe und weicht auf die Bibliothek aus.
-
 ### CD
 
 * **cdparanoia `-e`** meldet absolute Positionen ab CD-Anfang → relativ zum ersten Wert rechnen.
@@ -189,8 +162,6 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 
 ### Bluetooth, AirPlay, Spotify
 
-* **SELinux + bluez-alsa:** Als Dienst darf bluealsa die PCM-Pipe nicht über D-Bus weiterreichen (stummes
-  dontaudit) → dbus-broker trennt bluealsa, bluetoothd kann mit abstürzen → Modul `system/klangstation-bluealsa.cil`.
 * **BlueZ hostname-Plugin** macht aus dem Gehäusetyp „Desktop-Computer“ → `bluetoothd -P hostname`.
 * **Bluetooth-PCM meldet am Pi nach Ausgabewechsel kurz `Running`**, obwohl das iPhone pausiert ist → Übernahme
   nie bei AVRCP „paused“, sofort bei „playing“, sonst erst nach 3 s laufender PCM (iPhone meldet nach frischem
@@ -243,8 +214,7 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 
 ### Netzwerk und systemd
 
-* **USB-WLAN-Sticks mit Treiber-CD** (ZeroCD, z. B. AVM) melden sich als CD-Laufwerk; `usb_modeswitch` gibt es für
-  EL10 nicht → `eject /dev/sr<n>` schaltet um.
+* **USB-WLAN-Sticks mit Treiber-CD** (ZeroCD, z. B. AVM) melden sich als CD-Laufwerk → `eject /dev/sr<n>` schaltet um.
 * **Ein WLAN, mehrere Zugangspunkte/Bänder:** `nmcli dev wifi list` liefert je BSSID eine Zeile → Liste nach SSID
   zusammenfassen, Bänder sammeln („2,4 + 5 GHz“).
 
@@ -270,22 +240,23 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `arp_ignore=1`, `arp_announce=2` (`/etc/sysctl.d/90-klangstation.conf`).
 * **Port-Probe** vor dem Wechsel mit `SO_REUSEADDR` (wie uvicorn), sonst gilt der alte Port wegen TIME_WAIT als belegt.
 
-### Installer und PipeWire
+### Installer
 
 * **Nur ohne Desktop** (Entscheidung des Nutzers, 25.11.2026, ab 0.2.18): Installer bricht ab, wenn ein Display-Manager aktiviert
   ist (`/etc/systemd/system/display-manager.service`) und das System grafisch startet. `graphical.target` allein taugt nicht:
   Debian ohne Desktop (Thin Client) startet es auch. Entfernt: WirePlumber-Bluetooth- und `pro-audio`-Profil, XDG-Autostart
   (`klangstation-tv.desktop`) samt Start in laufenden Sitzungen, GNOME-`gsettings` und Firefox in `ks-tv-kiosk`, Regler-Wächter
   nach WirePlumber-Start (`_mixer_loop`). Geblieben: Sperre von Ruhezustand und Deckel (Laptop ohne Desktop), PipeWire-Sperre für
-  die Kiosk-Sitzung, `_busy_loop` (jedes andere Programm auf derselben Karte). Die Desktop-Lehren unten bleiben als Beleg.
+  die Kiosk-Sitzung, `_busy_loop` (jedes andere Programm auf derselben Karte). Gründe: PipeWire/WirePlumber und die Sitzung
+  griffen in Regler, Anschlüsse und Bluetooth ein, GNOME schlief ein oder sperrte.
 
 * **Nur Debian/Pi OS** (Entscheidung des Nutzers, 25.11.2026, ab 0.2.14): AlmaLinux/RHEL fallen weg. Gründe: Pi braucht ohnehin
   Debian; unter EL10 mussten mpd, shairport-sync, gmediarender, bluez-alsa gebaut werden (Thin Client 15 min statt ~1 min), es
   fehlten `alsaequal`/`caps` (Equalizer), `usb_modeswitch`, RPM Fusion für CPUs ohne AVX. Entfernt: RHEL-Zweig im Installer,
-  Build-Funktionen, SELinux-Modul. Die Lehren zu RHEL unten bleiben als Beleg, falls es je zurückkommt. openSUSE ebenfalls verworfen.
+  Build-Funktionen, SELinux-Modul. openSUSE ebenfalls verworfen.
 * **Ubuntu nicht unterstützen** (Entscheidung des Nutzers, 02.11.): Der Installer lehnt Ubuntu und Ableger ab. Browser gibt
   es nur als Snap: AppArmor sperrt Profile außerhalb von `~/snap/`, `chromium`/`--tv-headless` geht nicht, dazu andere
-  Firmware-Pakete. Der Test vom 02.11. (siehe Bestanden) lief mit Snap-Sonderfall in `ks-tv-kiosk` (b575f4b, wieder entfernt).
+  Firmware-Pakete.
 * **`pipefail` und `| grep -q`:** grep beendet sich beim ersten Treffer, der Befehl davor bekommt SIGPIPE, die Pipe endet mit 141
   → die Prüfung „scheitert“ immer. So installierte der Installer die WLAN-Firmware (`apt-cache policy … | grep -q`) nie, auch die
   ufw-Prüfung war betroffen → Ausgabe erst in eine Variable, dann vergleichen.
@@ -293,27 +264,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   Datei, Code 2), beendet das Skript still → `|| true`. Fällt bei Updates nicht auf, nur auf frischen Systemen.
 * **`apt-cache show`** findet auch Paketnamen ohne Kandidat → `apt-cache policy` prüfen.
 * **`/etc/debian_version`** kann `forky/sid` enthalten → nur verwenden, wenn es mit einer Ziffer beginnt.
-* **WirePlumber setzt bei jedem Start** (Anmeldung, Neustart von PipeWire) HDMI und Kopfhörer auf stumm/0 %, MPD spielt
-  dann lautlos → `_mixer_loop` holt die Regler 30 s lang zurück, wenn ein neuer wireplumber-Prozess auftaucht. Nur dann,
-  damit Stummschalten von Hand (auch die Testtechnik `IEC958 off`) bestehen bleibt.
-* **PipeWire spielt auf demselben Ausgang:** MPD bleibt mit „Device or resource busy“ auf Pause und versucht es nicht
+* **Anderes Programm spielt auf demselben Ausgang:** MPD bleibt mit „Device or resource busy“ auf Pause und versucht es nicht
   wieder → `_busy_loop` zeigt den Hinweis und versucht es alle 3 s, höchstens 2 min. Pause/Stopp beenden das Warten
   (samt `clearerror`), sonst startet die Wiedergabe später ungefragt. Aus einer Pause heraus nur `pause 0`: `seek` löscht den Fehler
   und MPD bleibt ohne Hinweis pausiert. `pause 0` lässt den Fehler nach dem Erfolg stehen → bei `state: play` `clearerror`.
-
-* **GNOME schläft ein:** Standard sind Bereitschaft nach 15 min ohne Eingabe, Bildschirm dunkel und Sperre nach 5 min; nach dem
-  Aufwecken steht trotz automatischer Anmeldung die Passwortabfrage da → Installer sperrt die Sleep-Ziele (`systemctl mask`),
-  `ks-tv-kiosk` stellt Dunkelschalten und Sperre per `gsettings` ab, solange „Läuft gerade“ an ist.
-* **Autostart greift erst bei der nächsten Anmeldung** → Installer startet `ks-tv-kiosk` in laufenden Sitzungen per
-  `systemd-run --user --machine=<Nutzer>@`; `flock` im Skript verhindert eine zweite Instanz.
-* **WirePlumber verstellt die Karte im Betrieb:** Der Lautstärkeregler des Desktops und der Anschlusswechsel (Kopfhörer ein/aus,
-  je Anschluss gemerkte Lautstärke) setzen Master direkt (am ASUS 64 %). `api.alsa.soft-mixer` allein taugt nicht: PipeWire schaltet
-  beim Herausziehen den Kopfhörer stumm (0 %/aus), den Lautsprecher aber nicht wieder ein → still. Lösung: Profil `pro-audio` für
-  alle Karten (WirePlumber-Regel `device.profile`), PipeWire fasst dann Regler und Anschlüsse nicht an; `Auto-Mute Mode` (von
-  PipeWire auf Disabled gestellt) setzt `prepare_mixer` auf Enabled, der Treiber schaltet selbst um.
-* **PackageKit** lädt auf frischen Desktops nach dem Start Updates und hält die dpkg-Sperre (am ASUS über 10 min, alle
-  LibreOffice-Sprachpakete) → apt-get im Installer mit `DPkg::Lock::Timeout=600`; sonst vorher Updates von Hand.
-* WirePlumber 0.5 meldet beim Start „Old configuration file detected“ wegen `bluetooth.lua.d/90-klangstation.lua` (für 0.4) – harmlos.
 
 ### Sicherheit
 
@@ -337,47 +291,31 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 
 ### Noch offen
 
-* **Rest von 0.2.11/0.2.12** (übrige Punkte am Thin Client bestanden, siehe unten):
-  * „Neu“ bei großer Bibliothek (Dauer von `sort -Last-Modified` über alle Titel, z. B. Synology am Pi).
-  * Equalizer am Pi (vc4hdmi, `default:CARD=…` als slave) und mit 7.1 an echter Karte; am Thin Client bestanden.
-  * Obergrenze bei UPnP/Bluetooth.
+* **Pi** (zu Hause, erst mit dem Nutzer Pi OS Lite neu aufsetzen): Installation mit `--tv-headless`; Wecker mit CEC (Fernseher
+  an?) und Ruhebildschirm am Fernseher; Equalizer an vc4hdmi (`default:CARD=…` als slave); Synology/SMB samt Ausfall und „Neu“ bei
+  großer Bibliothek (Dauer von `sort -Last-Modified`); Obergrenze bei UPnP/Bluetooth; eingebautes WLAN verbinden/trennen (nur mit
+  Kabel testen).
+* **Thin Client:** Equalizer mit 7.1 an echter Karte (USB-Karte CM106 des Nutzers); AirPlay (unter Debian bisher nur Spotify).
+  Bluetooth geht dort nicht (kein Adapter).
 * **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
-* **Pi zu Hause** (Stand 01.11., hat Desktop → vorher Pi OS Lite aufsetzen): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
-  WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
-* Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
-  Radio Browser gestört).
+* Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm; Hochladen vom iPhone und
+  Ordnerwahl mit echtem Dateidialog.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
-  `vcgencmd get_throttled`). Erster Lauf am 26.10.2026 nach 35 min abgebrochen (unauffällig).
+  `vcgencmd get_throttled`). Nach dem Neuaufsetzen erst wieder hinlegen.
 * Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst am Pi „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Thin Client.
 
-### Testplan weitere Geräte (mit dem Nutzer abgestimmt am 01.11.2026, seit 25.11. nur Debian ohne Desktop)
+### Laptop (Dell, nur bei laptop-spezifischen Neuerungen)
 
-| Gerät | System | Deckt ab |
-|---|---|---|
-| ASUS-Laptop, Ryzen 5 5500U | Debian 13 mit Desktop (bis 0.2.17 bestanden, nicht mehr unterstützt) | AMD-Sound/-Grafik, eingebaute Lautsprecher und Display, eingebautes WLAN |
-| Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
-| Wincor Nixdorf Beetle, Core 2 Quad | Debian 13 ohne Desktop | ifupdown statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
-| HP i7 (`KlangStationDebian`) | Debian 13 mit GNOME (vorher ohne Desktop) | beides bestanden, 7.1 mit CM106 und Soundbird ohne Desktop; für weitere Tests wieder ohne Desktop aufsetzen |
-| Pi 4 zu Hause | Pi OS (für weitere Tests Lite) | CEC, Fernseher |
-
-Reihenfolge: ASUS und Dell erledigt, als Nächstes Beetle.
-Zugang jeweils per SSH mit sudo wie am Pi.
-
-Vorher bzw. dabei bedenken:
-
-* **Laptop-Deckel:** Installer setzt `HandleLidSwitch=ignore` (auch ExternalPower/Docked) in
-  `/etc/systemd/logind.conf.d/90-klangstation.conf` (0.2.5), am ASUS bestanden.
-* **Laptop-Display:** Kiosk bei offenem Deckel auf dem eingebauten Display, bei geschlossenem Deckel am Fernseher – macht
-  GNOME von selbst (am ASUS bestanden). Ohne Desktop nutzt cage mit `-m last` den Fernseher, sobald er steckt (am Dell bestanden).
-* **Lautsprecher/Kopfhörer:** Erscheint als ein Gerät („ALC256 Analog“); Umschalten per Auto-Mute des Treibers (am ASUS bestanden).
-* **SOF:** Weder ASUS noch Dell brauchen es (beide laufen über `snd_hda_intel`). Andere Laptops brauchen evtl.
-  `firmware-sof-signed`, bringt der Installer bisher nicht mit; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
-* **Beetle:** vorher RAM und Tonausgang klären (Kassensysteme haben teils nur Lautsprecher- oder keinen Ausgang);
-  Chromium-Kiosk auf alter Intel-Grafik evtl. langsam.
-* Akkustand: oben rechts auf „Läuft gerade“ (0.2.7, `sysinfo.battery`, alle 5 s); unter Info mit Kapazität vom Neuzustand (0.2.10).
+* **Deckel:** Installer setzt `HandleLidSwitch=ignore` (auch ExternalPower/Docked) in
+  `/etc/systemd/logind.conf.d/90-klangstation.conf`.
+* **Display:** cage mit `-m last` nutzt den Fernseher, sobald er steckt, sonst das eingebaute Display.
+* **SOF:** Der Dell läuft über `snd_hda_intel`. Andere Laptops brauchen evtl. `firmware-sof-signed`, bringt der Installer bisher
+  nicht mit; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
+* Akkustand: oben rechts auf „Läuft gerade“ (`sysinfo.battery`, alle 5 s); unter Info mit Kapazität vom Neuzustand.
+* Noch offen: Kopfhörer.
 
 ### Bestanden
 
@@ -400,22 +338,6 @@ Vorher bzw. dabei bedenken:
 * Aufgeräumt: Testdateien, Testplaylist „Test Update“ und Radio-Favorit entfernt; Wiedergabeliste „SynoTest“
   ist geblieben.
 
-**Alma, 26.10.2026**
-
-* Update per `install.sh --tv-headless` (1 min 47 s; Einstellungen, Geheimnis, Spotify-Anmeldung, Freigabe mit
-  Passwort unverändert, keine Paketänderung).
-* Neustart während Radio: Web nach 65 s (davon 39 s Firmware), alle Dienste, Freigabe, Stick, Bluetooth,
-  SELinux-Modul da, kein ungefragtes Weiterspielen.
-* CD: Rippen in den internen Speicher (3 min 15 s), Auswerfen per Taste während des Rippens.
-* USB: FAT32-Umlaute; Speichern auf NTFS und FAT32; Abziehen/Anstecken per USB-`authorized` mit offener Datei,
-  schnelles Wiederanstecken (neuer Gerätename), ausgeschaltete remove-Regel (Rückfallweg) und echtes Abziehen.
-* Bluetooth: übersteht Neustart, Stick wird im laufenden Betrieb erkannt; mit iPhone keine Übernahme bei
-  Bit-perfekt-Wechseln (pausiert und frisch verbunden), Play übernimmt sofort.
-* Spotify übernimmt von AirPlay ohne Absturz von librespot.
-* Störfälle: Webradio spielt 7 s nach Netzrückkehr wieder; Synology-Ausfall 40 s und 210 s → setzt an derselben
-  Stelle fort.
-* WebSocket 4401 statt 1006 (per TestClient).
-
 **Pi OS Lite frisch (unterwegs), 27.10.2026**
 
 * `install.sh --tv-headless` von null: 8 min über mobiles Netz (pip-Aussetzer abgefangen), alle Dienste und
@@ -426,83 +348,6 @@ Vorher bzw. dabei bedenken:
 * NFS (Laptop, NFS 4.2, `soft,timeo=50,retrans=2`): einhängen, 7 Titel in 6 s eingelesen, Umlaute und „&“ in
   Pfaden und Tags; Ausfall 90 s (stumm): Puffer reicht ~27 s, nach 15 s Stillstand pausiert, 4 s nach Rückkehr
   an derselben Stelle weiter.
-
-**OptiPlex 3060, AlmaLinux 10.2 x86_64_v2 mit GNOME (unterwegs), 27.10.2026**
-
-* Installation auf frischem System (ohne `--tv-headless`): erster Lauf 16 min 21 s, mpd/shairport-sync stürzten ab
-  (RPM Fusion, siehe Behobene Fehler); nach dem Fix Neubau in 8 min 33 s, alle Dienste laufen.
-* Neustart: Web nach 48 s, alle Dienste, kein ungefragtes Weiterspielen, keine AVCs. GNOME meldet root automatisch
-  an, `ks-tv-kiosk` startet Firefox im Kiosk (kein Chromium installiert), PipeWire läuft nicht mit.
-* AirPlay ↔ Spotify mit iPhone: je 1–2 s bis zum Titel (laut Nutzer höchstens 3 s), zweimal hin und her,
-  Pause/Weiter/Spulen bei Spotify gehen.
-* NFS (Laptop, NFS 4.2, `soft,timeo=50,retrans=2`, per API eingetragen): 8 Titel in 7 s, Umlaute und „&“, MP3 über
-  ffmpeg-free mit richtiger Länge; Ausfall 90 s (stumm): Puffer ~23 s, nach 15 s Stillstand pausiert, 9 s nach
-  Rückkehr an derselben Stelle weiter, keine AVCs. Cover-Suche bei MusicBrainz im mobilen Netz gedrosselt (503) →
-  nach vier Versuchen 5 min Pause, wie vorgesehen.
-* CD (USB-Laufwerk, kein over-current): 4 Titel erkannt; MusicBrainz per `/etc/hosts` gesperrt → Abfrage beim
-  Einlegen, 16 Wiederholungen im Minutentakt, danach alle 5 min; nach Freigabe beim nächsten Versuch gefunden.
-* Rippen auf USB-Stick (FAT32) mit Rückfall: Stick bei „Wird gespeichert …“ per `authorized` getrennt → „Input/output
-  error“, Album im internen Speicher mit Hinweis, in der Bibliothek; Stick nach Wiederanstecken nach 3 s wieder da,
-  ohne halben Ordner, fsck sauber. Normales Rippen auf den Stick: 224 s, danach wieder `ro`.
-* Bluetooth (Stick im Betrieb eingesteckt): nach 5 s erkannt, Name DellOptiPlex3060, Klasse Lautsprecher; iPhone
-  gekoppelt, übernimmt von Spotify, Pause/Weiter; keine AVCs, GNOME stört nicht.
-* UPnP mit echter App (mconnect, iPhone): Titel, Interpret, Cover, Länge, Pause/Weiter, Spulen.
-* Aufgeräumt: Test-Rips, NFS-Freigabe, Testskripte, `/etc/hosts`; Testalben auf dem Laptop gelöscht.
-* Schlummer-Timer und Wecker (stumm per `IEC958 off`, Lautstärke 60): Timer 1 min blendet ab 30 s vorher von 60 auf
-  9 aus, pausiert, stellt 60 wieder her; „Titelende“ hält nach dem Titel an, `single` danach wieder 0; Abbrechen
-  setzt `single` zurück. Wecker-Test wird über 2 min von 6 auf 40 lauter; echter einmaliger Wecker mit kaputtem
-  Sender → nach 2 s Bibliothek im Zufall, 15-min-Timer gesetzt, Wecker danach aus; bei laufender Musik bleibt er
-  still. Wetter (Open-Meteo) und unbekannter Ort, Verlauf, Ruhebildschirm mit Coverband, Ersatzbild, Uhr weicht
-  dem Band aus.
-
-**Alma, 30.10.2026**
-
-* Update vom Stand 26.10. per `install.sh --tv-headless` (2 min 2 s, keine Paketänderung, RPM Fusion bleibt – CPU
-  kann x86-64-v3): Daten und Spotify-Anmeldung erhalten, Kiosk (cage + Chromium) läuft, statische Dateien mit
-  `no-cache`, keine AVCs. Spotify vom Handy verbindet sich direkt nach dem Neustart.
-* Laut Nutzer: Ruhebildschirm am Monitor passt, AirPlay zeigt den Gerätenamen des iPhones, Spotify ohne Namen
-  (librespot liefert keinen). Wecker-Dialog auf dem iPhone (nach Korrektur) bedienbar, Wecker-Test mit Ton: spielt
-  und wird hörbar lauter.
-* Bluetooth (Stick im Betrieb eingesteckt, nach 5 s erkannt): iPhone neu gekoppelt, verbunden ohne Übernahme (MPD
-  spielt weiter), Play übernimmt nach ~1 s (bluealsa-aplay gibt belegtes Gerät frei, Neustart), Pause/Weiter/
-  Titelsprung sofort, Trennen → Leerlauf ohne ungefragtes Weiterspielen von MPD; keine AVCs.
-* Lautstärke angleichen und Überblenden (stumm per `IEC958 off`): Überblenden und ReplayGain sofort zur Laufzeit,
-  „Dynamisch“ startet MPD neu und spielt nach 2 s an derselben Stelle weiter. Die Bibliothek am Alma hat keine
-  ReplayGain-Tags.
-* Sperrbildschirm: in Chromium Titel, Cover, Pause/Weiter/Nächster, bei Stopp leer; am iPhone (laut Nutzer)
-  Pause/Weiter und Spulen mit richtiger Zeit, Play weckt die pausierte Seite. Homescreen-App ohne Browserleiste.
-* Themes: Frutiger Aero (gedämpft) für Oberfläche und `/tv` im Browser (Desktop, 320–390 px) und am Monitor
-  (Kiosk); laut Nutzer angenehm. Knopfreihe passt ab 320 px.
-* Themes Nacht, Winamp, Aqua, Hi-Fi und Luna (Oberfläche: Wiedergabe, Bibliothek, Optionen, Wecker-Dialog bei 1280 und
-  390 px ohne Überlauf; `/tv` mit Wiedergabe und Ruhebildschirm im Browser). Noch nicht am Monitor und am iPhone.
-
-**Alma, 31.10.2026**
-
-* Update per `install.sh --tv-headless` mit WLAN-Unterstützung (NetworkManager-wifi nachinstalliert, NM neu
-  gestartet, Kabelverbindung blieb), `ks-netadmin.socket` läuft, keine AVCs.
-* Netzwerk (per API, über die eigene Verbindung): feste IPv4 statt DHCP → „Behalten?“ in der Oberfläche, ohne
-  Bestätigung nach 120 s zurück auf DHCP; mit Bestätigung bleibt sie; „Zurücknehmen“ stellt sofort zurück.
-  Prüfungen (Gateway außerhalb, Broadcast-Adresse, falsche UUID, kurzes WLAN-Passwort, Port 22/belegt) greifen.
-* Port der Weboberfläche 8080 → 8082 → 8080: je 4 s, Kiosk zieht mit, firewalld angepasst.
-* SSH aus (neue Verbindung abgelehnt, laufende Sitzung bleibt) und wieder an.
-* Oberfläche (Reiter Netzwerk) bei 390 px im Klassisch- und Nacht-Theme ohne Überlauf.
-* WLAN noch nicht getestet (kein Adapter am Alma).
-
-**Alma, 01.11.2026 – fünf USB-WLAN-Sticks**
-
-* Edimax N150 (7392:b811, RTL8188EU, rtl8xxxu, 2,4 GHz): sofort erkannt, Suche, Verbinden in der Oberfläche
-  (Nutzer), DHCP, Weboberfläche bei getrenntem Kabel über die WLAN-MAC erreichbar, „Vergessen“ löscht Profil und
-  Datei, Abziehen erkennt die Oberfläche („Kein WLAN-Adapter gefunden“).
-* Netgear WNDA3100v3 (0846:9014, MT7632U, mt76x2u): nach 2 s erkannt (dreimal „MCU resp evt:9“ beim Laden,
-  folgenlos), verbunden auf 5 GHz mit 300 Mbit/s, ohne Kabel Weboberfläche (4,8 MB in 0,4 s) und Internet.
-* AVM FRITZ!WLAN USB Stick N v2 (057c:62ff → nach `eject` 057c:8501, RT5572, rt2800usb): findet Netze, trennt sich
-  ~6 s nach der Suche (-71) und kommt im CD-Modus zurück, vorne wie hinten, auch ohne NetworkManager und ohne
-  USB-Autosuspend. Während der Tests startete der Alma dreimal ohne Herunterfahren neu (09:15, 09:38, 09:40, kein
-  Überstrom/MCE im Protokoll, Watchdog inaktiv), nach dem Abziehen 10 min stabil → **Stick nicht mehr an
-  Testgeräte stecken.** Journal am Alma seitdem dauerhaft (`/var/log/journal`).
-* Sharp „Remote Download Wireless Adapter“ (04dd:941f, BCM43236 rev 2): brcmfmac kennt nur rev 3
-  („Unknown chip“), auch per `new_id` → unter Linux nicht nutzbar.
-* Ein Stick ohne Kennung: meldet sich vorne und hinten nicht an (-71, „not accepting address“) → defekt.
 
 **Pi zu Hause, 01.11.2026 – Update vom Stand 26.10.**
 
@@ -515,140 +360,6 @@ Vorher bzw. dabei bedenken:
 * Optionen › Info: Pi 4 Rev 1.5, Cortex-A72 4 Kerne 1,8 GHz, 4 GB, SD64G 59,5 GB ext4, Raspberry Pi OS 13.5, 64 Bit.
 * Netzwerk-Reiter unter Pi OS: Adapter, WLAN-Liste (2,4 + 5 GHz), gespeichertes WLAN, SSH (`ssh`), Ports.
 * Pi-Klinke meldete 8 Kanäle (bcm2835) → von 5.1/7.1 ausgenommen.
-
-**Alma, 01.11.2026 – Lautsprecher 5.1/7.1 (stumm über snd-aloop)**
-
-* Kanalzahl per aplay: Analog 2, DP 2/8, Loopback 32; belegtes Gerät = unbekannt, später erneut.
-* Links-only-Rauschen über MPD: 5.1 → FL/RL voll, FC/LFE halb, rechts 0; 7.1 zusätzlich SL voll, SR 0. MPD gibt
-  44100:16:2 aus, shairport-sync nutzt `ks_surround`, `ks-spotify-sink` öffnet es. Zurück auf Stereo entfernt
-  `.asoundrc`. Oberfläche: Auswahl nur bei ≥ 6 Kanälen, bei Bit-perfekt gesperrt.
-
-**HP, Ubuntu 26.04.1, 04.11.2026 – Lautsprecher 7.1 mit echter Karte**
-
-* USB-Karte `ICUSBAUDIO7D` (0d8c:0102, CM106) mit Soundbird: MPD gibt über `ks_surround` 44100:16:8 aus, Musik aus allen
-  Lautsprechern (laut Nutzer).
-* Kanalreihenfolge: Alle 8 Kanäle einzeln mit `speaker-test -t wav -s <n>` direkt auf `hw:`, jede Ansage kam laut Nutzer aus
-  dem passenden Lautsprecher. Die Kanalkarte der Karte (FL FR FC LFE RL RR SL SR) stimmt mit der Tabelle in `ks_surround` überein.
-* Lautstärke (Wunsch des Nutzers: Karte immer 100 %, geregelt wird in den Quellen): Karte von Hand auf 90 % und MPD auf 40 → nach
-  Neustart beide 100; Player von Hand auf 60 bleibt, Karte bleibt 100; librespot mit `--initial-volume 100`, dazu `default_airplay_volume`.
-  Spotify und AirPlay mit iPhone: Laut Nutzer alles in Ordnung; bei AirPlay meldet der Zustand Lautstärke 100, Karte 100 %.
-* Nachtmodus: Grenze 30 → Wächter holt 80 in 7 s zurück, Regler bleibt darunter, außerhalb des Fensters frei; Zeitfenster über
-  Mitternacht per Test. Wecker-Test (`Speaker mute`, Grenze 20, Weckerlautstärke 60): wird trotzdem bis 51 lauter, danach wieder 20.
-  Spotify/AirPlay fängt er nicht ab (lässt sich nur am Handy regeln).
-* Sicherung: Keine Passwörter oder Hash in der Datei; Rückspielen mit `auth_hash`, kaputtem Wecker, kaputter Freigabe, `../`-Liste,
-  unbekannter Einstellung → übergangen, Passwort-Hash bleibt; Original zurückgespielt → `settings.json` identisch.
-* Hochladen (per curl und in der Oberfläche): Ordner, Umlaute, doppelte Datei 409, `../` und `.exe` abgelehnt, Abbruch hinterlässt
-  keine Teildatei, danach in `Lokal/Hochgeladen` in der Bibliothek. Update-Hinweis: gegen GitHub mit simulierter alter und neuer
-  Version, Punkt an „Optionen“ und Text unter Info. Noch nicht getestet: Hochladen vom iPhone, Ordnerwahl mit echtem Dateidialog.
-* „Läuft gerade“ bei 800x600, 1024x768, 1280x1024, 1366x768, 1600x900 (Browser-Viewport, gestellter Zustand mit langem Titel und
-  Liedtext, alle Themes): nichts ragt heraus, Uhr passt. 4:3/5:4 jetzt nach Breite (`tv-schmal.css`), Schrift mindestens 11 px, aktuelle
-  Liedzeile wird nicht mehr abgeschnitten. Noch nicht am echten Monitor mit dieser Auflösung.
-* Reiter unter Optionen in allen Themes: 1920, 1280 und 900 px eine Reihe, darunter Umbruch, am Handy wie bisher wischbar.
-
-**HP, Ubuntu 26.04.1 Desktop frisch, 02.11.2026 – ohne Ton** (Ubuntu seitdem nicht mehr unterstützt, gilt nur als Beleg für PipeWire und Python 3.14)
-
-* `install.sh` von null: 126 s, EXIT 0 (erst nach Korrektur, siehe Behobene Fehler), danach Update in 11 s. Alle Dienste
-  laufen, Pakete aus Ubuntu, raspotify und die Paketdienste bleiben aus; Weboberfläche vom Laptop erreichbar.
-* Python 3.14.4 mit den festen Versionen (starlette 0.41.3, uvicorn 0.32.1, websockets 13.1): Start ohne Warnungen.
-* MPD neben aktivem PipeWire (Lautstärke 0): bekommt `hw:` für HDMI 0 und Analog direkt, Regler bleiben an.
-* Snap-Firefox als Kiosk per `ks-tv-kiosk` (von Hand in der Sitzung gestartet): lädt `/tv`, keine AppArmor-Sperren;
-  `tv_enabled` aus schließt das Fenster, an öffnet es wieder.
-* Optionen › Info: HP ProDesk 400 G5 MT, i7-8700 6 Kerne/12 Threads, x86-64-v3, 32 GB, NVMe 238 GB, Ubuntu 26.04.
-* Stumm über `snd-aloop` (Unterbrechungen durch PipeWire beim Entladen beachten: erst wireplumber/pipewire stoppen):
-  Bibliothek mit Umlauten und „&“, Warteschlange, Wiedergabeliste, Überblenden, ReplayGain, „Dynamisch“ (MPD-Neustart,
-  spielt an derselben Stelle weiter), Ausgabewechsel beim Spielen, Schlummer-Timer und Titelende, Wecker-Rampe, kaputter
-  Sender → Bibliothek + 60-min-Timer, 5.1/7.1-Verteilung wie am Alma, UPnP per SOAP (Titel, Umlaute, Pause; Spulen nicht
-  geprüft, der Testserver kann kein Range).
-* Webradio-Netzausfall 60 s: Sender läuft hier über IPv6, also v4 **und** v6 sperren (`ip -6 route add blackhole`). Nach
-  25 s „Verbindung unterbrochen“, 19 s nach Rückkehr spielt er wieder.
-* Spotify (`getInfo` auf Port 4070) und AirPlay (RTSP auf Port 5000) antworten, beide per mDNS gefunden (vom HP aus geprüft).
-* MPD und PipeWire auf getrennten Ausgängen nebeneinander; PipeWire gibt die Karte ~5 s nach Ende frei.
-* Abmelden und Anmelden (Protokoll, laut Nutzer alles richtig): Der Anmeldebildschirm (gdm-greeter) startet schon ein
-  eigenes WirePlumber → HDMI/Kopfhörer stumm, 1 s später vom Regler-Wächter zurückgeholt; bei der Anmeldung erneut. „Läuft
-  gerade“ startet 1 s nach dem WirePlumber der Sitzung von selbst, keine AppArmor-Sperren. Spotify vom Handy mit Ton über HDMI.
-* Neustart während Spotify: Start 53 s (davon 39 s Firmware), alle Dienste da, Sitzung meldet sich selbst an, Kiosk läuft,
-  Regler an, kein ungefragtes Weiterspielen.
-* AirPlay mit iPhone (laut Nutzer alles gut): Titel, Interpret, Album, Cover nach ~2 s, Gerätename `konnis-iPhone-16` per
-  `avahi-resolve` über link-/ULA-IPv6, Pause/Weiter, Trennen → Leerlauf ohne ungefragtes Weiterspielen.
-* Bluetooth (RTL8761BU, 0bda:8771, im Betrieb eingesteckt, Firmware aus `linux-firmware`) mit iPhone (laut Nutzer wie
-  erwartet): sofort erkannt, Klasse Lautsprecher, gekoppelt, Kopplungsfenster schließt, Play übernimmt nach 3 s, Titel,
-  Interpret, Pause/Weiter/Titelsprung, Trennen → Leerlauf. PipeWire/GNOME greift nicht ein (WirePlumber-Bluetooth aus).
-* CD (internes HP-Laufwerk GUD1N, laut Nutzer alles gut): 4 Titel, MusicBrainz 18 s nach dem Einlegen, kein GNOME-Dialog,
-  Autoplay spielt (Titelnamen und Cover kommen nach). Rippen in den internen Speicher: 8 min 8 s für 18 min Musik, FLAC
-  und `cover.jpg`, Auswurf danach, sofort in der Bibliothek, abspielbar.
-
-**HP, Debian 13.7 mit GNOME frisch, 04.11.2026**
-
-* `install.sh` von null: 67 s, EXIT 0, danach Update in 12 s. Alle Dienste laufen, Paketdienste aus, PipeWire und WirePlumber laufen mit.
-* GNOME schlief nach 15 min ein und sperrte (siehe Lehren und Behobene Fehler) → Sleep-Ziele gesperrt, `CanSuspend` = no; nach der
-  Korrektur 30 min wach und ungesperrt, Kiosk direkt nach der Installation da. Bildschirm ohne Eingabe und ohne Ton über 15 min: bleibt an
-  (laut Nutzer).
-* Neustart: Start 82 s (davon 42 s Firmware), Web nach 73 s, automatische Anmeldung, „Läuft gerade“ (Firefox-ESR) 2 s nach WirePlumber, HDMI an,
-  kein ungefragtes Weiterspielen.
-* WirePlumber-Neustart: HDMI und Master stumm/69 %, nach 1–3 s zurück.
-* Stumm über `snd-aloop`: alle Formate, Umlaute und „&“; Nur-links-Rauschen in 5.1 und 7.1 wie ohne Desktop; Webradio-Netzausfall 60 s, nach
-  spätestens 26 s Hinweis, 15 s nach Rückkehr spielt er wieder. WirePlumber zeigt Loopback als eigenes Gerät: vor `rmmod` PipeWire stoppen.
-* Laut Nutzer alles gut: Monitor und Ton darüber, Radio, Spotify und AirPlay mit Wechsel (librespot stürzt nicht ab), Bluetooth-Stick im Betrieb
-  (Klasse Lautsprecher, gekoppelt, Play übernimmt, Trennen → Leerlauf; GNOME greift nicht ein).
-* CD ohne GNOME-Dialog und ohne Einhängen, Autoplay hier aus. Rippen in den internen Speicher: 7 min 28 s für 18 min 32 s Musik.
-* Belegter Ausgang (stumm, PipeWire auf dem analogen Ausgang, Gerätebesitzer geprüft): Hinweis, PipeWire gibt die Karte ~6 s nach dem Ende frei,
-  MPD spielt innerhalb von 2 s. Aus dem Stopp von vorn, aus der Pause an derselben Stelle (~3 s zurück, MPD setzt auf den letzten Sprung zurück).
-  Pause beendet das Warten, danach bleibt es still.
-
-**HP, Debian 13.7 ohne Desktop frisch, 04.11.2026**
-
-* Mit Ton (laut Nutzer alles gut): Radio über den Monitor (HDMI 0, DP) und Kiosk mit Ruhebildschirm und „Läuft gerade“; Spotify und
-  AirPlay mit iPhone samt Wechsel; Bluetooth-Stick im Betrieb eingesteckt, gekoppelt, Play übernimmt, Trennen → Leerlauf.
-* Neustart (Ausgabe Monitor, Bluetooth-Stick steckt): Start 63 s (davon 44 s Firmware), Web nach 74 s, alle Dienste und Kiosk da, kein
-  PipeWire, Regler an, Ausgabe und Kopplung erhalten, kein ungefragtes Weiterspielen. dhcpcd meldet `network-online` vor dem IPv4-Lease
-  (9 s später): librespot beendet sich anfangs ohne Netz, die App startet es neu, nach 18 s läuft es.
-* CD (internes Laufwerk GUD1N, Protokoll): 4 Titel, Autoplay nach dem Einlesen, MusicBrainz 2 s danach, Pause/Weiter. Rippen in den
-  internen Speicher: 7 min 27 s für 18 min 32 s Musik, FLAC mit Tags und `cover.jpg`, Auswurf nach 2 s, sofort in der Bibliothek.
-* 7.1 mit USB-Karte (CM106) und Soundbird: Wechsel beim Spielen, Karte mit 8 Kanälen, S16, 44,1 kHz; laut Nutzer Ton aus allen Lautsprechern.
-* Die übrigen Punkte ohne Ton:
-* `install.sh --tv-headless` von null: 212 s, EXIT 0. Python 3.13.5, MPD 0.24.4, shairport-sync 4.3.7, librespot 0.8.0,
-  gmediarender 0.3, Chromium 156, cage 0.2.0, bluez-alsa 4.3.1. Alle Dienste und der Kiosk laufen, keine fehlgeschlagenen
-  Units, kein PipeWire, Paketdienste (mpd, shairport-sync, raspotify) aus. Spotify `getInfo` und mDNS antworten.
-* Automatische Ausgabe wählt die USB-Karte, Regler 100 %. Info und Update-Hinweis (0.2.1) stimmen.
-* Kabel bleibt unter ifupdown („nicht von NetworkManager verwaltet“, dhcpcd), wie in der README beschrieben.
-* Hochladen vom Laptop mit Umlauten, „&“ und Ordnern; stumm über `snd-aloop` spielen WAV, FLAC, MP3, OGG, Opus, M4A, WMA.
-* Nur-links-Rauschen, Werte je Kanal: Stereo 1886/0; 5.1 FL 1886, FR 0, RL 1886, RR 0, FC 943, LFE 943; 7.1 zusätzlich SL 1880,
-  SR 0. Zurück auf Stereo entfernt `.asoundrc`.
-* Webradio-Netzausfall 60 s (v4 und v6 gesperrt): nach 28 s Hinweis „Verbindung unterbrochen“, 10 s nach Rückkehr spielt er
-  wieder. Reiner Verbindungsabbruch: spielt nach wenigen Sekunden weiter.
-* Abbruch bei gesperrtem Sender (Sperrroute plus `ss -K` auf die Stream-Verbindung, siehe Behobene Fehler): nach ~10 s Hinweis,
-  11 s nach Rückkehr spielt er wieder. Stopp und Pause-Taste beenden den Neuversuch, normaler Stopp, Warteschlange leeren und
-  kaputter Sender starten keinen.
-
-**ASUS VivoBook X515UA (Ryzen 5 5500U, 8 GB), Debian 13.7 mit GNOME frisch, nur WLAN, 06.11.2026**
-
-* `install.sh` (ohne `--tv-headless`): erst zweimal Abbruch wegen PackageKit (siehe Lehren), nach Updates von Hand 59 s, EXIT 0;
-  Updates danach 17–19 s. Alle Dienste laufen, „Läuft gerade“ (Firefox-ESR) direkt nach der Installation.
-* Info: x86-64-v3, 6 Kerne/12 Threads, NVMe 238 GB. Ausgabe automatisch „ALC256 Analog“ (Lautsprecher und Kopfhörer ein
-  Gerät), HDMI (AMD) „nichts angeschlossen“; eingebautes Bluetooth erkannt.
-* Deckel zu und auf während Radio (laut Nutzer): läuft weiter, Rechner bleibt wach; logind meldet `HandleLidSwitch=ignore`.
-* Radio über Lautsprecher und Kopfhörer (laut Nutzer): Ein- und Ausstecken schaltet um, Lautstärke voll; Protokoll: zehn Wechsel,
-  alle Regler 100 %/an. Nach dem Einspielen per Installer: Profil `pro-audio`, `Auto-Mute eingeschaltet` im Protokoll.
-* Neustart: Start 32 s, SSH und Web nach 37 s, alle Dienste und Kiosk da, Regler 100 %, Auto-Mute an, Profil `pro-audio`,
-  Deckel `ignore`, kein ungefragtes Weiterspielen.
-* Stumm über `snd-aloop` (Aufnahme mit `plughw`, sonst schreibt arecord nichts, solange MPD spielt): FLAC, MP3, OGG, Opus, M4A,
-  WMA, WAV mit Pegel; Umlaute und „&“ in Bibliothek, Suche, Warteschlange, Wiedergabeliste; Ausgabewechsel beim Spielen;
-  Überblenden, ReplayGain, „Dynamisch“ (spielt weiter); Schlummer-Timer und Titelende; Wecker-Rampe; kaputter Sender →
-  Bibliothek + 60-min-Timer. Webradio-Netzausfall 60 s über WLAN (v4 und v6): Hinweis nach 27 s, 17 s nach Rückkehr spielt er
-  wieder. Zum Entladen von `snd-aloop` erst PipeWire, WirePlumber und deren Sockets der Sitzung stoppen.
-* Spotify, AirPlay und Bluetooth mit iPhone (laut Nutzer alles gut, Protokoll): Spotify Pause/Weiter; Wechsel zu AirPlay mit
-  Gerätename `konnis-iPhone-16`, Titel und Cover nach ~2 s, zurück zu Spotify; Bluetooth (eingebauter QCA9377) gekoppelt, Fenster
-  schließt, Play übernimmt nach ~2 s, Pause und Titelsprung, Trennen → Leerlauf. Master blieb 100 %.
-* Springen im Titel bei Bluetooth: Zeit und Liedtext laufen von der alten Stelle weiter (siehe Lehren, nicht behebbar).
-* Deckel und Kiosk (laut Nutzer, Protokoll): ohne HDMI zu und auf → Bluetooth spielt weiter, Sitzung bleibt aktiv und
-  ungesperrt, „Läuft gerade“ sofort wieder da. Mit Fernseher an HDMI: Deckel zu → GNOME schaltet eDP ab, „Läuft gerade“
-  bildschirmfüllend am Fernseher; Deckel auf → Kiosk zurück aufs eingebaute Display, Fernseher zeigt den Desktop (erweitert).
-  HDMI wird als „Monitor angeschlossen“ erkannt; die Ausgabe wechselt beim Anstecken nicht (Automatik wählte damals nur beim Start, seit 0.2.10 auch beim Anstecken).
-* Ton über HDMI am Fernseher (laut Nutzer): Ausgabe auf HDMI 0 umgestellt, Spotify spielt dort.
-* Akkustand auf „Läuft gerade“ (0.2.7): Symbol mit Prozent, Blitz beim Anstecken des Netzteils (laut Nutzer); alle Themes und
-  „schwach“ (rot ab 15 %) im Browser mit gestellten Werten geprüft.
-* Freigabe (Synology per SMB über WLAN, Zugangsdaten vom Nutzer eingetragen): etwa 1 min nach dem Anlegen eingehängt, 763 Alben
-  in etwa 6 min eingelesen. Cover in der Bibliothek erst bis 15 s je Bild, nach dem Fix 0,3–0,7 s (0.2.8). Ausfall nicht getestet.
 
 **Dell Latitude 5501 (i5-9400H), Debian 13.7 ohne Desktop frisch, nur WLAN über ifupdown, 07.11.2026**
 
@@ -675,49 +386,16 @@ Vorher bzw. dabei bedenken:
   Protokoll). Info zeigt den Akku („100 %, Netzteil, voll“, Kapazität 59 % vom Neuzustand).
 * Noch offen: Kopfhörer am Dell.
 
-**Thin Client 10ZiG (Celeron J4125), AlmaLinux 10.3 x86_64_v2 ohne Desktop frisch, 22.11.2026 – ohne Ton** (letzter AlmaLinux-Stand, 0.2.13)
-
-* `install.sh --tv-headless` von null (0.2.12): 15 min 9 s, EXIT 0, einzige Warnung „CPU ohne x86-64-v3 – RPM Fusion wird nicht
-  eingebunden“. MPD 0.24.20. Alle Dienste und Kiosk (cage + Chromium am DP-Monitor) laufen, keine fehlgeschlagenen Units, keine AVCs;
-  bluetooth inaktiv (kein Adapter). Automatik wählt HDMI 0 (Monitor) vor der Klinke. Gerätename „Linux“ (kein Hostname, DHCP `linux.fritz.box`).
-* Oberfläche im Browser vom Laptop hinter der Origin-Prüfung (0.2.11): WebSocket und POST gehen; Badges im klassischen Theme lesbar;
-  Equalizer zeigt „braucht libasound2-plugin-equal“ statt der Regler.
-* Bibliothek mit Testalben (`Lokal/Testalben`, Rauschen, liegen noch dort): `'`, `\`, Umlaute und „&“ in Album und AlbumArtist, ohne
-  AlbumArtist (fällt auf Artist zurück), zwei Genres, ohne Genre → Interpreten, Genres („(ohne Genre)“), Filter je Name, „Neu“ in
-  der Reihenfolge der Dateidaten, Albumtitel; je Abfrage 2–23 ms. Stumm (`setvol 0`) gespielt → „Zuletzt“ mit beiden Alben, neuestes
-  oben; Favorit gesetzt und im Reiter Favoriten. Alles auch in der Oberfläche.
-* Stern auf unbekannten Titel zeigte die rohe MPD-Meldung → „Titel nicht gefunden“ (0.2.12, ohne Versionswechsel).
-* Lautstärke (stumm per `IEC958 off`): Obergrenze 50 holt Regler 90 auf 50, fremdes `setvol 95` nach ~2 s zurück; neue Grenze
-  greift jetzt nach 0,5 s statt erst beim nächsten Durchlauf (0.2.13). Wecker-Rampe 8 → Ziel 80 endet bei 50. Startlautstärke 30
-  nach Neustart 30; Start 30 mit Grenze 20 → 20.
-* Neustart über `POST /api/system/power` (wie die Oberfläche): nach 3 s weg, Web nach 34 s (Boot 32 s), alle Dienste und Kiosk
-  da, keine fehlgeschlagenen Units, keine AVCs, kein ungefragtes Weiterspielen.
-* Herunterfahren über die Oberfläche (Nutzer, nach dem Update auf 0.2.13 per Installer, 43 s): Web weg, 3 s später Gerät aus;
-  nach dem Einschalten Boot 32 s, alle Dienste und Kiosk da, keine AVCs, nichts spielt.
-* 0.2.11 Sicherheit: fremder Origin und `Origin: null` 403, `text/plain` und Formular 415, Zeilenumbruch im Namen 400, falscher
-  Typ 400. Zwei gleichzeitige Uploads derselben Datei: einer 409, einer 200, Datei vollständig, keine `.part`-Reste.
-  `ks-netmount` (Loop-Abbild ext4): Symlink-Zielordner abgelehnt, nichts außerhalb geschrieben; Symlink-Datei im Album wird nicht
-  mitkopiert; `dest` Lokal sowie `..` in `src`/`folder` abgelehnt; danach wieder `ro`.
-* Stumm über `snd-aloop`: FLAC, M4A, MP3, OGG, Opus, WAV, WMA nur links (L ≈ 1760–1950, R 0); Ausgabewechsel beim Spielen 1,8 s,
-  an derselben Stelle; Überblenden, ReplayGain, „Dynamisch“ (spielt weiter); Schlummer-Timer blendet 60 → 3 aus, pausiert, 60
-  zurück; Titelende pausiert, `single` 0; echter einmaliger Wecker mit kaputtem Sender → nach ~20 s Bibliothek, 15-min-Timer,
-  Wecker danach aus.
-* Webradio-Netzausfall 60 s (DLF, v4 und v6 gesperrt): Hinweis nach 25 s, 5 s nach Rückkehr spielt er wieder.
-* Update per `install.sh --tv-headless`: 40 s, EXIT 0, `settings.json` unverändert, Favoriten erhalten, keine AVCs.
-* Oberfläche in allen sieben Themes bei 1280 und 390 px (alle Ansichten, Reiter der Bibliothek und Optionen): keine Seite scrollt
-  quer. Ausgabe-Badges hatten zu wenig Kontrast (Grau 2,8:1, gewählt in Winamp 1,8, Hi-Fi 2,1, Nacht 2,5) und „Analog“ war am
-  Handy abgeschnitten → dunkleres Grau, dunkle Schrift auf hellem Akzent, Spalte 44 px (0.2.13); jetzt mindestens 4,1:1 (Aero).
-
 **Thin Client 10ZiG (Celeron J4125), Debian 13 ohne Desktop frisch, 25.11.2026 – ohne Ton**
 
-* `install.sh --tv-headless` von null (0.2.14): 128 s, EXIT 0, keine Warnungen (unter AlmaLinux 15 min). MPD 0.24.4, shairport-sync
+* `install.sh --tv-headless` von null (0.2.14): 128 s, EXIT 0, keine Warnungen. MPD 0.24.4, shairport-sync
   4.3.7, librespot 0.8.0 (Raspotify), gmediarender 0.3, Chromium 156, cage 0.2.0, alsaequal 0.6 + caps 0.9.26. Alle Dienste und
   Kiosk laufen, keine fehlgeschlagenen Units; Automatik wählt HDMI 0 (Monitor). Kabel bleibt unter ifupdown.
 * Installer lehnt AlmaLinux, Fedora, Ubuntu, Mint und Arch ab (Fallprüfung mit gestellter `os-release`).
 * Equalizer stumm über snd-aloop: zehn Regler in richtiger Reihenfolge (numid 1–10 = 31 Hz…16 kHz, 0–100), jedes Band wirkt auf
   seine Frequenz, vor 5.1 auf allen sechs Kanälen gleich. „Flach“ hob um +3,2 dB an → korrigiert (0.2.15, siehe Lehren), jetzt
   −0,4 dB bei 1 kHz. Oberfläche mit Reglern in allen Themes bei 390 px ohne Überlauf.
-* Wie am 22.11. unter AlmaLinux bestanden: Formate nur links (L ≈ 1760–1950, R 0), Ausgabewechsel beim Spielen, Überblenden,
+* Formate nur links (L ≈ 1760–1950, R 0), Ausgabewechsel beim Spielen, Überblenden,
   ReplayGain, „Dynamisch“, Schlummer-Timer (60 → 3, Pause, 60 zurück), Titelende, echter Wecker mit kaputtem Sender (Bibliothek,
   15-min-Timer, Wecker aus); Obergrenze 50 (Regler, fremdes `setvol` nach ~1 s, Wecker-Rampe endet bei 50, neue Grenze nach 0,5 s),
   Startlautstärke 30 nach Neustart 30, mit Grenze 20 → 20; Origin/JSON/Zeilenumbruch/Typ, gleichzeitige Uploads (einer 409, keine
@@ -727,7 +405,7 @@ Vorher bzw. dabei bedenken:
 * Update per `install.sh --tv-headless`: 30 s, EXIT 0, `settings.json` unverändert.
 * Netzwerk-Reiter (per API): Port 8080 → 8082 (erreichbar nach 6 s) → 8080 (4 s), Kiosk zieht mit; belegter Port (6600) und 22
   abgelehnt. SSH aus → neue Verbindungen abgelehnt, laufende Sitzung bleibt; SSH wieder an. Feste IPv4 auf dem Kabel unter ifupdown
-  richtig abgelehnt („Ungültige Verbindung“), Rücknahme nicht prüfbar (am Alma am 31.10. bestanden).
+  richtig abgelehnt („Ungültige Verbindung“); Rücknahme auf der WLAN-Verbindung geprüft (siehe unten).
 * USB emuliert (`dummy_hcd` + `g_mass_storage`, echtes USB-Gerät für udev), je FAT32 und NTFS: nach 3 s `ro` eingehängt (FAT32 mit
   `utf8`), Umlaute und „&“ in Ordner und Datei in der Bibliothek; Speichern per `ks-netmount` (wie nach dem Rippen, Ordner mit Umlaut)
   → Datei auf dem Stick, danach wieder `ro` (NTFS über Aus- und neu Einhängen); Abziehen per `authorized=0` mit offener Datei →
@@ -767,7 +445,7 @@ Vorher bzw. dabei bedenken:
 
 **26.10.2026**
 
-* NTFS-Sticks: Installer zieht `ntfs-3g` (RHEL aus EPEL); `ks-netmount` schreibt auch auf `fuseblk`; Rip-Ziele
+* NTFS-Sticks: Installer zieht `ntfs-3g`; `ks-netmount` schreibt auch auf `fuseblk`; Rip-Ziele
   nur mit beschreibbarem Dateisystem; scheitert das Speichern auf USB, landet das Album im internen Speicher
   (Hinweis in der Oberfläche) statt verworfen zu werden.
 * USB abziehen/wieder anstecken: udev-`remove` hängt lazy aus und entfernt den Ordner; `ks-automount` räumt einen
@@ -789,8 +467,6 @@ Vorher bzw. dabei bedenken:
 
 **27.10.2026**
 
-* Alma auf CPU ohne AVX (OptiPlex 3060, x86_64_v2): mpd und shairport-sync stürzten sofort ab (RPM-Fusion-ffmpeg
-  ist v3) → Installer prüft per `ld-linux --help` auf x86-64-v3, sonst ohne RPM Fusion. Erster Lauf 16 min 21 s.
 * Am Pi erkannte Klangstation nicht, ob an HDMI etwas hängt → DRM-Status. Automatische Ausgabe jetzt:
   USB-DAC/I²S-HAT, dann HDMI mit erkanntem Gerät (Wunsch des Nutzers), dann Klinke, dann HDMI unbekannt.
 * Übersetzen-Popup von Chromium im Kiosk abgeschaltet.
@@ -810,24 +486,17 @@ Vorher bzw. dabei bedenken:
 **02.11.2026**
 
 * Jede Erstinstallation brach seit be2f422 (31.10.) sofort und ohne Meldung ab (Port aus fehlender Unit lesen, siehe Lehren).
-* Unter Ubuntu: Warnung wegen Firmware-Paketen ohne Kandidat, Kiosk mit Snap-Firefox zeigte nichts, Info zeigte
-  „forky/sid“ als Version (siehe Lehren).
-* Unter PipeWire: stumme Regler nach WirePlumber-Start, keine Meldung bei belegtem Ausgang (siehe Lehren).
-  `avahi-utils`/`avahi-tools` fehlten im Installer (`avahi-resolve` für den AirPlay-Gerätenamen).
-  Getestet (stumm): Regler nach WirePlumber-Neustart wieder an, von Hand stumm bleibt stumm; belegt → Hinweis, 7 s nach
-  Ende des Desktop-Tons spielt MPD von selbst; Pause, Umschalten und Stopp beenden das Warten; nach 2 min bleibt es aus.
+* Keine Meldung bei belegtem Ausgang (siehe Lehren); `avahi-utils` fehlte im Installer (`avahi-resolve` für den
+  AirPlay-Gerätenamen).
 
 **04.11.2026**
 
 * Webradio blieb dauerhaft aus, wenn die Verbindung abriss und der Sender dabei nicht erreichbar war → Wächter verbindet neu
   (siehe Lehren). Stopp während des Neuversuchs startete den Sender später ungefragt wieder → beendet ihn jetzt (0.2.2).
-* Unter GNOME: Rechner ging nach 15 min in Bereitschaft, danach Anmeldeseite; „Läuft gerade“ erst nach der nächsten Anmeldung (siehe Lehren, 0.2.3).
 * Belegter Ausgang: Play aus einer Pause blieb still stehen, ohne Hinweis und ohne neuen Versuch (siehe Lehren, 0.2.4).
 
 **06.11.2026**
 
-* Installer brach auf frischem Desktop ab, solange PackageKit Updates lud (dpkg-Sperre) → wartet bis zu 10 min (0.2.6).
-* Desktop: Kopfhörer ein/aus und der Lautstärkeregler des Desktops stellten die Karte leiser → Profil `pro-audio`, Auto-Mute (siehe Lehren, 0.2.6).
 * Cover von Freigaben luden sehr langsam (bis 15 s je Bild) → `binarylimit` (siehe Lehren, 0.2.8).
 
 **07.11.2026**

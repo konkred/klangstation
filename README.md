@@ -58,15 +58,13 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 |---|---|---|
 | **PC (x86-64)** (empfohlen) | Debian 13 | getestet |
 | **Raspberry Pi 4 (4 GB)** (empfohlen) | Raspberry Pi OS Lite | getestet |
-| älterer PC (z. B. Core 2 Quad) | Debian 13 | nicht getestet |
 
-Klangstation unterstützt seit Version 0.2.14 nur noch Debian und Raspberry Pi OS. Dort kommen alle Programme fertig aus
-den Paketquellen; unter AlmaLinux mussten mehrere aus dem Quellcode gebaut werden, und manche (etwa für den Equalizer)
-gab es gar nicht. Seit Version 0.2.18 nur noch ohne Desktop: Mit Desktop greifen PipeWire und die Sitzung in Regler,
-Anschlüsse und Bluetooth ein, der Rechner schläft ein oder sperrt sich.
+Unter Debian und Raspberry Pi OS kommen alle Programme fertig aus den Paketquellen. Mit Desktop würden PipeWire und die
+Sitzung in Regler, Anschlüsse und Bluetooth eingreifen, der Rechner schliefe ein oder sperrte sich.
 
 * **Laptop:** geht auch ohne Desktop (Debian 13: Deckel zuklappen, Display und Fernseher, eingebautes WLAN und Bluetooth).
-* **Sollte laufen, nicht getestet:** Raspberry Pi 5, andere 64-Bit-ARM-Rechner mit Debian, Raspberry Pi 2/3 mit 32-Bit-System.
+* **Sollte laufen, nicht getestet:** Raspberry Pi 5, andere 64-Bit-ARM-Rechner mit Debian, Raspberry Pi 2/3 mit 32-Bit-System,
+  ältere PCs mit Debian 13.
 * **Nicht unterstützt:** Systeme mit Desktop (Raspberry Pi OS mit Desktop, Debian mit GNOME, KDE usw., bis 0.2.17
   unterstützt), AlmaLinux, RHEL, Rocky Linux, Fedora (bis 0.2.13 unterstützt, der Installer lehnt sie jetzt ab),
   Ubuntu und Ableger wie Linux Mint (Browser nur als Snap), andere Systeme wie Arch, openSUSE, Alpine. Bestehende
@@ -77,11 +75,11 @@ Anschlüsse und Bluetooth ein, der Rechner schläft ein oder sperrt sich.
 
 | Zubehör | Getestet mit | Hinweis |
 |---|---|---|
-| Tonausgang | Klinke (Pi), HDMI, DisplayPort, PC-Lautsprecher, Laptop-Lautsprecher, 7.1 über USB-Karte mit CM106 | USB-DACs und I²S-HATs werden erkannt, sind aber nicht getestet |
-| Fernseher | mit CEC am Pi, ohne CEC, DP-Monitor | CEC am PC braucht einen USB-Adapter (nicht getestet) |
-| CD-Laufwerk | internes SATA-Laufwerk, USB-Laufwerk Samsung SE-218GN | USB-Laufwerk am Pi nur mit Y-Kabel oder aktivem Hub |
-| Bluetooth | eingebaut am Pi und am Laptop, USB-Stick RTL8761BU | |
-| WLAN-Stick | Edimax N150, Netgear WNDA3100v3 | geht nicht: Broadcom BCM43236 rev 2, AVM FRITZ!WLAN USB Stick N v2 (Test-PC startete mehrfach neu) |
+| Tonausgang | Klinke (Pi), HDMI, DisplayPort, PC-Lautsprecher, Laptop-Lautsprecher; 5.1/7.1 nur ohne echte Karte geprüft | USB-DACs und I²S-HATs werden erkannt, sind aber nicht getestet |
+| Fernseher | Fernseher an HDMI (Pi, Laptop), DP-Monitor | CEC am Pi wird nach dem Neuaufsetzen geprüft; am PC braucht CEC einen USB-Adapter |
+| CD-Laufwerk | USB-Laufwerk Samsung SE-218GN | USB-Laufwerk am Pi nur mit Y-Kabel oder aktivem Hub |
+| Bluetooth | eingebaut am Laptop | eingebaut am Pi folgt |
+| WLAN-Stick | Edimax N150 | |
 | USB-Speicher | Sticks mit FAT32, NTFS und exFAT | |
 
 </details>
@@ -89,16 +87,16 @@ Anschlüsse und Bluetooth ein, der Rechner schläft ein oder sperrt sich.
 <details>
 <summary>Was womit getestet ist</summary>
 
-| | Pi OS Lite | Debian ohne Desktop | Debian ohne Desktop Laptop |
+| | Raspberry Pi OS Lite | Debian 13, PC | Debian 13, Laptop |
 |---|---|---|---|
-| **Rechner** | Pi 4 | PC Intel-HDA (2 Geräte) | Dell i5 |
+| **Rechner** | Pi 4 | Thin Client, Celeron J4125 | Dell Latitude, i5 |
 | Installation von null | ✓ | ✓ | ✓ |
 | Update | ✓ | ✓ | |
 | Neustart | ✓ | ✓ | ✓ |
 | Herunterfahren aus der Oberfläche | | ✓ | |
 | „Läuft gerade“ | ✓ | ✓ | ✓ |
-| Spotify, AirPlay | ✓ | ✓ | ✓ |
-| Bluetooth mit iPhone | | ✓ | ✓ |
+| Spotify, AirPlay | ✓ | Spotify | ✓ |
+| Bluetooth mit iPhone | | (kein Adapter) | ✓ |
 | UPnP | | ✓ | |
 | Radio, auch bei Netzausfall | | ✓ | ✓ |
 | CD abspielen und rippen, auch auf USB | | ✓ | |
@@ -112,9 +110,8 @@ Anschlüsse und Bluetooth ein, der Rechner schläft ein oder sperrt sich.
 | Erscheinungsbilder | | ✓ | |
 | Laptop: Deckel, Bildschirm am Fernseher | | | ✓ |
 
-Leere Felder: Bis 0.2.13 lief vieles davon unter AlmaLinux (Bit-perfekt u. a.), bis
-0.2.17 auch auf Systemen mit Desktop (am Pi zusätzlich UPnP, CEC, SMB-Freigabe samt Ausfall). Der Code ist derselbe;
-ohne Desktop werden diese Punkte gerade nachgeholt.
+Leere Felder sind dort noch nicht geprüft. Der Pi wird gerade mit Raspberry Pi OS Lite neu aufgesetzt, danach folgen
+CEC, Freigabe über SMB, Equalizer und die übrigen Punkte.
 
 </details>
 

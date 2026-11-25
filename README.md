@@ -109,7 +109,7 @@ Anschlüsse und Bluetooth ein, der Rechner schläft ein oder sperrt sich.
 | Musik hochladen | | ✓ | |
 | Equalizer, Lautstärke angleichen, Überblenden | | ✓ | ✓ (ohne Equalizer) |
 | Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | |
-| Erscheinungsbilder | | | |
+| Erscheinungsbilder | | ✓ | |
 | Laptop: Deckel, Bildschirm am Fernseher | | | ✓ |
 
 Leere Felder: Bis 0.2.13 lief vieles davon unter AlmaLinux (UPnP, Sperrbildschirm, Erscheinungsbilder, Bit-perfekt), bis
@@ -238,6 +238,9 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 * Mit `dhcpcd` (Debian mit ifupdown): ein Hook (`/usr/lib/dhcpcd/dhcpcd-hooks/90-klangstation`) setzt die direkte
   IPv6-Route ins eigene Netz. Kündigt der Router sein Präfix zusätzlich als Route über sich selbst an (z. B. FRITZ!Box), legt
   dhcpcd nur diese an, und AirPlay vom iPhone bleibt stumm. Rückgängig: Datei löschen.
+* Kabel und WLAN im selben Netz: Jede Schnittstelle beantwortet ARP nur noch für ihre eigene Adresse
+  (`/etc/sysctl.d/90-klangstation.conf`, `arp_ignore=1`, `arp_announce=2`). Sonst „beansprucht“ der WLAN-Adapter die Adresse
+  des Kabels, und das Gerät ist nach dem Verbinden mit dem WLAN unter seiner alten IP nicht mehr erreichbar. Rückgängig: Datei löschen.
 
 ## Bedienung
 

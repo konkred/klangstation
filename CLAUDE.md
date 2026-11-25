@@ -54,7 +54,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 
 | Gerät | Zugang | Hinweise |
 |---|---|---|
-| **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1 (Hostname `KlangStation`), Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB, **Debian 13 ohne Desktop** (seit 25.11., vorher AlmaLinux 10.3) | `ssh root@10.0.0.189` bzw. `KlangStation.fritz.box` (SSH-Key, zu Hause, Kabel unter ifupdown) | root erlaubt, Neustart ja, Herunterfahren nur mit dem Nutzer; kein `sudo` installiert (in Skripten `runuser -u klangstation`); eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1 = HDMI 0); kein WLAN, kein Bluetooth-Adapter; Testskripte `t_*.py`, `t_sec.sh` in `/root` |
+| **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1 (Hostname `KlangStation`), Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB, **Debian 13 ohne Desktop** (seit 25.11., vorher AlmaLinux 10.3) | `ssh root@10.0.0.190` (bis 25.11. .189, siehe ARP-Flux) bzw. `KlangStation.fritz.box` (SSH-Key, zu Hause, Kabel unter ifupdown; IPv6 `fd20:fb6d:4793:0:2e0:c5ff:fe2b:4050` mit `-o HostKeyAlias=10.0.0.190`) | root erlaubt, Neustart ja, Herunterfahren nur mit dem Nutzer; kein `sudo` installiert (in Skripten `runuser -u klangstation`); eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1 = HDMI 0); kein WLAN, kein Bluetooth-Adapter; Testskripte `t_*.py`, `t_sec.sh` in `/root` |
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0; **Desktop: Installer lehnt seit 0.2.18 ab** – für weitere Tests Pi OS Lite neu aufsetzen (mit dem Nutzer) |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
@@ -262,6 +262,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `system/dhcpcd-hook-klangstation` (bei `ROUTERADVERT` je L-Präfix `ip -6 route replace … dev <if> metric 100 expires <vltime>`).
 * **cage `-m extend`** (Voreinstellung) verteilt eine Fläche über alle Bildschirme → Laptop mit Fernseher zeigte „Läuft gerade“
   halb auf dem Display, halb am Fernseher. `-m last`: nur der zuletzt angeschlossene; cage kennt den Deckel nicht.
+* **ARP-Flux bei Kabel und WLAN im selben Netz:** Linux beantwortet ARP standardmäßig auf jeder Schnittstelle für jede eigene
+  Adresse. Nach dem WLAN-Verbinden meldete dhcpcd am Kabel „08:be:ac:… claims 10.0.0.189“, „10 second defence failed“ und holte
+  eine neue Adresse (Gerät unter der alten IP weg; die FRITZ!Box vergab danach dauerhaft .190) → Installer setzt
+  `arp_ignore=1`, `arp_announce=2` (`/etc/sysctl.d/90-klangstation.conf`).
 * **Port-Probe** vor dem Wechsel mit `SO_REUSEADDR` (wie uvicorn), sonst gilt der alte Port wegen TIME_WAIT als belegt.
 
 ### Installer und PipeWire
@@ -280,6 +284,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **Ubuntu nicht unterstützen** (Entscheidung des Nutzers, 02.11.): Der Installer lehnt Ubuntu und Ableger ab. Browser gibt
   es nur als Snap: AppArmor sperrt Profile außerhalb von `~/snap/`, `chromium`/`--tv-headless` geht nicht, dazu andere
   Firmware-Pakete. Der Test vom 02.11. (siehe Bestanden) lief mit Snap-Sonderfall in `ks-tv-kiosk` (b575f4b, wieder entfernt).
+* **`pipefail` und `| grep -q`:** grep beendet sich beim ersten Treffer, der Befehl davor bekommt SIGPIPE, die Pipe endet mit 141
+  → die Prüfung „scheitert“ immer. So installierte der Installer die WLAN-Firmware (`apt-cache policy … | grep -q`) nie, auch die
+  ufw-Prüfung war betroffen → Ausgabe erst in eine Variable, dann vergleichen.
 * **`set -euo pipefail`:** Ein Befehl, der in einer Pipe in `$(...)` scheitert darf (z. B. `sed` auf eine noch fehlende
   Datei, Code 2), beendet das Skript still → `|| true`. Fällt bei Updates nicht auf, nur auf frischen Systemen.
 * **`apt-cache show`** findet auch Paketnamen ohne Kandidat → `apt-cache policy` prüfen.
@@ -337,9 +344,8 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
-* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: feste IPv4 mit Rücknahme (braucht eine Kabelverbindung unter
-  NetworkManager, am Thin Client läuft das Kabel unter ifupdown), USB-WLAN-Sticks, UPnP,
-  Sperrbildschirm am iPhone. Die Tests vom 22.11. sowie Port, SSH, USB-Sticks, Herunterfahren und Rippen auf USB sind unter Debian bestanden (siehe unten).
+* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: UPnP,
+  Sperrbildschirm am iPhone. Die Tests vom 22.11. sowie Port, SSH, feste IPv4, USB-Sticks, USB-WLAN, Herunterfahren und Rippen auf USB sind unter Debian bestanden (siehe unten).
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -743,6 +749,15 @@ Vorher bzw. dabei bedenken:
   stoppt beim Abziehen.
 * Ohne Desktop-Unterstützung (0.2.18): Update per `install.sh --tv-headless` 31 s, EXIT 0, alle Dienste und Kiosk; mit
   gestelltem `display-manager.service` bricht der Installer sofort ab (EXIT 1, Meldung), ohne etwas zu ändern.
+* Erscheinungsbilder (0.2.18, eingebauter Browser, per Skript): Oberfläche in allen sieben Themes bei 1280 und 390 px, je 22 Ansichten
+  und Reiter (Wiedergabe, Bibliothek ×8, Radio ×3, CD, Optionen ×9) → keine Seite scrollt quer, nichts ragt heraus (Gegenprobe mit
+  2000 px breitem Element schlägt an). `/tv` Ruhebildschirm in allen Themes bei 1920×1080, 1280×720, 1024×768, 800×600 und 390 px:
+  nichts ragt heraus, kleinste Schrift 11 px. „Läuft gerade“ mit Titel nicht geprüft (nichts spielte).
+* USB-WLAN (Edimax N150, RTL8188EU, 0.2.19): zuerst ohne Firmware („failed to load rtl8188eufw.bin“, Installer-Fehler, siehe
+  Behobene Fehler), danach Firmware 28.0, NetworkManager verwaltet `wlx…`, Oberfläche zeigt das Netz (2,4 GHz), Verbinden durch den
+  Nutzer. Dabei verlor das Kabel seine Adresse (ARP-Flux, siehe Lehren); nach dem Fix WLAN getrennt/neu ohne Konflikt.
+* Feste IPv4 auf der WLAN-Verbindung (Kabel als Zugang, per API): 10.0.0.230 ohne Bestätigung → nach 120 s zurück auf DHCP (.168);
+  mit Bestätigung → bleibt `manual` (130 s geprüft); auf DHCP und „Zurücknehmen“ → wieder fest; DHCP bestätigt → `auto`.
 
 ### Behobene Fehler
 
@@ -826,3 +841,5 @@ Vorher bzw. dabei bedenken:
 
 * Rippen auf USB: Abziehen beim Speichern ergab „gerippt“ mit leeren Dateien auf dem Stick, Album verloren → `fsync` (0.2.17).
 * Rippen blieb ohne Meldung auf „läuft“ stehen, wenn der Arbeitsordner nicht angelegt werden konnte → Fehler im Auftrag (0.2.17).
+* WLAN-Firmware wurde unter Debian nie installiert (`| grep -q` mit pipefail) → Ausgabe erst einsammeln (0.2.19).
+* WLAN verbunden → Kabel verlor seine Adresse (ARP-Flux) → `arp_ignore`/`arp_announce` (0.2.19).

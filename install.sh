@@ -182,10 +182,15 @@ install_packages() {
         # (braucht die Komponente non-free-firmware, die Raspberry Pi OS und Debian ab 12 mitbringen)
         local fw="" p
         # nur fehlende Pakete: vorhandene Firmware (am Pi auch die des eingebauten WLAN) nicht nebenbei aktualisieren
+        # Ausgaben erst einsammeln, nicht "| grep -q": grep beendet sich beim ersten Treffer, apt-cache bekommt SIGPIPE,
+        # und mit pipefail gilt die Pruefung als gescheitert (Code 141) - die Firmware wurde so nie installiert
+        local status policy
         for p in firmware-realtek firmware-mediatek firmware-atheros firmware-iwlwifi; do
-            dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" && continue
+            status="$(dpkg-query -W -f='${Status}' "$p" 2>/dev/null || true)"
+            [ "$status" = "install ok installed" ] && continue
             # apt-cache show findet auch Namen ohne installierbares Paket, darum den Kandidaten pruefen
-            LC_ALL=C apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [^(]' && fw="$fw $p"
+            policy="$(LC_ALL=C apt-cache policy "$p" 2>/dev/null || true)"
+            [[ "$policy" == *"Candidate: "* && "$policy" != *"Candidate: (none)"* ]] && fw="$fw $p"
         done
         # shellcheck disable=SC2086
         [ -z "$fw" ] || apt-get install -y --no-install-recommends $fw || warn "WLAN-Firmware liess sich nicht installieren"
@@ -215,7 +220,7 @@ install_firewall() {
         # UPnP/DLNA (SSDP + Renderer); ist 49494 nach einem schnellen Neustart noch belegt, weicht libupnp nach oben aus
         firewall-cmd --permanent --add-port=1900/udp --add-port=49494-49504/tcp
         firewall-cmd --reload
-    elif command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
+    elif command -v ufw >/dev/null 2>&1 && [[ "$(ufw status 2>/dev/null || true)" == *"Status: active"* ]]; then
         log "Oeffne Ports in ufw..."
         ufw allow "${PORT}/tcp"; ufw allow 5353/udp; ufw allow 5000/tcp; ufw allow 6001:6011/udp; ufw allow 4070/tcp
         ufw allow 1900/udp; ufw allow 49494:49504/tcp
@@ -342,6 +347,14 @@ for d in /usr/lib/dhcpcd/dhcpcd-hooks /lib/dhcpcd/dhcpcd-hooks; do
         break
     fi
 done
+# Kabel und WLAN im selben Netz: Linux beantwortet ARP sonst auf jeder Schnittstelle fuer jede eigene Adresse.
+# Der WLAN-Adapter "beansprucht" dann die Kabeladresse, dhcpcd haelt das fuer einen Adresskonflikt und gibt sie auf
+# (Geraet unter der alten IP weg). Jede Schnittstelle antwortet nur noch fuer ihre eigene Adresse.
+printf '%s\n' '# Klangstation: kein ARP-Flux bei Kabel und WLAN im selben Netz' \
+    'net.ipv4.conf.all.arp_ignore = 1' 'net.ipv4.conf.all.arp_announce = 2' \
+    'net.ipv4.conf.default.arp_ignore = 1' 'net.ipv4.conf.default.arp_announce = 2' \
+    > /etc/sysctl.d/90-klangstation.conf
+sysctl -q -p /etc/sysctl.d/90-klangstation.conf >/dev/null 2>&1 || true
 systemctl daemon-reload
 install_firewall
 systemctl enable --now ks-netmount.socket ks-netadmin.socket

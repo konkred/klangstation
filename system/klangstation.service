@@ -10,6 +10,8 @@ Group=klangstation
 Environment=KS_DATA_DIR=/var/lib/klangstation
 Environment=KS_MEDIA_ROOT=/media/klangstation
 Environment=KS_PORT=@PORT@
+# Meldungen von aplay, bluealsa, GStreamer und MPD englisch: Klangstation erkennt "busy" daran (Debian setzt LANG=de_DE)
+Environment=LC_ALL=C.UTF-8
 Environment=PATH=/opt/klangstation/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin
 WorkingDirectory=/opt/klangstation/backend
 ExecStart=/opt/klangstation/venv/bin/python -m klangstation

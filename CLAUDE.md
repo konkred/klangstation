@@ -174,6 +174,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   App findet das Gerät erst nach 30–60 s wieder. Die Hook-Ereignisse kommen zu spät (am Pi ~0,4 s je Aufruf,
   „loading“ erst nach ~4 s) → Backend `subprocess` mit `system/ks-spotify-sink`: wartet bis 10 s auf das Gerät,
   meldet „sink busy“, Klangstation gibt es frei.
+* **Debian setzt `LANG=de_DE`** (Thin Client): aplay, bluealsa, GStreamer und MPD melden dann „Das Gerät oder die Ressource ist
+  belegt“ statt „busy“ → `ks-spotify-sink` brach sofort ab statt zu warten, Spotify sprang nach wenigen Sekunden zum nächsten
+  Titel, ohne Ton. Dienst läuft mit `LC_ALL=C.UTF-8` (0.2.21). Meldungen nie ohne englische Locale auswerten.
+* **gmediarender hält das ALSA-Gerät auch nach Stop** (GStreamer-Pipeline bleibt in READY) → bei Übernahme durch eine andere
+  Quelle gmediarender neu starten, sobald UPnP einen Titel geladen hat (`uri`), nicht nur beim Spielen.
 * Beendet sich ein Dienst unerwartet, schreibt `daemons.py` seine letzten Zeilen ins Journal.
 * **Bluetooth-Position nach dem Springen:** Das iPhone schickt beim Springen im Titel nichts über AVRCP (btmon: nur der
   Audiostrom), BlueZ meldet `Position` nur beim Statuswechsel (z. B. auf „playing“), eine Nachfrage gibt die D-Bus-API nicht
@@ -517,3 +522,4 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 * WLAN-Firmware wurde unter Debian nie installiert (`| grep -q` mit pipefail) → Ausgabe erst einsammeln (0.2.19).
 * WLAN verbunden → Kabel verlor seine Adresse (ARP-Flux) → `arp_ignore`/`arp_announce` (0.2.19).
 * UPnP ohne Cover, wenn die App eine nicht abrufbare Bildadresse schickt (mconnect) → prüfen, sonst MusicBrainz (0.2.20).
+* Spotify nach UPnP: Titel liefen nur Sekunden, kein Ton (gmediarender hielt HDMI, „belegt“ auf Deutsch) → Locale, Freigabe (0.2.21).

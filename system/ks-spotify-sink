@@ -3,6 +3,7 @@
 # librespot beendet sich ganz, wenn sein ALSA-Geraet beim Abspielen belegt ist (z. B. noch von AirPlay) -
 # die Spotify-App verliert dann die Verbindung und findet das Geraet erst nach 30-60 s wieder. Dieses Skript
 # wartet stattdessen, bis das Geraet frei ist. Die Meldung "sink busy" laesst Klangstation das Geraet freigeben.
+export LC_ALL=C  # "busy" statt lokalisiertem "belegt"
 DEV="$1"
 FMT=(-q -t raw -f S16_LE -r 44100 -c 2 -D "$DEV")
 for i in $(seq 1 50); do

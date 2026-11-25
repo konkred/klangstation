@@ -267,12 +267,11 @@ class Core:
             if new != "spotify" and self.spotify.get("active"):
                 self.spotify = {}
                 await self.daemons["spotify"].restart()
-            if new != "upnp" and self.upnp.playing:
-                try:
-                    await self.upnp.action("Stop")
-                except (ConnectionError, ValueError):
-                    await self.daemons["upnp"].restart()
-                    self.upnp.reset()
+            if new != "upnp" and (self.upnp.playing or self.upnp.info.get("uri")):
+                # gmediarender haelt das ALSA-Geraet auch nach Stop offen (GStreamer-Pipeline bleibt in READY),
+                # andere Quellen finden es dann belegt -> neu starten gibt es frei
+                await self.daemons["upnp"].restart()
+                self.upnp.reset()
             if new != "bluetooth" and self.bt.streaming:
                 try:
                     await self.bt.control("Pause")  # Handy pausiert, statt ins Leere zu streamen

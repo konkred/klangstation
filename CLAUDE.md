@@ -101,6 +101,8 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **Belegter Ausgang (stumm):** MPD per `setvol 0`, dann `pw-cat -p --target <node.name> --volume 0 <wav>`. Eine Zahl als Ziel ignoriert
   pw-cat und nimmt den Standardausgang → per `/proc/asound/card<n>/pcm0p/sub0/status` prüfen, wer das Gerät hält.
 * **USB abziehen:** `echo 0 > /sys/bus/usb/devices/<port>/authorized` (wieder 1 = anstecken).
+* **USB-Stick ohne Hardware:** `modprobe dummy_hcd`, dann `modprobe g_mass_storage file=<abbild> removable=1` – meldet sich als
+  echtes USB-Gerät („Mass Storage Gadget“), udev und `ks-automount` greifen. Skript `t_usb.sh` in `/root` am Thin Client.
 * **Oberfläche testen:** Nie Schalter oder Knöpfe betätigen, die Netz, WLAN, SSH oder Port abschalten – auch nicht mit
   abgefangenem `confirm`. Am 01.11. lief nach `navigate` auf dieselbe URL (nur `#` anders) noch das alte Skript ohne
   Rückfrage → WLAN am Pi aus, Pi nur noch per Kabel erreichbar. Neue Logik direkt aufrufen (Funktion im Konsolen-
@@ -323,9 +325,10 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
-* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: USB-Sticks (FAT32/NTFS, Abziehen mit offener
-  Datei), Rippen auf USB samt Rückfall (braucht CD-Laufwerk), Netzwerk-Reiter (feste IPv4 mit Rücknahme, Port, SSH), USB-WLAN-Sticks,
-  UPnP, Herunterfahren (mit dem Nutzer), Sperrbildschirm am iPhone. Die Tests vom 22.11. sind unter Debian bestanden (siehe unten).
+* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: echter USB-Stick (emuliert bestanden, siehe
+  unten), Rippen auf USB samt Rückfall (braucht CD-Laufwerk), feste IPv4 mit Rücknahme (braucht eine Kabelverbindung unter
+  NetworkManager, am Thin Client läuft das Kabel unter ifupdown), USB-WLAN-Sticks, UPnP, Herunterfahren (mit dem Nutzer),
+  Sperrbildschirm am iPhone. Die Tests vom 22.11. sowie Port, SSH und USB sind unter Debian bestanden (siehe unten).
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -707,6 +710,13 @@ Vorher bzw. dabei bedenken:
 * Webradio-Netzausfall 60 s (v4 und v6): Hinweis nach 27 s, 12 s nach Rückkehr spielt er wieder.
 * Neustart über `POST /api/system/power`: Web nach 36 s (Boot 21 s), alle Dienste und Kiosk, nichts spielt, IPv6-Routen per Hook.
 * Update per `install.sh --tv-headless`: 30 s, EXIT 0, `settings.json` unverändert.
+* Netzwerk-Reiter (per API): Port 8080 → 8082 (erreichbar nach 6 s) → 8080 (4 s), Kiosk zieht mit; belegter Port (6600) und 22
+  abgelehnt. SSH aus → neue Verbindungen abgelehnt, laufende Sitzung bleibt; SSH wieder an. Feste IPv4 auf dem Kabel unter ifupdown
+  richtig abgelehnt („Ungültige Verbindung“), Rücknahme nicht prüfbar (am Alma am 31.10. bestanden).
+* USB emuliert (`dummy_hcd` + `g_mass_storage`, echtes USB-Gerät für udev), je FAT32 und NTFS: nach 3 s `ro` eingehängt (FAT32 mit
+  `utf8`), Umlaute und „&“ in Ordner und Datei in der Bibliothek; Speichern per `ks-netmount` (wie nach dem Rippen, Ordner mit Umlaut)
+  → Datei auf dem Stick, danach wieder `ro` (NTFS über Aus- und neu Einhängen); Abziehen per `authorized=0` mit offener Datei →
+  nach ≤ 1 s ausgehängt, Ordner entfernt; Wiederanstecken nach 1 s eingehängt; fsck/ntfsfix sauber.
 
 ### Behobene Fehler
 

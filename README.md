@@ -56,19 +56,20 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 
 | Hardware | Betriebssystem | Stand |
 |---|---|---|
-| **PC mit x86-64-v3 oder neuer** (empfohlen) | AlmaLinux 10 oder Debian 13 | getestet |
+| **PC (x86-64)** (empfohlen) | Debian 13 | getestet |
 | **Raspberry Pi 4 (4 GB)** (empfohlen) | Raspberry Pi OS Lite | getestet |
-| PC mit x86-64-v2 | AlmaLinux 10 in der v2-Ausgabe oder Debian 13 | AlmaLinux getestet, Debian nicht |
-| PC mit x86-64-v1 (z. B. Core 2 Quad) | nur Debian 13 | nicht getestet |
+| älterer PC (z. B. Core 2 Quad) | Debian 13 | nicht getestet |
 
-Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep supported`.
+Klangstation unterstützt seit Version 0.2.14 nur noch Debian und Raspberry Pi OS. Dort kommen alle Programme fertig aus
+den Paketquellen; unter AlmaLinux mussten mehrere aus dem Quellcode gebaut werden, und manche (etwa für den Equalizer)
+gab es gar nicht.
 
 * **Getestet, läuft auch:** dieselben Systeme mit Desktop (GNOME bzw. Raspberry Pi OS mit Desktop), auch auf einem Laptop
   (Debian 13 mit GNOME: Deckel zuklappen, Lautsprecher und Kopfhörer, eingebautes WLAN und Bluetooth).
-* **Sollte laufen, nicht getestet:** RHEL 10, Rocky Linux 10, CentOS Stream 10, Fedora; Raspberry Pi 5, andere 64-Bit-ARM-Rechner,
-  Raspberry Pi 2/3 mit 32-Bit-System.
-* **Nicht unterstützt:** AlmaLinux und RHEL vor Version 10, Ubuntu und Ableger wie Linux Mint (Browser nur als Snap), andere Systeme wie
-  Arch, openSUSE, Alpine.
+* **Sollte laufen, nicht getestet:** Raspberry Pi 5, andere 64-Bit-ARM-Rechner mit Debian, Raspberry Pi 2/3 mit 32-Bit-System.
+* **Nicht unterstützt:** AlmaLinux, RHEL, Rocky Linux, Fedora (bis 0.2.13 unterstützt, der Installer lehnt sie jetzt ab),
+  Ubuntu und Ableger wie Linux Mint (Browser nur als Snap), andere Systeme wie Arch, openSUSE, Alpine. Bestehende
+  Installationen unter AlmaLinux laufen weiter, `install.sh` aktualisiert sie aber nicht mehr.
 
 <details>
 <summary>Getestetes Zubehör</summary>
@@ -87,27 +88,31 @@ Welche Stufe die CPU hat, zeigt `/lib64/ld-linux-x86-64.so.2 --help | grep suppo
 <details>
 <summary>Was womit getestet ist</summary>
 
-| | Pi OS Desktop | Pi OS Lite | Alma ohne Desktop | Alma GNOME | Debian ohne Desktop | Debian GNOME | Debian GNOME Laptop | Debian ohne Desktop Laptop |
-|---|---|---|---|---|---|---|---|---|
-| **Rechner** | Pi 4 | Pi 4 | PC Intel-HDA | OptiPlex 3060 | PC Intel-HDA | PC Intel-HDA | ASUS Ryzen 5 | Dell i5 |
-| Installation von null | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Update | ✓ | ✓ | ✓ | | | ✓ | ✓ | |
-| Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| UPnP | ✓ | | ✓ | ✓ | | | | |
-| Radio, auch bei Netzausfall | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✓ |
-| CD abspielen und rippen | ✓ | | ✓ | ✓ | ✓ | ✓ | | |
-| Freigabe, auch bei Serverausfall | SMB | NFS | SMB | NFS | | | | |
-| USB-Sticks, auch Abziehen im Betrieb | | | ✓ | ✓ | | | | |
-| CEC | ✓ | | | | | | | |
-| Schlummer-Timer, Wecker | | | ✓ | ✓ | | | ✓ | ✓ |
-| Musik hochladen | | | | | ✓ | | | |
-| Bit-perfekt, Lautstärke angleichen, Überblenden | | | ✓ | | | | | |
-| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | ✓ | | | | | |
-| Erscheinungsbilder | | | ✓ | | | | | |
-| Laptop: Deckel, Kopfhörer, Bildschirm am Fernseher | | | | | | | ✓ | ✓ (ohne Kopfhörer) |
+| | Pi OS Desktop | Pi OS Lite | Debian ohne Desktop | Debian GNOME | Debian GNOME Laptop | Debian ohne Desktop Laptop |
+|---|---|---|---|---|---|---|
+| **Rechner** | Pi 4 | Pi 4 | PC Intel-HDA | PC Intel-HDA | ASUS Ryzen 5 | Dell i5 |
+| Installation von null | | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Update | ✓ | ✓ | | ✓ | ✓ | |
+| Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ |
+| UPnP | ✓ | | | | | |
+| Radio, auch bei Netzausfall | ✓ | | ✓ | ✓ | ✓ | ✓ |
+| CD abspielen und rippen | ✓ | | ✓ | ✓ | | |
+| Freigabe, auch bei Serverausfall | SMB | NFS | | | | |
+| USB-Sticks, auch Abziehen im Betrieb | | | | | | |
+| CEC | ✓ | | | | | |
+| Schlummer-Timer, Wecker | | | | | ✓ | ✓ |
+| Musik hochladen | | | ✓ | | | |
+| Bit-perfekt, Lautstärke angleichen, Überblenden | | | | | ✓ (ohne Bit-perfekt) | ✓ (ohne Bit-perfekt) |
+| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | | | | |
+| Erscheinungsbilder | | | | | | |
+| Laptop: Deckel, Kopfhörer, Bildschirm am Fernseher | | | | | ✓ | ✓ (ohne Kopfhörer) |
+
+Leere Felder hießen bis 0.2.13 oft „unter AlmaLinux getestet“: UPnP, USB-Sticks samt Abziehen im Betrieb, Bit-perfekt,
+Lautstärke angleichen, Überblenden, Sperrbildschirm und die Erscheinungsbilder liefen dort, der Code ist derselbe. Unter
+Debian werden sie gerade nachgeholt.
 
 </details>
 
@@ -126,15 +131,13 @@ git clone https://github.com/konkred/klangstation.git && cd klangstation
 sudo ./install.sh
 ```
 
-Fehlt `git`: vorher `sudo apt install git` (Debian, Raspberry Pi OS) bzw. `sudo dnf install git` (AlmaLinux).
+Fehlt `git`: vorher `sudo apt install git`.
 
 Danach im Browser `http://<hostname>.local:8080` öffnen (z. B. `http://raspberrypi.local:8080`).
 Klappt der `.local`-Name nicht, geht auch die IP-Adresse: `http://192.168.x.y:8080`.
 
 Ohne Optionen wird alles installiert: lokale Medien, Freigaben, Radio, CD, AirPlay, Spotify, UPnP und
-Bluetooth. Die Dauer hängt vom System ab: Auf Debian und Raspberry Pi OS kommt fast alles als Paket
-(wenige Minuten). Unter RHEL-Systemen werden mehrere Programme aus dem Quellcode gebaut, das dauert auf
-einem PC etwa 10–20 Minuten.
+Bluetooth. Fast alles kommt als Paket, die Installation dauert meist nur wenige Minuten.
 
 ### Optionen
 
@@ -143,13 +146,13 @@ Die Optionen lassen sich beliebig kombinieren. `sudo ./install.sh --help` zeigt 
 | Option | Was sie tut | Wann verwenden |
 |---|---|---|
 | `--port <n>` | Die Weboberfläche lauscht auf Port `<n>` statt 8080. Firewall, Kiosk-Bildschirm und Dienst werden passend eingerichtet. | Wenn 8080 schon belegt ist oder die Adresse ohne Port gehen soll (`--port 80` → `http://<hostname>.local`). |
-| `--no-airplay` | `shairport-sync` wird nicht installiert bzw. gebaut, das Gerät erscheint nicht als AirPlay-Lautsprecher. | Wenn niemand Apple-Geräte nutzt, oder um auf RHEL-Systemen den Quellcode-Build zu sparen. |
-| `--no-spotify` | `librespot` wird nicht installiert, kein Spotify Connect. | Ohne Spotify-Premium-Konto. Spart unter RHEL-Systemen und auf Debian ohne passendes Paket den Rust-Build, der auf einem Raspberry Pi 20–60 Minuten dauert. |
+| `--no-airplay` | `shairport-sync` wird nicht installiert, das Gerät erscheint nicht als AirPlay-Lautsprecher. | Wenn niemand Apple-Geräte nutzt. |
+| `--no-spotify` | `librespot` wird nicht installiert, kein Spotify Connect. | Ohne Spotify-Premium-Konto. Spart auf Systemen ohne passendes Paket den Rust-Build, der auf einem Raspberry Pi 20–60 Minuten dauert. |
 | `--no-upnp` | `gmediarender` wird nicht installiert, das Gerät erscheint nicht als UPnP/DLNA-Renderer. | Wenn niemand von Android-Apps, Windows („Wiedergeben auf“) oder einem NAS aus abspielt. |
 | `--no-wifi` | Keine WLAN-Unterstützung: NetworkManager-WLAN, `wpa_supplicant` und Firmware für USB-WLAN-Sticks werden nicht installiert. | Wenn das Gerät nur per Kabel im Netz hängt und kein WLAN vorgesehen ist. |
 | `--no-bluetooth` | `bluez` und `bluez-alsa` werden nicht installiert, die Bluetooth-Konfiguration bleibt unverändert. Auf Systemen mit Desktop wird auch WirePlumber nicht angefasst. | Ohne Bluetooth-Adapter, oder wenn Bluetooth am Gerät für etwas anderes gebraucht wird (Tastatur, Kopfhörer am Desktop). |
-| `--spotify-from-source` | `librespot` wird mit Cargo aus dem Quellcode gebaut statt aus dem Raspotify-Paketarchiv geholt. | Nur Debian/Raspberry Pi OS: wenn kein fremdes Paketarchiv eingebunden werden soll oder das Raspotify-Paket Probleme macht. Unter RHEL-Systemen wird ohnehin gebaut. |
-| `--tv-headless` | Installiert `cage` (minimaler Wayland-Kiosk) und `chromium` und richtet den Dienst `klangstation-tv` ein. Er zeigt den „Läuft gerade“-Bildschirm nach jedem Start im Vollbild auf dem ersten Bildschirm (tty1), ohne Anmeldung und ohne Desktop. | Auf Systemen **ohne** Desktop (Raspberry Pi OS Lite, AlmaLinux-Server, Debian ohne GUI), wenn am HDMI-/DP-Ausgang ein Fernseher oder Monitor hängt. Auf Systemen **mit** Desktop nicht nötig, dort startet der Bildschirm automatisch nach dem Anmelden. |
+| `--spotify-from-source` | `librespot` wird mit Cargo aus dem Quellcode gebaut statt aus dem Raspotify-Paketarchiv geholt. | Wenn kein fremdes Paketarchiv eingebunden werden soll oder das Raspotify-Paket Probleme macht. |
+| `--tv-headless` | Installiert `cage` (minimaler Wayland-Kiosk) und `chromium` und richtet den Dienst `klangstation-tv` ein. Er zeigt den „Läuft gerade“-Bildschirm nach jedem Start im Vollbild auf dem ersten Bildschirm (tty1), ohne Anmeldung und ohne Desktop. | Auf Systemen **ohne** Desktop (Raspberry Pi OS Lite, Debian ohne Desktop), wenn am HDMI-/DP-Ausgang ein Fernseher oder Monitor hängt. Auf Systemen **mit** Desktop nicht nötig, dort startet der Bildschirm automatisch nach dem Anmelden. |
 | `-h`, `--help` | Zeigt die Optionen an und beendet sich. | |
 
 Hinweise:
@@ -173,7 +176,7 @@ sudo ./install.sh --tv-headless --port 80
 # Server ohne Bildschirm, nur Medien, Radio und AirPlay
 sudo ./install.sh --no-spotify --no-upnp --no-bluetooth
 
-# AlmaLinux-PC am Monitor, ohne Bluetooth-Adapter
+# PC mit Debian ohne Desktop am Monitor, ohne Bluetooth-Adapter
 sudo ./install.sh --tv-headless --no-bluetooth
 ```
 
@@ -211,14 +214,10 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
 
 ### Was der Installer macht
 
-* **Debian/Raspberry Pi OS:** Pakete aus den offiziellen Quellen: `mpd`, `shairport-sync`, `gmediarender`,
+* Pakete aus den offiziellen Quellen von Debian bzw. Raspberry Pi OS: `mpd`, `shairport-sync`, `gmediarender`,
   `bluez-alsa-utils`, `avahi-daemon`, `cdparanoia`, `flac`, `cifs-utils`, `nfs-common`, `alsa-utils`,
   `ntfs-3g`, `v4l-utils` (CEC), für WLAN `network-manager`, `wpasupplicant`, `iw` und Firmware für USB-Sticks
   (`firmware-realtek`, `-mediatek`, `-atheros`, `-iwlwifi`). `librespot` kommt aus dem Raspotify-Archiv (amd64/arm64/armhf), sonst per Cargo.
-* **RHEL/Alma/Rocky/Fedora:** Aktiviert EPEL, CRB und RPM Fusion Free. Was dort nicht als Paket existiert, wird
-  aus dem Quellcode gebaut und nach `/usr/local` installiert: unter EL10 `mpd` (neueste 0.24.x),
-  `shairport-sync`, `gmediarender`, `bluez-alsa`; `librespot` immer per Cargo. `ntfs-3g` kommt aus EPEL
-  (die EL-Kernel lesen NTFS nicht selbst).
 * Legt den Systembenutzer `klangstation` an (Gruppen `audio`, `cdrom`, `video`, `render`, `input`), installiert
   die Anwendung mit Python-venv nach `/opt/klangstation` und richtet den Dienst `klangstation` ein.
 * Richtet die udev-Regel für USB/SD-Medien, den Hilfsdienst `ks-netmount` (Freigaben, Speichern gerippter CDs)
@@ -228,9 +227,7 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
   umschalten kann.
 * Mit Bluetooth: `bluealsa` nur als Empfänger, Gerätetyp „Lautsprecher“ (auch auf PCs, deren Gehäusetyp BlueZ
   sonst „Desktop-Computer“ melden lässt); auf Desktops überlässt WirePlumber Bluetooth-Audio an `bluez-alsa`
-  (rückgängig: `/etc/wireplumber/*/90-klangstation*` löschen). Mit SELinux lädt er das Modul
-  `klangstation-bluealsa`: Ohne es darf bluealsa als Dienst den Tonkanal nicht über D-Bus weiterreichen und
-  stürzt beim ersten Abspielen ab (rückgängig: `semodule -r klangstation-bluealsa`).
+  (rückgängig: `/etc/wireplumber/*/90-klangstation*` löschen).
 * „Läuft gerade“: mit Desktop ein Autostart-Eintrag (`/etc/xdg/autostart/klangstation-tv.desktop`), mit
   `--tv-headless` der Dienst `klangstation-tv`. Für dessen Sitzung werden PipeWire und WirePlumber gesperrt:
   Chromium würde sie sonst starten, und WirePlumber setzt die ALSA-Regler zurück (HDMI/DP nach dem Booten stumm).
@@ -284,8 +281,8 @@ wenigen Sekunden zurück.
 **Equalizer:** Zehn Bänder von 31 Hz bis 16 kHz (±12 dB) mit Voreinstellungen wie *Mehr Bass* oder *Sprache*. Er gilt für
 alle Quellen, auch AirPlay, Spotify und Bluetooth, und sitzt vor dem Hochmischen auf 5.1/7.1. Die Regler wirken sofort;
 Ein- und Ausschalten startet die Wiedergabe kurz neu, wie ein Ausgabewechsel. Grundlage ist das ALSA-Plugin `alsaequal`
-mit den Filtern aus `caps` (Pakete `libasound2-plugin-equal` und `caps`, bringt der Installer mit). Unter AlmaLinux gibt
-es dafür keine Pakete, dort bleibt der Equalizer aus. Bei *Bit-perfekt* ist er aus. Anheben kann bei lauter Musik
+mit den Filtern aus `caps` (Pakete `libasound2-plugin-equal` und `caps`, bringt der Installer mit). Bei *Bit-perfekt* ist
+er aus. Anheben kann bei lauter Musik
 verzerren, dann lieber die übrigen Bänder absenken.
 
 **Nachtmodus:** Unter *Optionen › Ausgabe* lässt sich die Lautstärke für ein Zeitfenster begrenzen, gleiche Zeiten bei *Von* und
@@ -381,7 +378,7 @@ Private Kopien eigener CDs sind in Deutschland erlaubt, solange kein Kopierschut
 ### Netzwerk
 
 *Optionen › Netzwerk* zeigt alle Netzwerkadapter mit Zustand, IPv4- und IPv6-Adressen, Gateway, DNS-Servern und
-MAC-Adresse. Geändert wird über NetworkManager (Raspberry Pi OS, AlmaLinux und die meisten Desktops nutzen ihn
+MAC-Adresse. Geändert wird über NetworkManager (Raspberry Pi OS und die meisten Desktops nutzen ihn
 ohnehin; unter Debian ohne NetworkManager installiert ihn der Installer für WLAN und lässt die
 bestehende Kabelverbindung in Ruhe).
 
@@ -393,10 +390,8 @@ bestehende Kabelverbindung in Ruhe).
   Gespeicherte WLANs verbinden sich automatisch, sobald sie in Reichweite sind.
 * **WLAN-Stick:** Hat das Gerät kein WLAN (viele PCs), genügt ein USB-WLAN-Stick. Er wird im laufenden Betrieb
   erkannt und erscheint nach wenigen Sekunden. Der Installer bringt Firmware für gängige Realtek-, MediaTek-
-  und Atheros-Chips mit. Unter RHEL fehlen im Kernel einige Realtek-Treiber (z. B. RTL8821CU); Sticks mit
-  MediaTek MT7601U/MT7610U/MT7612U/MT7632U oder Realtek RTL8188EU/RTL8812BU/RTL8822BU laufen dort ohne
-  Zusatztreiber.
-* **SSH:** schaltet den SSH-Server ein oder aus (`ssh`/`sshd`). Laufende Sitzungen bleiben beim Ausschalten bestehen.
+  und Atheros-Chips mit. Getestet sind Edimax N150 (RTL8188EU) und Netgear WNDA3100v3 (MT7632U).
+* **SSH:** schaltet den SSH-Server ein oder aus (`ssh`). Laufende Sitzungen bleiben beim Ausschalten bestehen.
 * **Ports:** Liste der offenen Ports mit Dienst und ob sie im Netzwerk oder nur am Gerät erreichbar sind. Den Port
   der Weboberfläche kann man ändern (80 oder 1024–65535); Dienst, Kiosk-Bildschirm und Firewall werden angepasst,
   die Seite wechselt danach von selbst zur neuen Adresse. Ein späteres Update behält den Port.
@@ -427,8 +422,8 @@ systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
 * **Nicht mehr erreichbar nach IP-Änderung:** 2 Minuten warten – dann gilt wieder die alte Einstellung.
   Danach unter `http://<hostname>.local:8080` (bzw. dem eigenen Port) neu laden.
 * **WLAN-Stick erscheint nicht:** `ip link` zeigt, ob der Kernel ihn erkennt; `dmesg | tail` nennt fehlende
-  Firmware. Unter RHEL fehlen manche Realtek-Treiber (siehe Netzwerk). Meldet sich der Stick als CD-Laufwerk
-  (Treiber-CD, z. B. AVM), schaltet ihn `eject /dev/sr<n>` in den WLAN-Modus; `usb_modeswitch` fehlt unter RHEL 10.
+  Firmware. Meldet sich der Stick als CD-Laufwerk (Treiber-CD, z. B. AVM), schaltet ihn `eject /dev/sr<n>` in den
+  WLAN-Modus.
 * **Kein Ton:** Unter *Optionen › Ausgabe* den richtigen Ausgang wählen. Hinter HDMI-/DP-Ausgängen steht,
   ob ein Monitor angeschlossen ist. Ob ALSA selbst Ton ausgibt: `speaker-test -D plughw:CARD=<Karte>,DEV=<n> -c 2 -l 1`.
 * **Kein Ton über HDMI am Pi:** Monitor muss beim Booten angeschlossen sein. Klangstation verwendet für `vc4hdmi`
@@ -439,7 +434,7 @@ systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
   erreichbar, Zugangsdaten falsch, Freigabe unbekannt). Auf der Synology muss SMB2/3 aktiv sein.
 * **Radio bricht ab oder Freigabe ist weg:** Klangstation verbindet von selbst neu bzw. spielt weiter, sobald der
   Server wieder da ist; bis dahin steht der Grund im Player.
-* **NTFS-Stick erscheint nicht:** Unter RHEL-Systemen muss `ntfs-3g` aus EPEL installiert sein (macht der Installer).
+* **NTFS-Stick erscheint nicht:** `ntfs-3g` muss installiert sein (macht der Installer).
 * **CD wird nicht erkannt:** `ls -l /dev/sr0` zeigt, ob das Laufwerk da ist. Der Benutzer `klangstation` muss in der
   Gruppe `cdrom` sein.
 * **CD lässt sich nicht auswerfen:** Hält ein anderes Programm das Laufwerk (z. B. der Desktop), meldet

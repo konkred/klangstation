@@ -292,7 +292,7 @@ def do_ipv4_revert(req):
 
 # ------------------------------------------------------------------ SSH
 def ssh_units():
-    """(Dienst, Socket oder None) - Debian: ssh, RHEL: sshd."""
+    """(Dienst, Socket oder None) - Debian: ssh (sshd ist nur ein Alias)."""
     for name in ("ssh", "sshd"):
         code, out = run(["systemctl", "list-unit-files", "--no-legend", f"{name}.service"], timeout=10)
         if code == 0 and out.strip():

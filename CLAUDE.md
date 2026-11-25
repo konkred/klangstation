@@ -1,8 +1,8 @@
 # Klangstation – Arbeitskontext für Claude
 
 Musik-Streaming-Webapp (Python/Starlette + MPD) im Stil der 2000er (WMP-Skin, wahlweise Frutiger Aero) für
-headless Debian- und RHEL-Systeme
-(ARM und x86). Was das Projekt kann und wie es installiert wird, steht in der README.md. Diese Datei hält fest,
+headless Debian-Systeme samt Raspberry Pi OS
+(ARM und x86); RHEL/AlmaLinux bis 0.2.13, seit 0.2.14 nicht mehr (Entscheidung des Nutzers, 25.11.2026). Was das Projekt kann und wie es installiert wird, steht in der README.md. Diese Datei hält fest,
 was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der Fehlersuche und den Teststand.
 
 ## Absprachen mit dem Nutzer
@@ -11,7 +11,7 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
 * Nie selbst Passwörter oder Zugangsdaten eingeben; kein Auth-Passwort in Klangstation gesetzt lassen.
 * Die E-Mail des Nutzers nicht an Dienste senden; den MusicBrainz-Kontakt trägt der Nutzer selbst ein.
 * Vor größeren Systemänderungen auf dem Pi fragen (Systempakete, config.txt, Reboot, Firewall).
-* Auf dem Alma-PC (Testsystem) darf Claude als root arbeiten und neu starten.
+* Auf dem zentralen Test-PC (Thin Client) darf Claude als root bzw. per sudo arbeiten und neu starten; Herunterfahren nur mit dem Nutzer.
 * Nicht unvermittelt Ton abspielen – Wiedergabetests startet der Nutzer. Eigene Tests stumm (siehe Testtechniken).
 
 ## Code und Stil
@@ -33,12 +33,12 @@ was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der F
   Nacht bei dunklem System), `/tv` folgt der Einstellung `tv_theme` (Liste in `config.TV_THEMES`).
   `theme-dunkel.css` macht für Nacht, Winamp und Hi-Fi die hellen Listen und Dialoge dunkel (über Variablen wie
   `--card`, `--btn-top`). Eigene Bilder je Theme: `VIS_PAL`/VU-Meter in `app.js`, `draw()` in `tv.js`.
-* `system/` – systemd-Units, udev-Regel, Hilfsskripte, SELinux-Modul. `ks-netmount` ist ein root-Hilfsdienst
+* `system/` – systemd-Units, udev-Regel, Hilfsskripte. `ks-netmount` ist ein root-Hilfsdienst
   (Socket nur für Gruppe klangstation): SMB/NFS lesend einhängen, gerippte CDs auf USB speichern. `ks-netadmin`
   ebenso für Netzwerk: WLAN, IPv4 mit Rücknahme-Zeitgeber, SSH, Port der Weboberfläche.
   `ks-automount` hängt USB/SD ein und aus, `ks-tv-kiosk` startet den Kiosk-Browser.
-* `install.sh` – Installer und Updater (Optionen: `--help`). Unter RHEL baut er mpd, shairport-sync,
-  gmediarender, bluez-alsa und librespot aus dem Quellcode.
+* `install.sh` – Installer und Updater (Optionen: `--help`), nur Debian/Pi OS; lehnt Ubuntu und RHEL-Systeme ab.
+  Aus dem Quellcode baut er nur noch librespot (ohne Raspotify-Paket) und shairport-sync (falls kein Paket).
 
 Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, Medien unter `/media/klangstation`.
 
@@ -53,7 +53,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 
 | Gerät | Zugang | Hinweise |
 |---|---|---|
-| **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1, Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB, AlmaLinux 10.3 **x86_64_v2** ohne Desktop, SELinux enforcing | `ssh root@10.0.0.178` (SSH-Key, zu Hause, Kabel) | root erlaubt wie am Alma; eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1); kein WLAN, kein Bluetooth-Adapter. Unter AlmaLinux kein `alsaequal` → Equalizer hier nicht testbar |
+| **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1, Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB; bis 25.11. AlmaLinux 10.3 x86_64_v2, wird mit **Debian 13 ohne Desktop** neu aufgesetzt | bisher `ssh root@10.0.0.178` (SSH-Key, zu Hause, Kabel); neuen Zugang nach der Installation eintragen | root/sudo erlaubt; eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1); kein WLAN, kein Bluetooth-Adapter |
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
@@ -73,8 +73,7 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   `ssh pi@<pi> "cd ~/klangstation && sudo ./install.sh"` (ggf. `--tv-headless`) oder einzelne Dateien mit
   `sudo install -m 0644` nach `/opt/klangstation/...` und `sudo systemctl restart klangstation`. Danach prüfen.
   `ks-tv-kiosk` enthält `@PORT@` – beim Einzeleinspielen per `sed` ersetzen.
-* **Alma (root):** scp nach `/root/klangstation`, dann `bash install.sh --tv-headless` oder einzelne Dateien
-  mit `install -m 0644` nach `/opt/klangstation/...` und `systemctl restart klangstation`.
+* **Thin Client:** wie am Pi (`git archive HEAD | ssh … tar -x`, dann `install.sh --tv-headless`).
 * **Vor jedem Neustart von Klangstation** (oder Ausgabewechsel) in einem eigenen Schritt prüfen, ob etwas spielt
   (`/api/state` → `source`, `now.state`), und bei laufender Musik fragen – nicht im selben Befehl wie den Neustart.
 * Nur Web-Dateien geändert: kein Neustart nötig (`no-cache`), Browser neu laden; den Kiosk (headless) per
@@ -251,6 +250,10 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 
 ### Installer und PipeWire
 
+* **Nur Debian/Pi OS** (Entscheidung des Nutzers, 25.11.2026, ab 0.2.14): AlmaLinux/RHEL fallen weg. Gründe: Pi braucht ohnehin
+  Debian; unter EL10 mussten mpd, shairport-sync, gmediarender, bluez-alsa gebaut werden (Thin Client 15 min statt ~1 min), es
+  fehlten `alsaequal`/`caps` (Equalizer), `usb_modeswitch`, RPM Fusion für CPUs ohne AVX. Entfernt: RHEL-Zweig im Installer,
+  Build-Funktionen, SELinux-Modul. Die Lehren zu RHEL unten bleiben als Beleg, falls es je zurückkommt. openSUSE ebenfalls verworfen.
 * **Ubuntu nicht unterstützen** (Entscheidung des Nutzers, 02.11.): Der Installer lehnt Ubuntu und Ableger ab. Browser gibt
   es nur als Snap: AppArmor sperrt Profile außerhalb von `~/snap/`, `chromium`/`--tv-headless` geht nicht, dazu andere
   Firmware-Pakete. Der Test vom 02.11. (siehe Bestanden) lief mit Snap-Sonderfall in `ks-tv-kiosk` (b575f4b, wieder entfernt).
@@ -314,15 +317,18 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
-* **CEC unter RHEL:** braucht einen USB-CEC-Adapter (z. B. Pulse-Eight), die Intel-Grafik kann kein CEC.
+* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client mit Debian 13: Tests vom 22.11. (Lautstärke,
+  Sicherheit, `ks-netmount`, snd-aloop, Webradio, Update, Neustart/Herunterfahren, Oberfläche), dazu USB-Sticks (FAT32/NTFS,
+  Abziehen mit offener Datei), Rippen auf USB samt Rückfall, Netzwerk-Reiter (feste IPv4 mit Rücknahme, Port, SSH), USB-WLAN-Sticks,
+  UPnP, Equalizer.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
   `vcgencmd get_throttled`). Erster Lauf am 26.10.2026 nach 35 min abgebrochen (unauffällig).
 * Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst am Pi „over-current“ aus → Y-Kabel oder aktiver Hub.
-  CD-/USB-Tests darum am Alma.
+  CD-/USB-Tests darum am Thin Client.
 
-### Testplan weitere Geräte (mit dem Nutzer abgestimmt am 01.11.2026, am 02.11. auf Debian/AlmaLinux umgestellt)
+### Testplan weitere Geräte (mit dem Nutzer abgestimmt am 01.11.2026, seit 25.11. nur Debian)
 
 | Gerät | System | Deckt ab |
 |---|---|---|
@@ -333,7 +339,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 | Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
 
 Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle.
-AlmaLinux 8 und 9 testen wir nicht (Entscheidung des Nutzers, 04.11.): zu alt, für CPUs mit x86-64-v1 gilt nur Debian. Zugang jeweils per SSH mit sudo wie am Pi.
+Zugang jeweils per SSH mit sudo wie am Pi.
 
 Vorher bzw. dabei bedenken:
 
@@ -646,7 +652,7 @@ Vorher bzw. dabei bedenken:
   Protokoll). Info zeigt den Akku („100 %, Netzteil, voll“, Kapazität 59 % vom Neuzustand).
 * Noch offen: Kopfhörer am Dell.
 
-**Thin Client 10ZiG (Celeron J4125), AlmaLinux 10.3 x86_64_v2 ohne Desktop frisch, 22.11.2026 – ohne Ton**
+**Thin Client 10ZiG (Celeron J4125), AlmaLinux 10.3 x86_64_v2 ohne Desktop frisch, 22.11.2026 – ohne Ton** (letzter AlmaLinux-Stand, 0.2.13)
 
 * `install.sh --tv-headless` von null (0.2.12): 15 min 9 s, EXIT 0, einzige Warnung „CPU ohne x86-64-v3 – RPM Fusion wird nicht
   eingebunden“. MPD 0.24.20. Alle Dienste und Kiosk (cage + Chromium am DP-Monitor) laufen, keine fehlgeschlagenen Units, keine AVCs;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Klangstation Installer
-# Debian / Raspberry Pi OS  sowie  RHEL / AlmaLinux / Rocky / Fedora
+# Debian 13 / Raspberry Pi OS (andere Distributionen werden nicht unterstuetzt)
 # Architekturen: x86_64, aarch64, armv7l
 # Optionen: siehe usage() bzw. ./install.sh --help
 set -euo pipefail
@@ -41,7 +41,7 @@ UPnP und Bluetooth. Die Optionen lassen sich beliebig kombinieren.
 
   --no-airplay
       shairport-sync nicht installieren: kein AirPlay-Lautsprecher.
-      Verwenden ohne Apple-Geraete; spart unter RHEL/Alma/Rocky einen Quellcode-Build.
+      Verwenden ohne Apple-Geraete.
 
   --no-spotify
       librespot nicht installieren: kein Spotify Connect.
@@ -60,8 +60,8 @@ UPnP und Bluetooth. Die Optionen lassen sich beliebig kombinieren.
       Verwenden, wenn das Geraet nur per Kabel im Netz haengt und kein WLAN-Stick vorgesehen ist.
 
   --spotify-from-source
-      librespot mit Cargo bauen statt aus dem Raspotify-Paketarchiv (nur Debian/Raspberry Pi OS;
-      unter RHEL wird immer gebaut). Verwenden, wenn kein fremdes Paketarchiv eingebunden werden soll.
+      librespot mit Cargo bauen statt aus dem Raspotify-Paketarchiv.
+      Verwenden, wenn kein fremdes Paketarchiv eingebunden werden soll.
 
   --tv-headless
       "Laeuft gerade"-Bildschirm ohne Desktop: installiert cage + chromium und den Dienst
@@ -105,20 +105,11 @@ done
 . /etc/os-release
 case " ${ID:-} ${ID_LIKE:-} " in
     # vor debian pruefen: Ubuntu und Ableger (Mint, Pop!_OS ...) melden auch ID_LIKE=debian
-    *" ubuntu "*) die "Ubuntu und davon abgeleitete Systeme werden nicht unterstuetzt (Browser nur als Snap). Bitte Debian, Raspberry Pi OS oder AlmaLinux verwenden." ;;
-    *" debian "*|*" raspbian "*) FAMILY=debian ;;
-    *" rhel "*|*" fedora "*|*" centos "*) FAMILY=rhel ;;
-    *) die "Nicht unterstuetzte Distribution: ${PRETTY_NAME:-$ID}" ;;
+    *" ubuntu "*) die "Ubuntu und davon abgeleitete Systeme werden nicht unterstuetzt (Browser nur als Snap). Bitte Debian oder Raspberry Pi OS verwenden." ;;
+    *" debian "*|*" raspbian "*) ;;
+    *" rhel "*|*" fedora "*|*" centos "*) die "${PRETTY_NAME:-$ID} wird nicht mehr unterstuetzt (seit 0.2.14 nur Debian). Bitte Debian 13 oder Raspberry Pi OS verwenden." ;;
+    *) die "Nicht unterstuetzte Distribution: ${PRETTY_NAME:-$ID}. Bitte Debian 13 oder Raspberry Pi OS verwenden." ;;
 esac
-# AlmaLinux/RHEL/Rocky/CentOS vor Version 10 sind zu alt (Python, Quellcode-Builds); Fedora zaehlt eigene Versionen
-if [ "$FAMILY" = rhel ] && [ "${ID:-}" != fedora ]; then
-    EL_MAJOR="${VERSION_ID:-}"
-    EL_MAJOR="${EL_MAJOR%%.*}"
-    case "$EL_MAJOR" in
-        ''|*[!0-9]*) ;;
-        *) [ "$EL_MAJOR" -ge 10 ] || die "${PRETTY_NAME:-$ID} wird nicht unterstuetzt: Bitte Version 10 oder neuer verwenden, auf aelteren CPUs Debian 13." ;;
-    esac
-fi
 ARCH="$(uname -m)"
 # Update ohne --port: bisherigen Port behalten (laesst sich auch unter Optionen > Netzwerk aendern)
 if [ -z "$PORT" ]; then
@@ -127,16 +118,12 @@ if [ -z "$PORT" ]; then
     PORT="${PORT:-8080}"
 fi
 PY=python3
-log "System: ${PRETTY_NAME:-$ID} ($ARCH), Familie: $FAMILY"
+log "System: ${PRETTY_NAME:-$ID} ($ARCH)"
 
 # ------------------------------------------------------------------ librespot aus Quellcode
 build_librespot() {
     log "Baue librespot aus dem Quellcode (auf einem Raspberry Pi kann das 20-60 Minuten dauern)..."
-    if [ "$FAMILY" = debian ]; then
-        apt-get install -y --no-install-recommends build-essential pkg-config libasound2-dev libssl-dev
-    else
-        dnf install -y gcc make pkgconf-pkg-config alsa-lib-devel openssl-devel
-    fi
+    apt-get install -y --no-install-recommends build-essential pkg-config libasound2-dev libssl-dev
     export CARGO_HOME=/root/.cargo RUSTUP_HOME=/root/.rustup
     if ! command -v cargo >/dev/null 2>&1 && [ ! -x "$CARGO_HOME/bin/cargo" ]; then
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
@@ -148,13 +135,8 @@ build_librespot() {
 # ------------------------------------------------------------------ shairport-sync aus Quellcode
 build_shairport() {
     log "Baue shairport-sync (klassisches AirPlay) aus dem Quellcode..."
-    if [ "$FAMILY" = debian ]; then
-        apt-get install -y --no-install-recommends build-essential git autoconf automake libtool pkg-config \
-            libasound2-dev libavahi-client-dev libssl-dev libpopt-dev libconfig-dev
-    else
-        dnf install -y gcc make git autoconf automake libtool pkgconf-pkg-config \
-            alsa-lib-devel avahi-devel openssl-devel popt-devel libconfig-devel
-    fi
+    apt-get install -y --no-install-recommends build-essential git autoconf automake libtool pkg-config \
+        libasound2-dev libavahi-client-dev libssl-dev libpopt-dev libconfig-dev
     local tmp; tmp="$(mktemp -d)"
     git clone --depth 1 https://github.com/mikebrady/shairport-sync.git "$tmp/shairport-sync"
     ( cd "$tmp/shairport-sync" && autoreconf -fi && \
@@ -163,61 +145,8 @@ build_shairport() {
     rm -rf "$tmp"
 }
 
-# ------------------------------------------------------------------ MPD aus Quellcode (RHEL)
-# EL10 hat (noch) kein mpd-Paket in EPEL/RPM Fusion. Gebaut wird nur, was Klangstation braucht.
-build_mpd() {
-    log "Baue MPD aus dem Quellcode..."
-    local ffdev=ffmpeg-free-devel
-    if dnf -q repoquery ffmpeg-devel 2>/dev/null | grep -q .; then ffdev=ffmpeg-devel; fi  # RPM Fusion: alle Codecs
-    dnf install -y git gcc-c++ meson ninja-build pkgconf-pkg-config fmt-devel alsa-lib-devel libcurl-devel \
-        flac-devel libvorbis-devel opus-devel libid3tag-devel libcdio-paranoia-devel libcdio-devel sqlite-devel \
-        soxr-devel systemd-devel liburing-devel pcre2-devel expat-devel libicu-devel "$ffdev"
-    local tmp tag; tmp="$(mktemp -d)"
-    # neueste stabile 0.24.x
-    tag="$(git ls-remote --tags --refs https://github.com/MusicPlayerDaemon/MPD.git 'v0.24.*' \
-           | sed 's#.*refs/tags/##' | grep -E '^v0\.24\.[0-9]+$' | sort -V | tail -n1)"
-    [ -n "$tag" ] || die "MPD-Version konnte nicht ermittelt werden (GitHub erreichbar?)"
-    git clone --depth 1 --branch "$tag" https://github.com/MusicPlayerDaemon/MPD.git "$tmp/mpd"
-    ( cd "$tmp/mpd" && meson setup build --prefix=/usr/local --buildtype=release \
-        -Ddocumentation=disabled -Dtest=false -Dzeroconf=disabled -Dsmbclient=disabled -Dnfs=disabled \
-        -Dupnp=disabled -Dqobuz=disabled && \
-      ninja -C build && ninja -C build install )
-    rm -rf "$tmp"
-    command -v mpd >/dev/null 2>&1 || [ -x /usr/local/bin/mpd ] || die "MPD-Build fehlgeschlagen"
-}
-
-# ------------------------------------------------------------------ UPnP-Renderer aus Quellcode (RHEL)
-# Ungetestet: gmediarender ist in RHEL/EPEL nicht paketiert.
-build_gmediarender() {
-    log "Baue gmediarender (UPnP-Renderer) aus dem Quellcode..."
-    dnf install -y gcc make git autoconf automake libtool pkgconf-pkg-config libupnp-devel \
-        gstreamer1-devel gstreamer1-plugins-base-devel gstreamer1-plugins-good
-    dnf install -y gstreamer1-libav || warn "gstreamer1-libav fehlt (RPM Fusion) - AAC/ALAC per UPnP evtl. nicht abspielbar"
-    local tmp; tmp="$(mktemp -d)"
-    git clone --depth 1 https://github.com/hzeller/gmrender-resurrect.git "$tmp/gmrender"
-    ( cd "$tmp/gmrender" && ./autogen.sh && ./configure --prefix=/usr/local && make -j"$(nproc)" && make install )
-    rm -rf "$tmp"
-}
-
-# ------------------------------------------------------------------ bluez-alsa aus Quellcode (RHEL)
-# Ungetestet: bluez-alsa ist in RHEL/EPEL nicht paketiert.
-build_bluealsa() {
-    log "Baue bluez-alsa (Bluetooth-Audio) aus dem Quellcode..."
-    dnf install -y gcc make git autoconf automake libtool pkgconf-pkg-config alsa-lib-devel bluez bluez-libs-devel \
-        dbus-devel glib2-devel sbc-devel
-    local tmp; tmp="$(mktemp -d)"
-    git clone --depth 1 --branch v4.3.1 https://github.com/arkq/bluez-alsa.git "$tmp/bluez-alsa"
-    ( cd "$tmp/bluez-alsa" && autoreconf --install && mkdir build && cd build && \
-      ../configure --prefix=/usr/local --enable-systemd --with-systemdsystemunitdir=/etc/systemd/system && \
-      make -j"$(nproc)" && make install )
-    rm -rf "$tmp"
-    id -u bluealsa >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin bluealsa
-    usermod -aG bluetooth bluealsa 2>/dev/null || true
-    systemctl daemon-reload
-}
-
-# ------------------------------------------------------------------ Debian-Familie
-install_debian() {
+# ------------------------------------------------------------------ Pakete
+install_packages() {
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
     apt-get install -y --no-install-recommends python3 python3-venv mpd avahi-daemon avahi-utils ca-certificates curl util-linux \
@@ -269,68 +198,6 @@ install_debian() {
     fi
 }
 
-# ------------------------------------------------------------------ RHEL-Familie
-install_rhel() {
-    if [ "$ID" = fedora ]; then
-        dnf install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" || true
-    else
-        local el; el="$(rpm -E %rhel)"
-        dnf install -y dnf-plugins-core
-        if ! rpm -q epel-release >/dev/null 2>&1; then
-            if [ "$ID" = rhel ]; then
-                subscription-manager repos --enable "codeready-builder-for-rhel-${el}-$(arch)-rpms" || warn "CodeReady Builder konnte nicht aktiviert werden"
-                dnf install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${el}.noarch.rpm"
-            else
-                dnf install -y epel-release
-                dnf config-manager --set-enabled crb 2>/dev/null || dnf config-manager --set-enabled powertools 2>/dev/null || true
-            fi
-        fi
-        # RPM Fusion baut fuer EL10 nur x86-64-v3 (AVX2). Auf aelteren CPUs (AlmaLinux x86_64_v2) stuerzen
-        # mpd und shairport-sync sonst beim Laden von libx265 ab -> dort ffmpeg-free aus EPEL
-        if [ "$el" -ge 10 ] && [ "$(uname -m)" = x86_64 ] && \
-           ! /lib64/ld-linux-x86-64.so.2 --help 2>/dev/null | grep -q 'x86-64-v3 (supported'; then
-            warn "CPU ohne x86-64-v3 - RPM Fusion wird nicht eingebunden (ffmpeg-free aus EPEL)"
-        else
-            dnf install -y "https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${el}.noarch.rpm" || true
-        fi
-        # EL9 liefert Python 3.9 - das reicht, 3.11 wird aber bevorzugt
-        if dnf install -y python3.11 >/dev/null 2>&1; then PY=python3.11; fi
-    fi
-    dnf install -y python3 avahi avahi-tools ca-certificates curl util-linux v4l-utils cifs-utils nfs-utils cdparanoia flac alsa-utils
-    # NTFS-Sticks: die EL-Kernel haben kein ntfs3, ntfs-3g kommt aus EPEL
-    dnf install -y ntfs-3g || warn "ntfs-3g nicht verfuegbar - NTFS-Datentraeger werden nicht eingehaengt"
-    if [ "$TV_HEADLESS" = 1 ]; then
-        dnf install -y cage chromium || warn "cage/chromium nicht verfuegbar - Bildschirm ohne Desktop nicht moeglich"
-    fi
-    if ! command -v mpd >/dev/null 2>&1 && [ ! -x /usr/local/bin/mpd ]; then
-        dnf install -y mpd || build_mpd
-    fi
-    if [ "$WITH_AIRPLAY" = 1 ] && ! command -v shairport-sync >/dev/null 2>&1; then
-        dnf install -y shairport-sync || build_shairport
-    fi
-    if [ "$WITH_UPNP" = 1 ] && ! command -v gmediarender >/dev/null 2>&1; then
-        dnf install -y gmediarender 2>/dev/null || build_gmediarender || warn "UPnP-Renderer konnte nicht gebaut werden"
-    fi
-    if [ "$WITH_BLUETOOTH" = 1 ] && ! command -v bluealsa-aplay >/dev/null 2>&1; then
-        dnf install -y bluez-alsa 2>/dev/null || build_bluealsa || warn "bluez-alsa konnte nicht gebaut werden"
-    fi
-    if [ "$WITH_SPOTIFY" = 1 ] && ! command -v librespot >/dev/null 2>&1 && [ ! -x "$PREFIX/bin/librespot" ]; then
-        build_librespot
-    fi
-    if [ "$WITH_WIFI" = 1 ] && ! rpm -q NetworkManager-wifi >/dev/null 2>&1; then
-        # Server-Installationen bringen NetworkManager ohne WLAN-Modul mit; geladen wird es erst nach einem
-        # Neustart von NetworkManager (bestehende Verbindungen bleiben dabei bestehen)
-        if dnf install -y NetworkManager NetworkManager-wifi wpa_supplicant iw; then
-            systemctl try-restart NetworkManager.service || true
-        else
-            warn "WLAN-Unterstuetzung liess sich nicht installieren"
-        fi
-    fi
-    if [ "$WITH_WIFI" = 1 ]; then
-        dnf install -y realtek-firmware mt7xxx-firmware atheros-firmware iwlwifi-mvm-firmware >/dev/null 2>&1 || true
-    fi
-}
-
 install_firewall() {
     if command -v firewall-cmd >/dev/null 2>&1 && firewall-cmd --state >/dev/null 2>&1; then
         log "Oeffne Ports in firewalld..."
@@ -350,7 +217,7 @@ install_firewall() {
 
 # ------------------------------------------------------------------ Ablauf
 mkdir -p "$PREFIX"
-if [ "$FAMILY" = debian ]; then install_debian; else install_rhel; fi
+install_packages
 
 log "Lege Dienstbenutzer '$SVC_USER' an..."
 if ! id -u "$SVC_USER" >/dev/null 2>&1; then
@@ -423,12 +290,6 @@ if [ "$WITH_BLUETOOTH" = 1 ]; then
         install -d /etc/systemd/system/bluetooth.service.d
         printf '[Service]\nExecStart=\nExecStart=%s -P hostname\n' "$BLUETOOTHD_BIN" \
             > /etc/systemd/system/bluetooth.service.d/klangstation.conf
-    fi
-    # SELinux (RHEL & Co.): bluealsa reicht beim Oeffnen eines PCMs Pipes ueber D-Bus weiter. Fuer Dienste
-    # verbietet die Standardrichtlinie das stillschweigend - dbus-broker trennt bluealsa, kein Ton.
-    if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled && command -v semodule >/dev/null 2>&1; then
-        semodule -i "$PREFIX/system/klangstation-bluealsa.cil" \
-            || warn "SELinux-Regel fuer bluez-alsa liess sich nicht laden - Bluetooth-Ton bleibt evtl. stumm"
     fi
     systemctl daemon-reload
     systemctl enable bluetooth.service bluealsa.service >/dev/null 2>&1 || true

@@ -1014,7 +1014,7 @@ function updateEq() {
   f.elements.eq_enabled.disabled = !eqInfo.available;
   $("#eq-box").hidden = !eqInfo.available || !on || bp;
   $("#eq-note").textContent = !eqInfo.available
-    ? "Der Equalizer braucht das Paket libasound2-plugin-equal (Debian, Raspberry Pi OS), install.sh bringt es mit. Unter AlmaLinux gibt es dafür kein Paket."
+    ? "Der Equalizer braucht die Pakete libasound2-plugin-equal und caps, install.sh bringt beide mit. Nach einem Update mit install.sh steht er hier bereit."
     : bp ? "Bei „Bit-perfekt“ geht der Ton unverändert an das Gerät, darum ohne Equalizer."
     : on && settings.eq_enabled && !eqInfo.active ? "Der Equalizer ist gerade nicht aktiv – das Gerät war beim Start belegt oder wird nicht unterstützt."
     : "Gilt für alle Quellen, auch AirPlay, Spotify und Bluetooth. Die Regler wirken sofort; Ein- und Ausschalten startet die Wiedergabe kurz neu. Anheben kann bei lauter Musik verzerren – dann lieber die übrigen Bänder etwas absenken.";

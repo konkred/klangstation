@@ -51,7 +51,7 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 
 ## Unterstützte Systeme
 
-**Empfohlen ist ein System ohne Desktop:** Dann greift nichts anderes auf den Tonausgang zu, und `--tv-headless` zeigt den
+**Nur Systeme ohne Desktop:** Dann greift nichts anderes auf den Tonausgang zu, und `--tv-headless` zeigt den
 „Läuft gerade“-Bildschirm trotzdem am Fernseher.
 
 | Hardware | Betriebssystem | Stand |
@@ -62,57 +62,59 @@ Aktivlautsprecher oder Fernseher, bedient über den Browser von Handy, Tablet od
 
 Klangstation unterstützt seit Version 0.2.14 nur noch Debian und Raspberry Pi OS. Dort kommen alle Programme fertig aus
 den Paketquellen; unter AlmaLinux mussten mehrere aus dem Quellcode gebaut werden, und manche (etwa für den Equalizer)
-gab es gar nicht.
+gab es gar nicht. Seit Version 0.2.18 nur noch ohne Desktop: Mit Desktop greifen PipeWire und die Sitzung in Regler,
+Anschlüsse und Bluetooth ein, der Rechner schläft ein oder sperrt sich.
 
-* **Getestet, läuft auch:** dieselben Systeme mit Desktop (GNOME bzw. Raspberry Pi OS mit Desktop), auch auf einem Laptop
-  (Debian 13 mit GNOME: Deckel zuklappen, Lautsprecher und Kopfhörer, eingebautes WLAN und Bluetooth).
+* **Laptop:** geht auch ohne Desktop (Debian 13: Deckel zuklappen, Display und Fernseher, eingebautes WLAN und Bluetooth).
 * **Sollte laufen, nicht getestet:** Raspberry Pi 5, andere 64-Bit-ARM-Rechner mit Debian, Raspberry Pi 2/3 mit 32-Bit-System.
-* **Nicht unterstützt:** AlmaLinux, RHEL, Rocky Linux, Fedora (bis 0.2.13 unterstützt, der Installer lehnt sie jetzt ab),
+* **Nicht unterstützt:** Systeme mit Desktop (Raspberry Pi OS mit Desktop, Debian mit GNOME, KDE usw., bis 0.2.17
+  unterstützt), AlmaLinux, RHEL, Rocky Linux, Fedora (bis 0.2.13 unterstützt, der Installer lehnt sie jetzt ab),
   Ubuntu und Ableger wie Linux Mint (Browser nur als Snap), andere Systeme wie Arch, openSUSE, Alpine. Bestehende
-  Installationen unter AlmaLinux laufen weiter, `install.sh` aktualisiert sie aber nicht mehr.
+  Installationen mit Desktop oder unter AlmaLinux laufen weiter, `install.sh` aktualisiert sie aber nicht mehr.
 
 <details>
 <summary>Getestetes Zubehör</summary>
 
 | Zubehör | Getestet mit | Hinweis |
 |---|---|---|
-| Tonausgang | Klinke (Pi), HDMI, DisplayPort, PC-Lautsprecher, Laptop-Lautsprecher und -Kopfhörerbuchse, 7.1 über USB-Karte mit CM106 | USB-DACs und I²S-HATs werden erkannt, sind aber nicht getestet |
+| Tonausgang | Klinke (Pi), HDMI, DisplayPort, PC-Lautsprecher, Laptop-Lautsprecher, 7.1 über USB-Karte mit CM106 | USB-DACs und I²S-HATs werden erkannt, sind aber nicht getestet |
 | Fernseher | mit CEC am Pi, ohne CEC, DP-Monitor | CEC am PC braucht einen USB-Adapter (nicht getestet) |
 | CD-Laufwerk | internes SATA-Laufwerk, USB-Laufwerk Samsung SE-218GN | USB-Laufwerk am Pi nur mit Y-Kabel oder aktivem Hub |
-| Bluetooth | eingebaut am Pi und am Laptop (Qualcomm QCA9377), USB-Stick RTL8761BU | |
+| Bluetooth | eingebaut am Pi und am Laptop, USB-Stick RTL8761BU | |
 | WLAN-Stick | Edimax N150, Netgear WNDA3100v3 | geht nicht: Broadcom BCM43236 rev 2, AVM FRITZ!WLAN USB Stick N v2 (Test-PC startete mehrfach neu) |
-| USB-Speicher | Sticks mit FAT32 und NTFS | |
+| USB-Speicher | Sticks mit FAT32, NTFS und exFAT | |
 
 </details>
 
 <details>
 <summary>Was womit getestet ist</summary>
 
-| | Pi OS Desktop | Pi OS Lite | Debian ohne Desktop | Debian GNOME | Debian GNOME Laptop | Debian ohne Desktop Laptop |
-|---|---|---|---|---|---|---|
-| **Rechner** | Pi 4 | Pi 4 | PC Intel-HDA | PC Intel-HDA | ASUS Ryzen 5 | Dell i5 |
-| Installation von null | | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Update | ✓ | ✓ | | ✓ | ✓ | |
-| Neustart | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| „Läuft gerade“ | | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Spotify, AirPlay | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Bluetooth mit iPhone | ✓ | | ✓ | ✓ | ✓ | ✓ |
-| UPnP | ✓ | | | | | |
-| Radio, auch bei Netzausfall | ✓ | | ✓ | ✓ | ✓ | ✓ |
-| CD abspielen und rippen | ✓ | | ✓ | ✓ | | |
-| Freigabe, auch bei Serverausfall | SMB | NFS | | | | |
-| USB-Sticks, auch Abziehen im Betrieb | | | | | | |
-| CEC | ✓ | | | | | |
-| Schlummer-Timer, Wecker | | | | | ✓ | ✓ |
-| Musik hochladen | | | ✓ | | | |
-| Bit-perfekt, Lautstärke angleichen, Überblenden | | | | | ✓ (ohne Bit-perfekt) | ✓ (ohne Bit-perfekt) |
-| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | | | | |
-| Erscheinungsbilder | | | | | | |
-| Laptop: Deckel, Kopfhörer, Bildschirm am Fernseher | | | | | ✓ | ✓ (ohne Kopfhörer) |
+| | Pi OS Lite | Debian ohne Desktop | Debian ohne Desktop Laptop |
+|---|---|---|---|
+| **Rechner** | Pi 4 | PC Intel-HDA (2 Geräte) | Dell i5 |
+| Installation von null | ✓ | ✓ | ✓ |
+| Update | ✓ | ✓ | |
+| Neustart | ✓ | ✓ | ✓ |
+| Herunterfahren aus der Oberfläche | | ✓ | |
+| „Läuft gerade“ | ✓ | ✓ | ✓ |
+| Spotify, AirPlay | ✓ | ✓ | ✓ |
+| Bluetooth mit iPhone | | ✓ | ✓ |
+| UPnP | | | |
+| Radio, auch bei Netzausfall | | ✓ | ✓ |
+| CD abspielen und rippen, auch auf USB | | ✓ | |
+| Freigabe, auch bei Serverausfall | NFS | | |
+| USB-Sticks, auch Abziehen im Betrieb | | ✓ | |
+| CEC | | | |
+| Schlummer-Timer, Wecker | | ✓ | ✓ |
+| Musik hochladen | | ✓ | |
+| Equalizer, Lautstärke angleichen, Überblenden | | ✓ | ✓ (ohne Equalizer) |
+| Sperrbildschirm, Home-Bildschirm-App (iPhone) | | | |
+| Erscheinungsbilder | | | |
+| Laptop: Deckel, Bildschirm am Fernseher | | | ✓ |
 
-Leere Felder hießen bis 0.2.13 oft „unter AlmaLinux getestet“: UPnP, USB-Sticks samt Abziehen im Betrieb, Bit-perfekt,
-Lautstärke angleichen, Überblenden, Sperrbildschirm und die Erscheinungsbilder liefen dort, der Code ist derselbe. Unter
-Debian werden sie gerade nachgeholt.
+Leere Felder: Bis 0.2.13 lief vieles davon unter AlmaLinux (UPnP, Sperrbildschirm, Erscheinungsbilder, Bit-perfekt), bis
+0.2.17 auch auf Systemen mit Desktop (am Pi zusätzlich UPnP, CEC, SMB-Freigabe samt Ausfall). Der Code ist derselbe;
+ohne Desktop werden diese Punkte gerade nachgeholt.
 
 </details>
 
@@ -150,9 +152,9 @@ Die Optionen lassen sich beliebig kombinieren. `sudo ./install.sh --help` zeigt 
 | `--no-spotify` | `librespot` wird nicht installiert, kein Spotify Connect. | Ohne Spotify-Premium-Konto. Spart auf Systemen ohne passendes Paket den Rust-Build, der auf einem Raspberry Pi 20–60 Minuten dauert. |
 | `--no-upnp` | `gmediarender` wird nicht installiert, das Gerät erscheint nicht als UPnP/DLNA-Renderer. | Wenn niemand von Android-Apps, Windows („Wiedergeben auf“) oder einem NAS aus abspielt. |
 | `--no-wifi` | Keine WLAN-Unterstützung: NetworkManager-WLAN, `wpa_supplicant` und Firmware für USB-WLAN-Sticks werden nicht installiert. | Wenn das Gerät nur per Kabel im Netz hängt und kein WLAN vorgesehen ist. |
-| `--no-bluetooth` | `bluez` und `bluez-alsa` werden nicht installiert, die Bluetooth-Konfiguration bleibt unverändert. Auf Systemen mit Desktop wird auch WirePlumber nicht angefasst. | Ohne Bluetooth-Adapter, oder wenn Bluetooth am Gerät für etwas anderes gebraucht wird (Tastatur, Kopfhörer am Desktop). |
+| `--no-bluetooth` | `bluez` und `bluez-alsa` werden nicht installiert, die Bluetooth-Konfiguration bleibt unverändert. | Ohne Bluetooth-Adapter, oder wenn Bluetooth am Gerät für etwas anderes gebraucht wird. |
 | `--spotify-from-source` | `librespot` wird mit Cargo aus dem Quellcode gebaut statt aus dem Raspotify-Paketarchiv geholt. | Wenn kein fremdes Paketarchiv eingebunden werden soll oder das Raspotify-Paket Probleme macht. |
-| `--tv-headless` | Installiert `cage` (minimaler Wayland-Kiosk) und `chromium` und richtet den Dienst `klangstation-tv` ein. Er zeigt den „Läuft gerade“-Bildschirm nach jedem Start im Vollbild auf dem ersten Bildschirm (tty1), ohne Anmeldung und ohne Desktop. | Auf Systemen **ohne** Desktop (Raspberry Pi OS Lite, Debian ohne Desktop), wenn am HDMI-/DP-Ausgang ein Fernseher oder Monitor hängt. Auf Systemen **mit** Desktop nicht nötig, dort startet der Bildschirm automatisch nach dem Anmelden. |
+| `--tv-headless` | Installiert `cage` (minimaler Wayland-Kiosk) und `chromium` und richtet den Dienst `klangstation-tv` ein. Er zeigt den „Läuft gerade“-Bildschirm nach jedem Start im Vollbild auf dem ersten Bildschirm (tty1), ohne Anmeldung. | Wenn am HDMI-/DP-Ausgang ein Fernseher oder Monitor hängt. Ohne Bildschirm weglassen (spart Chromium). |
 | `-h`, `--help` | Zeigt die Optionen an und beendet sich. | |
 
 Hinweise:
@@ -167,7 +169,7 @@ Hinweise:
 ### Beispiele
 
 ```bash
-# Raspberry Pi mit Desktop, alles
+# Raspberry Pi OS Lite ohne Bildschirm, alles
 sudo ./install.sh
 
 # Raspberry Pi OS Lite am Fernseher, Oberfläche ohne Port
@@ -226,25 +228,14 @@ sowie die Musik in `/media/klangstation/Lokal` bleiben erhalten.
   `bluealsa-aplay` ab. Klangstation startet eigene Instanzen, damit es das Audiogerät zwischen den Quellen
   umschalten kann.
 * Mit Bluetooth: `bluealsa` nur als Empfänger, Gerätetyp „Lautsprecher“ (auch auf PCs, deren Gehäusetyp BlueZ
-  sonst „Desktop-Computer“ melden lässt); auf Desktops überlässt WirePlumber Bluetooth-Audio an `bluez-alsa`
-  (rückgängig: `/etc/wireplumber/*/90-klangstation*` löschen).
-* „Läuft gerade“: mit Desktop ein Autostart-Eintrag (`/etc/xdg/autostart/klangstation-tv.desktop`), mit
-  `--tv-headless` der Dienst `klangstation-tv`. Für dessen Sitzung werden PipeWire und WirePlumber gesperrt:
-  Chromium würde sie sonst starten, und WirePlumber setzt die ALSA-Regler zurück (HDMI/DP nach dem Booten stumm).
-  Unter GNOME stellt der Bildschirm bei jedem Start Dunkelschalten und Sperren der Sitzung ab, solange „Läuft gerade“
-  in den Optionen an ist.
-* Bereitschaft und Ruhezustand: Die systemd-Ziele werden gesperrt, damit der Rechner nicht einschläft (GNOME täte das
-  nach 15 min ohne Eingabe). Rückgängig: `systemctl unmask sleep.target suspend.target hibernate.target
+  sonst „Desktop-Computer“ melden lässt).
+* „Läuft gerade“ (`--tv-headless`): der Dienst `klangstation-tv`. Für dessen Sitzung werden PipeWire und WirePlumber
+  gesperrt: Chromium würde sie sonst starten, und WirePlumber setzt die ALSA-Regler zurück (HDMI/DP nach dem Booten stumm).
+* Bereitschaft und Ruhezustand: Die systemd-Ziele werden gesperrt, damit der Rechner nicht einschläft. Rückgängig: `systemctl unmask sleep.target suspend.target hibernate.target
   hybrid-sleep.target suspend-then-hibernate.target`.
 * Laptop: Zuklappen des Deckels löst nichts aus (`/etc/systemd/logind.conf.d/90-klangstation.conf`, `HandleLidSwitch=ignore`).
   Rückgängig: Datei löschen und neu starten.
-* Desktop-Ton: WirePlumber nutzt für alle Tonkarten das Profil „Pro Audio“
-  (`/etc/wireplumber/wireplumber.conf.d/90-klangstation-mixer.conf`). Der Desktop regelt seinen Ton dann in Software,
-  die Regler der Karte bleiben auf 100 %, und zwischen Lautsprecher und Kopfhörer schaltet der Treiber selbst um. Sonst
-  stellt der Lautstärkeregler des Desktops oder das Einstecken von Kopfhörern die Karte leiser. In den Toneinstellungen
-  des Desktops heißen die Ausgänge darum „… Pro“. Rückgängig: Datei löschen und neu anmelden.
-* Wartet bis zu 10 min, wenn die Paketverwaltung des Desktops (PackageKit) gerade Updates lädt.
-* Ohne Desktop mit `dhcpcd` (Debian mit ifupdown): ein Hook (`/usr/lib/dhcpcd/dhcpcd-hooks/90-klangstation`) setzt die direkte
+* Mit `dhcpcd` (Debian mit ifupdown): ein Hook (`/usr/lib/dhcpcd/dhcpcd-hooks/90-klangstation`) setzt die direkte
   IPv6-Route ins eigene Netz. Kündigt der Router sein Präfix zusätzlich als Route über sich selbst an (z. B. FRITZ!Box), legt
   dhcpcd nur diese an, und AirPlay vom iPhone bleibt stumm. Rückgängig: Datei löschen.
 
@@ -320,12 +311,10 @@ Erscheinungsbild* für alle Bildschirme ein, die `/tv` zeigen.
   <img src="docs/img/laeuft-gerade.jpg" alt="„Läuft gerade“ am Fernseher: Spotify Connect mit Cover, Titel und Fortschritt" width="100%">
 </p>
 
-* **Mit Desktop:** Nach dem Anmelden öffnet sich Chromium im Vollbild auf `/tv`. Alt+F4 schließt ihn,
-  *Optionen › Fernseher › Jetzt am HDMI-Ausgang anzeigen* holt ihn zurück.
-* **Ohne Desktop** (`--tv-headless`): Der Dienst `klangstation-tv` startet nach jedem Boot von selbst. Bei mehreren
+* Mit `--tv-headless` installiert: Der Dienst `klangstation-tv` startet nach jedem Boot von selbst. Bei mehreren
   Bildschirmen nutzt er den zuletzt angeschlossenen: Am Laptop wechselt er beim Anstecken des Fernsehers ganz dorthin und
   beim Abziehen zurück aufs eingebaute Display.
-* *Optionen › Fernseher* schaltet den Bildschirm in beiden Fällen ganz ab und wieder an.
+* *Optionen › Fernseher* schaltet den Bildschirm ganz ab und wieder an.
 * Jeder andere Browser (Tablet an der Wand, Fernseher-Browser): `http://<hostname>.local:8080/tv`.
 * Ohne Wiedergabe zeigt er Uhr, Datum, den nächsten Wecker und ein durchlaufendes Band der zuletzt gehörten Alben und
   Sender. Für das Wetter trägt man unter *Optionen › Fernseher* einen Ort ein. Uhr und Band wandern, damit nichts einbrennt.
@@ -379,7 +368,7 @@ Private Kopien eigener CDs sind in Deutschland erlaubt, solange kein Kopierschut
 ### Netzwerk
 
 *Optionen › Netzwerk* zeigt alle Netzwerkadapter mit Zustand, IPv4- und IPv6-Adressen, Gateway, DNS-Servern und
-MAC-Adresse. Geändert wird über NetworkManager (Raspberry Pi OS und die meisten Desktops nutzen ihn
+MAC-Adresse. Geändert wird über NetworkManager (Raspberry Pi OS nutzt ihn
 ohnehin; unter Debian ohne NetworkManager installiert ihn der Installer für WLAN und lässt die
 bestehende Kabelverbindung in Ruhe).
 
@@ -416,7 +405,7 @@ sudo /opt/klangstation/system/ks-reset-password
 
 ```bash
 journalctl -u klangstation -f       # Hauptdienst
-journalctl -u klangstation-tv -b    # "Läuft gerade" ohne Desktop
+journalctl -u klangstation-tv -b    # "Läuft gerade"
 systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
 ```
 
@@ -438,9 +427,9 @@ systemctl status ks-netmount.socket # Hilfsdienst für Freigaben
 * **NTFS-Stick erscheint nicht:** `ntfs-3g` muss installiert sein (macht der Installer).
 * **CD wird nicht erkannt:** `ls -l /dev/sr0` zeigt, ob das Laufwerk da ist. Der Benutzer `klangstation` muss in der
   Gruppe `cdrom` sein.
-* **CD lässt sich nicht auswerfen:** Hält ein anderes Programm das Laufwerk (z. B. der Desktop), meldet
+* **CD lässt sich nicht auswerfen:** Hält ein anderes Programm das Laufwerk, meldet
   Klangstation das. Manche USB-Laufwerke brauchen einen eigenen Netzteil- bzw. Y-Kabel-Anschluss.
-* **„Läuft gerade“ ohne Desktop bleibt schwarz:** `journalctl -u klangstation-tv -b` prüfen; Monitor vor dem Start
+* **„Läuft gerade“ bleibt schwarz:** `journalctl -u klangstation-tv -b` prüfen; Monitor vor dem Start
   anschließen; unter *Optionen › Fernseher* muss der Bildschirm eingeschaltet sein.
 * **CEC reagiert nicht:** Am Fernseher die CEC-Funktion einschalten (Samsung „Anynet+“, LG „SimpLink“, Sony
   „Bravia Sync“, Philips „EasyLink“). PC-Monitore unterstützen CEC meist gar nicht.
@@ -477,7 +466,7 @@ Browser ──HTTP/WebSocket──► Klangstation (Python, Starlette, Benutzer 
   Klangstation neu (bis zu 30 Minuten lang). Steht ein Titel von einer Netzwerkfreigabe 15 s still und antwortet
   der Server nicht, wird pausiert und nach seiner Rückkehr an derselben Stelle weitergespielt. Ohne das bliebe
   MPD stumm bzw. spränge nach einigen Minuten durch die ganze Warteschlange.
-* Auf frisch installierten Systemen ohne Desktop stehen ALSA-Regler oft stumm oder auf 0 %. Klangstation schaltet
+* Auf frisch installierten Systemen stehen ALSA-Regler oft stumm oder auf 0 %. Klangstation schaltet
   sie beim Wählen eines Ausgangs ein (auf 80 %); bewusst eingestellte Lautstärken bleiben unverändert.
 * Ob an einem HDMI-/DP-Ausgang ein Monitor hängt, liest Klangstation bei PC-Grafik (Intel/AMD/NVIDIA) aus den
   ALSA-Jacks, am Raspberry Pi aus DRM (`/sys/class/drm`).

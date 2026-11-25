@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Klangstation Installer
-# Debian 13 / Raspberry Pi OS (andere Distributionen werden nicht unterstuetzt)
+# Debian 13 / Raspberry Pi OS, jeweils ohne Desktop (andere Distributionen und Desktop-Systeme werden nicht unterstuetzt)
 # Architekturen: x86_64, aarch64, armv7l
 # Optionen: siehe usage() bzw. ./install.sh --help
 set -euo pipefail
@@ -22,7 +22,7 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!!\033[0m  %s\n' "$*" >&2; }
 die()  { printf '\033[1;31mFehler:\033[0m %s\n' "$*" >&2; exit 1; }
-# Desktop: PackageKit haelt nach dem Start oft die dpkg-Sperre (automatische Updates) -> warten statt abbrechen
+# Laufen gerade automatische Updates (unattended-upgrades), haelt apt die dpkg-Sperre -> warten statt abbrechen
 apt-get() { command apt-get -o DPkg::Lock::Timeout=600 "$@"; }
 
 usage() {
@@ -52,7 +52,7 @@ UPnP und Bluetooth. Die Optionen lassen sich beliebig kombinieren.
       Verwenden, wenn niemand von Android-Apps, Windows ("Wiedergeben auf") oder NAS abspielt.
 
   --no-bluetooth
-      bluez/bluez-alsa nicht installieren, Bluetooth- und WirePlumber-Konfiguration unveraendert lassen.
+      bluez/bluez-alsa nicht installieren, Bluetooth-Konfiguration unveraendert lassen.
       Verwenden ohne Bluetooth-Adapter oder wenn Bluetooth fuer anderes gebraucht wird.
 
   --no-wifi
@@ -64,10 +64,9 @@ UPnP und Bluetooth. Die Optionen lassen sich beliebig kombinieren.
       Verwenden, wenn kein fremdes Paketarchiv eingebunden werden soll.
 
   --tv-headless
-      "Laeuft gerade"-Bildschirm ohne Desktop: installiert cage + chromium und den Dienst
-      klangstation-tv, der nach jedem Start im Vollbild auf tty1 laeuft (dort dann kein Login-Prompt).
-      Verwenden auf Systemen OHNE Desktop (Pi OS Lite, Server) mit Fernseher/Monitor am HDMI-/DP-
-      Ausgang. Mit Desktop nicht noetig - dort startet der Bildschirm nach dem Anmelden von selbst.
+      "Laeuft gerade"-Bildschirm: installiert cage + chromium und den Dienst klangstation-tv,
+      der nach jedem Start im Vollbild auf tty1 laeuft (dort dann kein Login-Prompt).
+      Verwenden mit Fernseher/Monitor am HDMI-/DP-Ausgang; ohne Bildschirm weglassen.
 
   -h, --help
       Diese Hilfe anzeigen.
@@ -76,7 +75,7 @@ Hinweis: --no-... verhindert nur die Installation. Bereits vorhandene Programme 
 weiter; abschalten laesst sich jede Quelle auch unter Optionen > Dienste.
 
 Beispiele:
-  sudo ./install.sh                                   # alles, z. B. Raspberry Pi mit Desktop
+  sudo ./install.sh                                   # alles, ohne Bildschirm (nur Musikserver)
   sudo ./install.sh --tv-headless --port 80           # Pi OS Lite am Fernseher
   sudo ./install.sh --no-spotify --no-upnp --no-bluetooth
 EOF
@@ -110,6 +109,12 @@ case " ${ID:-} ${ID_LIKE:-} " in
     *" rhel "*|*" fedora "*|*" centos "*) die "${PRETTY_NAME:-$ID} wird nicht mehr unterstuetzt (seit 0.2.14 nur Debian). Bitte Debian 13 oder Raspberry Pi OS verwenden." ;;
     *) die "Nicht unterstuetzte Distribution: ${PRETTY_NAME:-$ID}. Bitte Debian 13 oder Raspberry Pi OS verwenden." ;;
 esac
+# Nur Systeme ohne Desktop (Entscheidung seit 0.2.18): PipeWire/WirePlumber der Sitzung greifen in Regler,
+# Anschluesse und Bluetooth ein, die Sitzung schlaeft ein oder sperrt. Debian startet auch ohne Desktop oft
+# graphical.target - entscheidend ist ein aktivierter Display-Manager (gdm3, lightdm, sddm ...).
+if [ -e /etc/systemd/system/display-manager.service ] && [ "$(systemctl get-default 2>/dev/null || true)" = graphical.target ]; then
+    die "Systeme mit Desktop werden nicht unterstuetzt (seit 0.2.18). Bitte Raspberry Pi OS Lite bzw. Debian ohne Desktop verwenden."
+fi
 ARCH="$(uname -m)"
 # Update ohne --port: bisherigen Port behalten (laesst sich auch unter Optionen > Netzwerk aendern)
 if [ -z "$PORT" ]; then
@@ -225,7 +230,7 @@ log "Lege Dienstbenutzer '$SVC_USER' an..."
 if ! id -u "$SVC_USER" >/dev/null 2>&1; then
     useradd --system --home-dir "$DATA" --no-create-home --shell /usr/sbin/nologin --user-group "$SVC_USER"
 fi
-# audio/cdrom: Ton und CD; video: HDMI-CEC (/dev/cec*); render/input: Bildschirm ohne Desktop (cage)
+# audio/cdrom: Ton und CD; video: HDMI-CEC (/dev/cec*); render/input: Bildschirm "Laeuft gerade" (cage)
 for grp in audio cdrom optical video render input; do
     if getent group "$grp" >/dev/null; then usermod -aG "$grp" "$SVC_USER"; fi
 done
@@ -297,53 +302,6 @@ if [ "$WITH_BLUETOOTH" = 1 ]; then
     systemctl enable bluetooth.service bluealsa.service >/dev/null 2>&1 || true
     systemctl restart bluetooth.service bluealsa.service || warn "Bluetooth-Dienste liessen sich nicht starten"
     rfkill unblock bluetooth 2>/dev/null || true
-    # Desktop-Systeme: WirePlumber (PipeWire) wuerde Bluetooth-Audio selbst beanspruchen und bluez-alsa
-    # leer ausgehen lassen. Rueckgaengig: die beiden Dateien loeschen.
-    if [ -d /usr/share/wireplumber ]; then
-        log "Ueberlasse Bluetooth-Audio bluez-alsa (WirePlumber-Bluetooth wird abgeschaltet)..."
-        install -d /etc/wireplumber/wireplumber.conf.d /etc/wireplumber/bluetooth.lua.d
-        cat > /etc/wireplumber/wireplumber.conf.d/90-klangstation-bluetooth.conf <<'EOF'
-# Klangstation: Bluetooth-Audio uebernimmt bluez-alsa, nicht die Desktop-Sitzung (WirePlumber >= 0.5)
-wireplumber.profiles = {
-  main = {
-    monitor.bluez = disabled
-  }
-}
-EOF
-        # WirePlumber 0.4 (Debian 12 / Raspberry Pi OS Bookworm)
-        echo '-- Klangstation: Bluetooth-Audio uebernimmt bluez-alsa' > /etc/wireplumber/bluetooth.lua.d/90-klangstation.lua
-        echo 'bluez_monitor.enabled = false' >> /etc/wireplumber/bluetooth.lua.d/90-klangstation.lua
-        for user in $(loginctl list-users --no-legend 2>/dev/null | awk '{print $2}'); do
-            systemctl --user -M "${user}@" restart wireplumber.service >/dev/null 2>&1 || true
-        done
-    fi
-fi
-
-# Desktop-Systeme: WirePlumber setzt beim Anschlusswechsel (Kopfhoerer ein/aus) und ueber den Lautstaerkeregler
-# des Desktops die Regler der Karte (Master/PCM), MPD spielt dann leiser. Im Profil "pro-audio" fasst PipeWire
-# Regler und Anschluesse nicht an (Desktop-Ton per Software), Lautsprecher/Kopfhoerer schaltet der Treiber um
-# (Auto-Mute, setzt Klangstation). Ein Software-Mixer allein reicht nicht: Dann schaltet PipeWire beim
-# Herausziehen den Kopfhoerer stumm, aber den Lautsprecher nicht wieder ein. Rueckgaengig: Datei loeschen.
-if [ -d /usr/share/wireplumber ]; then
-    install -d /etc/wireplumber/wireplumber.conf.d
-    mixer_conf=/etc/wireplumber/wireplumber.conf.d/90-klangstation-mixer.conf
-    mixer_new=$(cat <<'EOF'
-# Klangstation: PipeWire laesst Regler und Anschluesse der Karten in Ruhe (WirePlumber >= 0.5)
-monitor.alsa.rules = [
-  {
-    matches = [ { device.name = "~alsa_card.*" } ]
-    actions = { update-props = { device.profile = "pro-audio" } }
-  }
-]
-EOF
-)
-    if [ "$(cat "$mixer_conf" 2>/dev/null || true)" != "$mixer_new" ]; then
-        log "PipeWire laesst die Regler der Karte in Ruhe (WirePlumber-Profil pro-audio)..."
-        printf '%s\n' "$mixer_new" > "$mixer_conf"
-        for user in $(loginctl list-users --no-legend 2>/dev/null | awk '{print $2}'); do
-            systemctl --user -M "${user}@" restart wireplumber.service >/dev/null 2>&1 || true
-        done
-    fi
 fi
 
 sed "s/@PORT@/${PORT}/" "$PREFIX/system/klangstation.service" > /etc/systemd/system/klangstation.service
@@ -356,9 +314,9 @@ else
     rm -f /etc/systemd/system/klangstation.service.d/port.conf
 fi
 
-# "Laeuft gerade"-Bildschirm: mit Desktop per Autostart in der Sitzung, ohne Desktop optional per cage
+# "Laeuft gerade"-Bildschirm (optional) per cage
 if [ "$TV_HEADLESS" = 1 ]; then
-    log "Richte den Bildschirm ohne Desktop ein (cage)..."
+    log "Richte den Bildschirm ein (cage)..."
     install -m 0644 "$PREFIX/system/klangstation-tv.service" /etc/systemd/system/klangstation-tv.service
     systemctl enable klangstation-tv.service >/dev/null 2>&1 || true
     # Chromium startet in der Kiosk-Sitzung sonst per Socket-Aktivierung PipeWire/WirePlumber. WirePlumber
@@ -368,11 +326,8 @@ if [ "$TV_HEADLESS" = 1 ]; then
     for unit in pipewire.socket pipewire.service pipewire-pulse.socket pipewire-pulse.service wireplumber.service; do
         ln -sfn /dev/null "$DATA/.config/systemd/user/$unit"
     done
-elif [ "$(systemctl get-default)" = graphical.target ] && [ -d /etc/xdg/autostart ]; then
-    log "Richte den Bildschirm fuer die Desktop-Sitzung ein (Autostart)..."
-    install -m 0644 "$PREFIX/system/klangstation-tv.desktop" /etc/xdg/autostart/klangstation-tv.desktop
 fi
-# Ein Musikserver darf nicht einschlafen: GNOME versetzt den Rechner sonst nach 15 min ohne Eingabe in Bereitschaft
+# Ein Musikserver darf nicht einschlafen
 log "Schalte Bereitschaft und Ruhezustand ab..."
 systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target >/dev/null 2>&1 || true
 # Laptop: Zuklappen soll nichts ausloesen (logind wuerde sonst versuchen, in den Ruhezustand zu gehen)
@@ -396,16 +351,7 @@ if [ "$TV_HEADLESS" = 1 ]; then
     # eine schon laufende Kiosk-Sitzung (samt PipeWire) beenden, damit die Sperren oben greifen
     systemctl stop klangstation-tv.service "user@$(id -u "$SVC_USER").service" >/dev/null 2>&1 || true
     systemctl restart klangstation.service
-    systemctl restart klangstation-tv.service || warn "Bildschirm ohne Desktop liess sich nicht starten"
-elif [ -f /etc/xdg/autostart/klangstation-tv.desktop ]; then
-    # Der Autostart greift erst bei der naechsten Anmeldung: in einer laufenden Sitzung gleich starten
-    for session in $(loginctl list-sessions --no-legend 2>/dev/null | awk '{print $1}'); do
-        case "$(loginctl show-session "$session" -p Type --value 2>/dev/null || true)" in wayland|x11) ;; *) continue ;; esac
-        session_user="$(loginctl show-session "$session" -p Name --value 2>/dev/null || true)"
-        [ -n "$session_user" ] || continue
-        pgrep -u "$session_user" -x ks-tv-kiosk >/dev/null 2>&1 && continue
-        systemd-run --user --machine="$session_user@" --collect --quiet "$PREFIX/system/ks-tv-kiosk" >/dev/null 2>&1 || true
-    done
+    systemctl restart klangstation-tv.service || warn "Bildschirm liess sich nicht starten"
 fi
 
 # bereits eingesteckte Datentraeger einhaengen

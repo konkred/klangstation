@@ -12,7 +12,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 ASOUND = Path("/proc/asound")
 _CARD_RE = re.compile(r"^\s*(\d+)\s+\[(\S+)\s*\]:\s*(.+?)\s+-\s+(.*)$")
@@ -115,7 +115,7 @@ def _vc4_connected(port: str) -> Optional[bool]:
     return None
 
 
-# Regler, die auf frisch installierten Systemen ohne Desktop oft stumm oder auf 0 stehen
+# Regler, die auf frisch installierten Systemen oft stumm oder auf 0 stehen
 _MIXER_CONTROLS = ("Master", "PCM", "Speaker", "Headphone", "Line Out", "Front", "IEC958")
 
 
@@ -132,7 +132,7 @@ def prepare_mixer(device_id: str) -> List[str]:
     for block in blocks[1:]:
         head, _, body = block.partition("\n")
         hm = re.match(r"'(.+)',(\d+)", head)
-        # Lautsprecher und Kopfhoerer bleiben beide an, beim Einstecken schaltet der Treiber um (PipeWire stellt das ab)
+        # Lautsprecher und Kopfhoerer bleiben beide an, beim Einstecken schaltet der Treiber um (falls Auto-Mute aus steht)
         if hm and hm.group(1) == "Auto-Mute Mode" and "Item0: 'Disabled'" in body and "'Enabled'" in body:
             _amixer("-c", card, "-q", "sset", f"Auto-Mute Mode,{hm.group(2)}", "Enabled")
             changed.append("Auto-Mute eingeschaltet")
@@ -149,19 +149,6 @@ def prepare_mixer(device_id: str) -> List[str]:
             _amixer("-c", card, "-q", "sset", name, "100%")
             changed.append(f"{name} auf 100 %")
     return changed
-
-
-def wireplumber_pids() -> Set[int]:
-    """Laufende WirePlumber-Prozesse (Desktop-Sitzungen). Ein neuer setzt die Regler der Karte auf stumm/0 %."""
-    pids: Set[int] = set()
-    for entry in Path("/proc").iterdir():
-        if entry.name.isdigit():
-            try:
-                if (entry / "comm").read_text().strip() == "wireplumber":
-                    pids.add(int(entry.name))
-            except OSError:
-                continue
-    return pids
 
 
 def max_channels(device_id: str) -> Optional[int]:

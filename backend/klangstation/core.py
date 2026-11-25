@@ -132,7 +132,6 @@ class Core:
             asyncio.create_task(self._guarded("Webradio-Waechter", self._stream_loop)),
             asyncio.create_task(self._guarded("Freigabe-Waechter", self._share_loop)),
             asyncio.create_task(self._guarded("Ausgabe-Waechter", self._busy_loop)),
-            asyncio.create_task(self._guarded("Regler-Waechter", self._mixer_loop)),
             asyncio.create_task(self._guarded("Nachtmodus", self._night_loop)),
             asyncio.create_task(self._guarded("Update-Hinweis", self._update_loop)),
             asyncio.create_task(self._guarded("Schlummer-Timer und Wecker", self.timers.loop)),
@@ -897,7 +896,6 @@ class Core:
     STREAM_RETRY_EVERY = 15  # s zwischen zwei Versuchen, wenn MPD mit Fehler angehalten hat
     STREAM_GIVE_UP = 1800    # s, danach bleibt der Sender aus
     OUTPUT_BUSY_GIVE_UP = 120  # s, danach bleibt die Wiedergabe angehalten (sonst startet sie irgendwann ungefragt)
-    MIXER_FIX_WINDOW = 30    # s nach dem Start von WirePlumber, in denen die Regler zurueckgeholt werden
 
     async def _stream_loop(self) -> None:
         """Haelt Webradio nach einem Netzausfall am Laufen.
@@ -968,10 +966,9 @@ class Core:
                 still_since = now
 
     async def _busy_loop(self) -> None:
-        """Startet MPD neu, wenn die Ausgabe belegt war (Desktop-Ton ueber PipeWire auf derselben Karte).
+        """Startet MPD neu, wenn die Ausgabe belegt war (anderes Programm spielt direkt auf derselben Karte).
 
-        MPD bleibt dann mit "Device or resource busy" auf Pause und versucht es nicht wieder. PipeWire gibt die Karte
-        ~5 s nach dem letzten Ton frei.
+        MPD bleibt dann mit "Device or resource busy" auf Pause und versucht es nicht wieder.
         """
         while True:
             await asyncio.sleep(3)
@@ -1013,25 +1010,6 @@ class Core:
                     await self.mpd.run("play", status.get("song", "0"))
             except (ConnectionError, MPDError, asyncio.TimeoutError):
                 continue
-
-    async def _mixer_loop(self) -> None:
-        """Stellt die Regler wieder her, wenn WirePlumber startet (z. B. bei jeder Anmeldung am Desktop).
-
-        WirePlumber setzt dabei HDMI und Kopfhoerer auf stumm/0 %, MPD spielt dann lautlos weiter. Nur in diesem Fall
-        eingreifen: Wer die Regler sonst von Hand stumm schaltet, meint das so.
-        """
-        known = await asyncio.to_thread(audio.wireplumber_pids)
-        fix_until = time.monotonic() + self.MIXER_FIX_WINDOW  # kann gerade eben erst gestartet sein
-        while True:
-            await asyncio.sleep(3)
-            pids = await asyncio.to_thread(audio.wireplumber_pids)
-            if pids - known:
-                fix_until = time.monotonic() + self.MIXER_FIX_WINDOW
-            known = pids
-            if time.monotonic() < fix_until:
-                fixed = await asyncio.to_thread(audio.prepare_mixer, self.output.get("id", ""))
-                if fixed:
-                    log.info("Mixer nach Start von WirePlumber: %s", ", ".join(fixed))
 
     async def _stream_lost(self, target: Optional[Dict[str, Any]], state: Optional[str], uri: str, status: Dict[str, str]) -> bool:
         """Hat MPD den Sender selbst angehalten (Fehler oder Verbindung weg), statt der Nutzer?"""

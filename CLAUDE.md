@@ -1,8 +1,9 @@
 # Klangstation – Arbeitskontext für Claude
 
 Musik-Streaming-Webapp (Python/Starlette + MPD) im Stil der 2000er (WMP-Skin, wahlweise Frutiger Aero) für
-headless Debian-Systeme samt Raspberry Pi OS
-(ARM und x86); RHEL/AlmaLinux bis 0.2.13, seit 0.2.14 nicht mehr (Entscheidung des Nutzers, 25.11.2026). Was das Projekt kann und wie es installiert wird, steht in der README.md. Diese Datei hält fest,
+headless Debian-Systeme samt Raspberry Pi OS, jeweils **ohne Desktop**
+(ARM und x86); RHEL/AlmaLinux bis 0.2.13, seit 0.2.14 nicht mehr; Desktop-Systeme bis 0.2.17, seit 0.2.18 nicht mehr
+(beides Entscheidungen des Nutzers, 25.11.2026). Was das Projekt kann und wie es installiert wird, steht in der README.md. Diese Datei hält fest,
 was nicht im Code steht: Absprachen, Testgeräte, Arbeitsweise, Lehren aus der Fehlersuche und den Teststand.
 
 ## Absprachen mit dem Nutzer
@@ -54,7 +55,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 | Gerät | Zugang | Hinweise |
 |---|---|---|
 | **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1 (Hostname `KlangStation`), Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB, **Debian 13 ohne Desktop** (seit 25.11., vorher AlmaLinux 10.3) | `ssh root@10.0.0.189` bzw. `KlangStation.fritz.box` (SSH-Key, zu Hause, Kabel unter ifupdown) | root erlaubt, Neustart ja, Herunterfahren nur mit dem Nutzer; kein `sudo` installiert (in Skripten `runuser -u klangstation`); eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1 = HDMI 0); kein WLAN, kein Bluetooth-Adapter; Testskripte `t_*.py`, `t_sec.sh` in `/root` |
-| Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
+| Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0; **Desktop: Installer lehnt seit 0.2.18 ab** – für weitere Tests Pi OS Lite neu aufsetzen (mit dem Nutzer) |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
 | Dell OptiPlex 3060 unterwegs (Hostname `DellOptiPlex3060`), AlmaLinux 10.2 **x86_64_v2** mit GNOME, SELinux enforcing | `ssh root@192.168.8.177` (SSH-Key, Reise-Router) | Celeron G4900T ohne AVX; Intel-HDA, Philips-TV an HDMI 0 (kein CEC); USB-CD-Laufwerk SE-218GN (`sr0`), Bluetooth-Stick RTL8761BU, Stick „MUSIKSTICK“ (FAT32) |
@@ -265,6 +266,13 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 
 ### Installer und PipeWire
 
+* **Nur ohne Desktop** (Entscheidung des Nutzers, 25.11.2026, ab 0.2.18): Installer bricht ab, wenn ein Display-Manager aktiviert
+  ist (`/etc/systemd/system/display-manager.service`) und das System grafisch startet. `graphical.target` allein taugt nicht:
+  Debian ohne Desktop (Thin Client) startet es auch. Entfernt: WirePlumber-Bluetooth- und `pro-audio`-Profil, XDG-Autostart
+  (`klangstation-tv.desktop`) samt Start in laufenden Sitzungen, GNOME-`gsettings` und Firefox in `ks-tv-kiosk`, Regler-Wächter
+  nach WirePlumber-Start (`_mixer_loop`). Geblieben: Sperre von Ruhezustand und Deckel (Laptop ohne Desktop), PipeWire-Sperre für
+  die Kiosk-Sitzung, `_busy_loop` (jedes andere Programm auf derselben Karte). Die Desktop-Lehren unten bleiben als Beleg.
+
 * **Nur Debian/Pi OS** (Entscheidung des Nutzers, 25.11.2026, ab 0.2.14): AlmaLinux/RHEL fallen weg. Gründe: Pi braucht ohnehin
   Debian; unter EL10 mussten mpd, shairport-sync, gmediarender, bluez-alsa gebaut werden (Thin Client 15 min statt ~1 min), es
   fehlten `alsaequal`/`caps` (Equalizer), `usb_modeswitch`, RPM Fusion für CPUs ohne AVX. Entfernt: RHEL-Zweig im Installer,
@@ -325,7 +333,7 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
   * Equalizer am Pi (vc4hdmi, `default:CARD=…` als slave) und mit 7.1 an echter Karte; am Thin Client bestanden.
   * Obergrenze bei UPnP/Bluetooth.
 * **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
-* **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
+* **Pi zu Hause** (Stand 01.11., hat Desktop → vorher Pi OS Lite aufsetzen): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
@@ -339,17 +347,17 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 * Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst am Pi „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Thin Client.
 
-### Testplan weitere Geräte (mit dem Nutzer abgestimmt am 01.11.2026, seit 25.11. nur Debian)
+### Testplan weitere Geräte (mit dem Nutzer abgestimmt am 01.11.2026, seit 25.11. nur Debian ohne Desktop)
 
 | Gerät | System | Deckt ab |
 |---|---|---|
-| ASUS-Laptop, Ryzen 5 5500U | Debian 13 mit Desktop | AMD-Sound/-Grafik, eingebaute Lautsprecher und Display, eingebautes WLAN, Desktop mit PipeWire |
+| ASUS-Laptop, Ryzen 5 5500U | Debian 13 mit Desktop (bis 0.2.17 bestanden, nicht mehr unterstützt) | AMD-Sound/-Grafik, eingebaute Lautsprecher und Display, eingebautes WLAN |
 | Dell Latitude 5501, i5-9400H | Debian 13 ohne Desktop, `--tv-headless` | Kiosk (cage) auf dem Laptop-Display, Intel-WLAN, Sound evtl. über SOF |
 | Wincor Nixdorf Beetle, Core 2 Quad | Debian 13 ohne Desktop | ifupdown statt NetworkManager, CPU nur x86-64-v1 (EL9/EL10 starten nicht), wenig Leistung |
-| HP i7 (`KlangStationDebian`) | Debian 13 mit GNOME (vorher ohne Desktop) | beides bestanden, 7.1 mit CM106 und Soundbird ohne Desktop |
-| Pi 4 zu Hause | bleibt Pi OS | CEC, Fernseher |
+| HP i7 (`KlangStationDebian`) | Debian 13 mit GNOME (vorher ohne Desktop) | beides bestanden, 7.1 mit CM106 und Soundbird ohne Desktop; für weitere Tests wieder ohne Desktop aufsetzen |
+| Pi 4 zu Hause | Pi OS (für weitere Tests Lite) | CEC, Fernseher |
 
-Reihenfolge: zuerst ASUS (Debian Desktop), dann Dell, Beetle.
+Reihenfolge: ASUS und Dell erledigt, als Nächstes Beetle.
 Zugang jeweils per SSH mit sudo wie am Pi.
 
 Vorher bzw. dabei bedenken:
@@ -361,8 +369,6 @@ Vorher bzw. dabei bedenken:
 * **Lautsprecher/Kopfhörer:** Erscheint als ein Gerät („ALC256 Analog“); Umschalten per Auto-Mute des Treibers (am ASUS bestanden).
 * **SOF:** Weder ASUS noch Dell brauchen es (beide laufen über `snd_hda_intel`). Andere Laptops brauchen evtl.
   `firmware-sof-signed`, bringt der Installer bisher nicht mit; Kartenname dann `sof-hda-dsp`, PCMs „HDA Analog“, „HDMI1–3“.
-* **PipeWire auf Debian Desktop** belegt die Karte im Betrieb (gibt sie nach ~5 s Leerlauf frei) – prüfen, ob MPD
-  `hw:` bekommt und Regler- und Ausgabe-Wächter greifen (unter Ubuntu getestet, siehe Bestanden).
 * **Beetle:** vorher RAM und Tonausgang klären (Kassensysteme haben teils nur Lautsprecher- oder keinen Ausgang);
   Chromium-Kiosk auf alter Intel-Grafik evtl. langsam.
 * Akkustand: oben rechts auf „Läuft gerade“ (0.2.7, `sysinfo.battery`, alle 5 s); unter Info mit Kapazität vom Neuzustand (0.2.10).
@@ -735,6 +741,8 @@ Vorher bzw. dabei bedenken:
   getrennt → erst 0-Byte-Dateien mit „ok“ (siehe Behobene Fehler), nach dem Fix „Kopieren fehlgeschlagen: No such device“,
   Album vollständig in `Lokal` mit Hinweis, auf dem Stick kein neuer Ordner, beim Wiederanstecken „clean“. Wiedergabe vom Stick
   stoppt beim Abziehen.
+* Ohne Desktop-Unterstützung (0.2.18): Update per `install.sh --tv-headless` 31 s, EXIT 0, alle Dienste und Kiosk; mit
+  gestelltem `display-manager.service` bricht der Installer sofort ab (EXIT 1, Meldung), ohne etwas zu ändern.
 
 ### Behobene Fehler
 

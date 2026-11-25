@@ -53,7 +53,7 @@ Auf den Geräten: App in `/opt/klangstation`, Daten in `/var/lib/klangstation`, 
 
 | Gerät | Zugang | Hinweise |
 |---|---|---|
-| **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1, Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB; bis 25.11. AlmaLinux 10.3 x86_64_v2, wird mit **Debian 13 ohne Desktop** neu aufgesetzt | bisher `ssh root@10.0.0.178` (SSH-Key, zu Hause, Kabel); neuen Zugang nach der Installation eintragen | root/sudo erlaubt; eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1); kein WLAN, kein Bluetooth-Adapter |
+| **Zentraler Test-PC** (seit 22.11.2026): Thin Client 10ZiG 6000q-1 (Hostname `KlangStation`), Celeron J4125 (4 Kerne, ohne AVX), 8 GB, SSD 512 GB, **Debian 13 ohne Desktop** (seit 25.11., vorher AlmaLinux 10.3) | `ssh root@10.0.0.189` bzw. `KlangStation.fritz.box` (SSH-Key, zu Hause, Kabel unter ifupdown) | root erlaubt, Neustart ja, Herunterfahren nur mit dem Nutzer; kein `sudo` installiert (in Skripten `runuser -u klangstation`); eingebaute Lautsprecher (ALC888-VD), Intel-HDMI/DP (Monitor an DP-1 = HDMI 0); kein WLAN, kein Bluetooth-Adapter; Testskripte `t_*.py`, `t_sec.sh` in `/root` |
 | Raspberry Pi zu Hause (Hostname `raspberrypi`), Raspberry Pi OS (Debian 13 trixie) mit Desktop, aarch64 | `ssh pi@raspberrypi` (SSH-Key) | sudo ohne Passwort; Fernseher mit CEC an HDMI 0 |
 | Raspberry Pi 4 (4 GB) unterwegs (Hostname `KlangStation-PiLite`), Pi OS Lite (Debian 13), aarch64 | `ssh pi@192.168.8.170` (SSH-Key, mobiler Reise-Router) | sudo ohne Passwort; Fernseher an HDMI 0; Synology dort nicht erreichbar |
 | HP ProDesk 400 G5 (Hostname `KlangStationDebian`, i7-8700), Debian 13.7 mit GNOME, x86_64 (seit 04.11., vorher Debian ohne Desktop, Ubuntu 26.04.1 und AlmaLinux 10.2) | `ssh debianuser@10.0.0.162` (SSH-Key, zu Hause) | sudo ohne Passwort; Intel-HDA, DP-Monitor an „HDMI 0“ (PCM 3), internes SATA-CD-Laufwerk, USB-Karte ICUSBAUDIO7D (8 Kanäle) |
@@ -95,6 +95,9 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
 * **Mit Lautstärke, aber ohne Ton** (z. B. Ausblenden prüfen): MPD hat einen Software-Mixer, also die
   HDMI-Schalter per `amixer -c 0 sset IEC958,<n> off` stumm schalten und danach wieder `on`.
   `disableoutput` taugt nicht – dann spielt MPD gar nicht („All audio outputs are disabled“).
+* **Stopp per API nur mit POST** (`/api/player/stop`, GET gibt 404). Am 25.11. lief deshalb nach einem Test ~22 s Rauschen hörbar
+  über den Monitor: Das Aufräumen stoppte nicht und schaltete `IEC958` danach wieder ein. `iec("on")` in `t_vol.py` stoppt jetzt
+  vorher selbst und lässt stumm, solange MPD spielt. Erst wieder hörbar machen, wenn sicher nichts mehr spielt.
 * **Belegter Ausgang (stumm):** MPD per `setvol 0`, dann `pw-cat -p --target <node.name> --volume 0 <wav>`. Eine Zahl als Ziel ignoriert
   pw-cat und nimmt den Standardausgang → per `/proc/asound/card<n>/pcm0p/sub0/status` prüfen, wer das Gerät hält.
 * **USB abziehen:** `echo 0 > /sys/bus/usb/devices/<port>/authorized` (wieder 1 = anstecken).
@@ -147,6 +150,11 @@ Testgeräten hinterlegt. Der Laptop löst keine `.local`-Namen auf (kein nss-mdn
   überschrieben. `aplay`-Meldungen sind lokalisiert → mit `LC_ALL=C` aufrufen. Stumm testen mit `snd-aloop`
   (bis 32 Kanäle; Aufnahme an `DEV=1` in S24_LE, plug wählt das beste Format); zum Entladen erst `alsa-state`
   stoppen (alsactl hält die Karte).
+* **Equalizer (caps Eq10 über alsaequal):** Regler 0–100 = −48…+24 dB je Band, linear (alle Bänder gleich: 0 → −44,4 dB,
+  100 → +22,2 dB). Die Bänder überlappen: alle auf „0 dB“ (Wert 66) ergeben +3,2 dB → laute Musik übersteuert. Darum
+  `_EQ_BANK_GAIN_DB` = 4 (flach = Wert 61, gemessen −0,4 dB). Ein einzelnes Band erreicht in der Mitte nur etwa +7,4/−3,5 dB bei ±12,
+  die Nachbarn begrenzen vor allem das Absenken; 31 Hz und 16 kHz liegen flach 1,4 bzw. 2,9 dB tiefer. Messen: Sinus −20 dBFS je
+  Band über snd-aloop, Bezug ohne EQ (`t_eq.py`, `t_eq2.py` in `/root` am Thin Client).
 * **Verbindung reißt ab, Sender nicht erreichbar:** MPD behandelt das wie ein Titelende: `stop` ohne `error` und ohne
   aktuellen Titel, der Sender steht noch in der Warteschlange → daran erkennt es `_stream_lost`. Der Nutzer-Stopp behält den
   aktuellen Titel, aber MPD behält auch `error` → Stopp und Pause beenden den Neuversuch in `player` (samt `clearerror`).
@@ -308,19 +316,16 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 * **Rest von 0.2.11/0.2.12** (übrige Punkte am Thin Client bestanden, siehe unten):
   * „Neu“ bei großer Bibliothek (Dauer von `sort -Last-Modified` über alle Titel, z. B. Synology am Pi).
   * `ks-netmount` mit echtem Rippen auf USB (Symlinks und Speichern per Loop-Abbild bestanden).
-  * Equalizer (nur Debian/Pi OS, am Thin Client nicht möglich): `libasound2-plugin-equal` + `caps` installieren, `amixer -D ks_equal contents` (zehn Regler, numid 1–10 =
-    31 Hz…16 kHz, Wertebereich 0–100 = −48…+24 dB angenommen), stumm per `snd-aloop` mit Sinus je Band messen; mit 5.1/7.1
-    davor; vc4hdmi am Pi (`default:CARD=…` als slave); Format S16 im Filter.
+  * Equalizer am Pi (vc4hdmi, `default:CARD=…` als slave) und mit 7.1 an echter Karte; am Thin Client bestanden.
   * Obergrenze bei UPnP/Bluetooth.
 * **Belegter Ausgang:** Spotify/AirPlay fängt der Wächter nicht ab.
 * **Pi zu Hause** (seit 01.11. aktueller Stand): Wecker mit CEC (Fernseher an?) und Ruhebildschirm am Fernseher;
   WLAN verbinden/trennen am eingebauten WLAN (der Pi hängt sonst nur daran – nur mit Kabel testen).
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm (am 30.10. war
   Radio Browser gestört).
-* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client mit Debian 13: Tests vom 22.11. (Lautstärke,
-  Sicherheit, `ks-netmount`, snd-aloop, Webradio, Update, Neustart/Herunterfahren, Oberfläche), dazu USB-Sticks (FAT32/NTFS,
-  Abziehen mit offener Datei), Rippen auf USB samt Rückfall, Netzwerk-Reiter (feste IPv4 mit Rücknahme, Port, SSH), USB-WLAN-Sticks,
-  UPnP, Equalizer.
+* **Unter Debian nachholen** (bisher nur unter AlmaLinux getestet), am Thin Client: USB-Sticks (FAT32/NTFS, Abziehen mit offener
+  Datei), Rippen auf USB samt Rückfall (braucht CD-Laufwerk), Netzwerk-Reiter (feste IPv4 mit Rücknahme, Port, SSH), USB-WLAN-Sticks,
+  UPnP, Herunterfahren (mit dem Nutzer), Sperrbildschirm am iPhone. Die Tests vom 22.11. sind unter Debian bestanden (siehe unten).
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`
   (Pi zu Hause), läuft als transienter Dienst per `systemd-run` und schreibt 24 h lang alle 5 min nach
   `/home/pi/ks-dauerlauf.csv` (RSS Python/MPD, FDs, CLOSE-WAIT, Dienst-Neustarts, Warnungen, Zustand, Temperatur,
@@ -684,6 +689,24 @@ Vorher bzw. dabei bedenken:
 * Oberfläche in allen sieben Themes bei 1280 und 390 px (alle Ansichten, Reiter der Bibliothek und Optionen): keine Seite scrollt
   quer. Ausgabe-Badges hatten zu wenig Kontrast (Grau 2,8:1, gewählt in Winamp 1,8, Hi-Fi 2,1, Nacht 2,5) und „Analog“ war am
   Handy abgeschnitten → dunkleres Grau, dunkle Schrift auf hellem Akzent, Spalte 44 px (0.2.13); jetzt mindestens 4,1:1 (Aero).
+
+**Thin Client 10ZiG (Celeron J4125), Debian 13 ohne Desktop frisch, 25.11.2026 – ohne Ton**
+
+* `install.sh --tv-headless` von null (0.2.14): 128 s, EXIT 0, keine Warnungen (unter AlmaLinux 15 min). MPD 0.24.4, shairport-sync
+  4.3.7, librespot 0.8.0 (Raspotify), gmediarender 0.3, Chromium 156, cage 0.2.0, alsaequal 0.6 + caps 0.9.26. Alle Dienste und
+  Kiosk laufen, keine fehlgeschlagenen Units; Automatik wählt HDMI 0 (Monitor). Kabel bleibt unter ifupdown.
+* Installer lehnt AlmaLinux, Fedora, Ubuntu, Mint und Arch ab (Fallprüfung mit gestellter `os-release`).
+* Equalizer stumm über snd-aloop: zehn Regler in richtiger Reihenfolge (numid 1–10 = 31 Hz…16 kHz, 0–100), jedes Band wirkt auf
+  seine Frequenz, vor 5.1 auf allen sechs Kanälen gleich. „Flach“ hob um +3,2 dB an → korrigiert (0.2.15, siehe Lehren), jetzt
+  −0,4 dB bei 1 kHz. Oberfläche mit Reglern in allen Themes bei 390 px ohne Überlauf.
+* Wie am 22.11. unter AlmaLinux bestanden: Formate nur links (L ≈ 1760–1950, R 0), Ausgabewechsel beim Spielen, Überblenden,
+  ReplayGain, „Dynamisch“, Schlummer-Timer (60 → 3, Pause, 60 zurück), Titelende, echter Wecker mit kaputtem Sender (Bibliothek,
+  15-min-Timer, Wecker aus); Obergrenze 50 (Regler, fremdes `setvol` nach ~1 s, Wecker-Rampe endet bei 50, neue Grenze nach 0,5 s),
+  Startlautstärke 30 nach Neustart 30, mit Grenze 20 → 20; Origin/JSON/Zeilenumbruch/Typ, gleichzeitige Uploads (einer 409, keine
+  Reste); `ks-netmount` (Symlink-Ordner abgelehnt, Symlink-Datei nicht kopiert, `..` und Ziel Lokal abgelehnt, danach `ro`).
+* Webradio-Netzausfall 60 s (v4 und v6): Hinweis nach 27 s, 12 s nach Rückkehr spielt er wieder.
+* Neustart über `POST /api/system/power`: Web nach 36 s (Boot 21 s), alle Dienste und Kiosk, nichts spielt, IPv6-Routen per Hook.
+* Update per `install.sh --tv-headless`: 30 s, EXIT 0, `settings.json` unverändert.
 
 ### Behobene Fehler
 

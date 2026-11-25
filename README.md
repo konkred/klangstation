@@ -282,8 +282,9 @@ wenigen Sekunden zurück.
 alle Quellen, auch AirPlay, Spotify und Bluetooth, und sitzt vor dem Hochmischen auf 5.1/7.1. Die Regler wirken sofort;
 Ein- und Ausschalten startet die Wiedergabe kurz neu, wie ein Ausgabewechsel. Grundlage ist das ALSA-Plugin `alsaequal`
 mit den Filtern aus `caps` (Pakete `libasound2-plugin-equal` und `caps`, bringt der Installer mit). Bei *Bit-perfekt* ist
-er aus. Anheben kann bei lauter Musik
-verzerren, dann lieber die übrigen Bänder absenken.
+er aus. Die Bänder überlappen sich: Ein einzelnes Band wirkt in seiner Mitte etwa halb so stark wie angezeigt
+(+12 dB → etwa +7 dB, −12 dB → etwa −3,5 dB), mehrere Nachbarbänder zusammen etwa wie angezeigt. Anheben kann bei lauter
+Musik verzerren, dann lieber die übrigen Bänder absenken.
 
 **Nachtmodus:** Unter *Optionen › Ausgabe* lässt sich die Lautstärke für ein Zeitfenster begrenzen, gleiche Zeiten bei *Von* und
 *Bis* begrenzen rund um die Uhr. Das gilt für Bibliothek, Radio, CD, UPnP und Bluetooth; Spotify und AirPlay regelst du am Handy.

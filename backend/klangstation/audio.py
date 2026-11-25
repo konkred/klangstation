@@ -47,8 +47,13 @@ def eq_available() -> bool:
     return bool(plugin) and any(os.path.exists(p) for p in ("/usr/lib/ladspa/caps.so", "/usr/lib64/ladspa/caps.so"))
 
 
+# Die Baender von Eq10 ueberlappen sich: alle auf 0 dB ergeben gemessen +3,2 dB, laute Musik wuerde uebersteuern.
+# Darum liegt "flach" um diesen Betrag tiefer (Wert 61 statt 66, gemessen -0,4 dB).
+_EQ_BANK_GAIN_DB = 4.0
+
+
 def _eq_value(db: float) -> int:
-    return round((db - _EQ_MIN_DB) / (_EQ_MAX_DB - _EQ_MIN_DB) * 100)
+    return round((db - _EQ_BANK_GAIN_DB - _EQ_MIN_DB) / (_EQ_MAX_DB - _EQ_MIN_DB) * 100)
 
 
 def set_eq(bands: List[int]) -> bool:

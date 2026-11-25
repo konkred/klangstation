@@ -305,10 +305,16 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 * **Pi** (zu Hause, erst mit dem Nutzer Pi OS Lite neu aufsetzen): Installation mit `--tv-headless`; Wecker mit CEC (Fernseher
   an?) und Ruhebildschirm am Fernseher; Equalizer an vc4hdmi (`default:CARD=…` als slave); Synology/SMB samt Ausfall und „Neu“ bei
   großer Bibliothek (Dauer von `sort -Last-Modified`); Obergrenze bei UPnP/Bluetooth; eingebautes WLAN verbinden/trennen (nur mit
-  Kabel testen).
+  Kabel testen); Bluetooth mit iPhone (eingebaut); UPnP; Webradio-Netzausfall; Spotify/AirPlay nach dem Neuaufsetzen erneut.
 * **Thin Client:** Equalizer mit 7.1 an echter Karte (USB-Karte CM106 des Nutzers). Bluetooth geht dort nicht (kein Adapter).
 * **Belegter Ausgang durch fremdes Programm:** Spotify gibt nach 10 s stumm auf, AirPlay scheitert stumm (MPD zeigt einen Hinweis).
   Klangstations eigene Quellen geben sich das Gerät gegenseitig frei; ohne Desktop kommt der Fall praktisch nicht vor.
+* **MusicBrainz-Anfragen mit vertauschten Daten** (zurückgestellt am 25.11.): Interpret des einen und Album des anderen Titels,
+  z. B. „Mark Morrison – Dutty Rock (20th Anniversary)“, „Destiny's Child – Dutty Rock“ beim Wechsel Spotify → AirPlay und bei
+  Titelsprüngen. Verbrauchen das Kontingent, MusicBrainz drosselt dann (503, 5 min Pause) und echte Cover fehlen. Quelle suchen
+  (Metadaten von AirPlay/Spotify während des Wechsels, Verlauf „Zuletzt“?) und nur zusammengehörige Paare anfragen.
+* **iPhone-Cover über AirPlay abgeschnitten** (shairport-sync 4.3.7 aus Debian, siehe Lehren): evtl. mit neuerer shairport-sync
+  prüfen; bis dahin MusicBrainz.
 * Mit Ton im Alltag (Nutzer): echter Wecker über Nacht mit Radiosender; Radio im Sperrbildschirm; Hochladen vom iPhone und
   Ordnerwahl mit echtem Dateidialog.
 * **Ganz zum Schluss:** Dauerlauf am Pi (nur auf Wunsch des Nutzers). `ks-dauerlauf.sh` liegt in `/home/pi`

@@ -324,6 +324,16 @@ Für Nutzer zusammengefasst in der README (Unterstützte Systeme: Übersicht und
 * Hardware: Das USB-CD-Laufwerk (Samsung SE-218GN) löst am Pi „over-current“ aus → Y-Kabel oder aktiver Hub.
   CD-/USB-Tests darum am Thin Client.
 
+### Ideen (nicht beschlossen, nicht von selbst anfangen)
+
+* **Home Assistant** (Idee vom 28.11.2026): Heute schon nutzbar über die HA-Integration „DLNA Digital Media Renderer“
+  (findet gmediarender, Abspielen/TTS-Ansagen) und Spotify. MPD lauscht nur auf `127.0.0.1` (kein Zugangsschutz) → HA-MPD-Integration
+  geht nicht und soll es auch nicht. Vorschlag: eigene Integration `custom_components/klangstation` (HACS, eigenes Repo) über die
+  vorhandene API und den WebSocket: `media_player` mit Titel, Cover, Lautstärke, Quellenwahl, „Medien durchsuchen“ (Radio-Favoriten,
+  Wiedergabelisten); Wecker/Schlummer-Timer als Schalter, Ausgabe als Auswahl. MQTT verworfen (HA hat dort keinen `media_player`).
+  Offen: Zugang bei aktivem Zugangsschutz (API-Token in den Optionen fehlt noch); HA-Instanz zum Testen klären (beim Nutzer oder
+  am Thin Client). Anfragen ohne `Origin` lässt die CSRF-Prüfung durch.
+
 ### Laptop (Dell, nur bei laptop-spezifischen Neuerungen)
 
 * **Deckel:** Installer setzt `HandleLidSwitch=ignore` (auch ExternalPower/Docked) in
